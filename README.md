@@ -36,7 +36,6 @@
 | 第 9 章 | 数据同步机制 — 集群一致性的实现 | [阅读](chapters/09-data-sync/chapter.md) |
 | 第 10 章 | 总结：架构设计的共性规律与取舍 | [阅读](chapters/10-summary/chapter.md) |
 | 后记 | 后记 | [阅读](chapters/10-epilogue.md) |
-| 附录 | 参考文献与延伸阅读（按章索引） | [阅读](chapters/11-references.md) |
 
 ## 版本约定
 

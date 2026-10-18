@@ -164,8 +164,6 @@ def slug_for(index, rel):
         return "00-preface.html"
     if rel.endswith("10-epilogue.md"):
         return "10-epilogue.html"
-    if rel.endswith("11-references.md"):
-        return "11-references.html"
     parts = rel.split("/")
     if len(parts) > 1:
         return parts[1] + ".html"

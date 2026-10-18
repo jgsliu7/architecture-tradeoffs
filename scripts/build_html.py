@@ -247,7 +247,7 @@ def link_xrefs(body, cur_idx, registry, n_chapters, page_for=None, stats=None):
     def href_for(kind, m):
         if kind == 'ch':
             n = int(m.group(1))
-            # 具名章只有 1..10（CHAPTERS 尾部的后记/参考文献不按"第 N 章"被引用）
+            # 具名章只有 1..10（CHAPTERS 尾部的后记不按"第 N 章"被引用）
             if not (1 <= n <= 10):
                 return None
             if page_for is None:
@@ -322,7 +322,7 @@ def validate_site(pages, out_json=None, label='', stats=None):
         base = os.path.dirname(name)
         for href in re.findall(r'\bhref="([^"]+)"', h):
             if href.startswith(('http://', 'https://', 'mailto:')):
-                continue  # 参考文献外链，允许
+                continue  # 外链，允许
             if href.startswith('#'):
                 frag_page, frag = name, href[1:]
             else:
@@ -385,7 +385,6 @@ CHAPTERS = [
     ('chapters/09-data-sync/chapter.md', 'chapters/09-data-sync/diagrams'),
     ('chapters/10-summary/chapter.md', 'chapters/10-summary/diagrams'),
     ('chapters/10-epilogue.md', None),
-    ('chapters/11-references.md', None),
 ]
 
 CSS = """
