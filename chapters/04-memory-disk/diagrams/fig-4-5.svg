@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 78 960 630" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="arrowInd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D97706"/>
+    </marker>
+  </defs>
+
+  <!-- Lifelines (actors) -->
+  <!-- Client -->
+  <rect x="40" y="90" width="120" height="40" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="100" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">客户端</text>
+  <line x1="100" y1="130" x2="100" y2="340" stroke="#6B7280" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="100" y1="359" x2="100" y2="381" stroke="#6B7280" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="100" y1="420" x2="100" y2="650" stroke="#6B7280" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- InnoDB -->
+  <rect x="220" y="90" width="140" height="40" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="290" y="108" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">InnoDB 引擎</text>
+  <text x="290" y="124" text-anchor="middle" font-size="10" fill="#374151">事务执行</text>
+  <line x1="290" y1="130" x2="290" y2="340" stroke="#D97706" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="290" y1="359" x2="290" y2="650" stroke="#D97706" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Buffer Pool -->
+  <rect x="420" y="90" width="140" height="40" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="490" y="108" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">缓冲池</text>
+  <text x="490" y="124" text-anchor="middle" font-size="10" fill="#374151">Buffer Pool</text>
+  <line x1="490" y1="130" x2="490" y2="220" stroke="#D97706" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="490" y1="257" x2="490" y2="650" stroke="#D97706" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Redo Log -->
+  <rect x="620" y="90" width="140" height="40" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="690" y="108" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">redo log</text>
+  <text x="690" y="124" text-anchor="middle" font-size="10" fill="#374151">日志缓冲 / 日志文件</text>
+  <line x1="690" y1="130" x2="690" y2="650" stroke="#D97706" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Disk -->
+  <rect x="820" y="90" width="120" height="52" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="880" y="108" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">磁盘</text>
+  <text x="880" y="122" text-anchor="middle" font-size="10.5" fill="#374151">日志、双写与</text>
+  <text x="880" y="136" text-anchor="middle" font-size="10.5" fill="#374151">表空间文件</text>
+  <line x1="880" y1="142" x2="880" y2="650" stroke="#6B7280" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- ===== Messages ===== -->
+  <!-- 1. UPDATE request -->
+  <line x1="100" y1="160" x2="288" y2="160" stroke="#4B5563" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="192" y="153" text-anchor="middle" font-size="11" fill="#374151">① UPDATE 请求</text>
+
+  <!-- 2–3. Related actions inside an internal mini-transaction, not SQL COMMIT -->
+  <path d="M 226 176 L 218 176 L 218 280 L 226 280" fill="none" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="208" y="213" text-anchor="end" font-size="10.5" fill="#6B7280">内部微事务</text>
+  <text x="208" y="228" text-anchor="end" font-size="10.5" fill="#6B7280">(mini-transaction)</text>
+  <line x1="290" y1="202" x2="488" y2="202" stroke="#D97706" stroke-width="1.6" marker-end="url(#arrowInd)"/>
+  <text x="387" y="190" text-anchor="middle" font-size="11.5" fill="#374151">② 改缓冲池页，生成 redo 记录</text>
+
+  <line x1="290" y1="264" x2="688" y2="264" stroke="#EF4444" stroke-width="1.8" marker-end="url(#arrowRed)"/>
+  <text x="490" y="235" text-anchor="middle" font-size="11.5" fill="#EF4444" font-weight="700">③ redo 写入日志缓冲，</text>
+  <text x="490" y="251" text-anchor="middle" font-size="11.5" fill="#374151">脏页登记到 Flush List</text>
+  <!-- The named registration point belongs to step 3 on the Buffer Pool lifeline. -->
+  <line x1="490" y1="264" x2="490" y2="274" stroke="#D97706" stroke-width="1.8"/>
+  <circle cx="490" cy="274" r="3.2" fill="#D97706"/>
+  <text x="502" y="287" font-size="10.5" fill="#D97706">Flush List</text>
+
+  <!-- SQL commit path: the default setting requires redo persistence before OK. -->
+  <rect x="575" y="296" width="230" height="40" rx="6" fill="#FFFBEB" stroke="#D97706" stroke-width="1.2"/>
+  <text x="690" y="311" text-anchor="middle" font-size="10.5" fill="#374151">innodb_flush_log_at_trx_commit</text>
+  <text x="690" y="326" text-anchor="middle" font-size="10.5" fill="#374151">=1：提交成功前 redo 落盘（默认）</text>
+  <line x1="690" y1="346" x2="878" y2="346" stroke="#EF4444" stroke-width="1.6" marker-end="url(#arrowRed)"/>
+  <text x="833" y="337" text-anchor="middle" font-size="10.5" fill="#EF4444">落盘</text>
+  <line x1="290" y1="365" x2="102" y2="365" stroke="#4B5563" stroke-width="1.6" marker-end="url(#arrow)" stroke-dasharray="5,3"/>
+  <text x="192" y="354" text-anchor="middle" font-size="11" fill="#374151">④ 返回提交成功（默认值 1：redo 已落盘）</text>
+
+  <!-- Background path branches from step 3, independently of SQL commit. -->
+  <text x="40" y="396" font-size="12" font-weight="700" fill="#6B7280">后台刷脏页</text>
+  <line x1="490" y1="277" x2="490" y2="378" stroke="#D97706" stroke-width="1.7" marker-end="url(#arrowInd)"/>
+  <rect x="420" y="382" width="180" height="52" rx="6" fill="#FFFBEB" stroke="#D97706" stroke-width="1.3"/>
+  <text x="510" y="403" text-anchor="middle" font-size="11.5" fill="#374151">相应 redo 已落盘？</text>
+  <text x="510" y="422" text-anchor="middle" font-size="11.5" fill="#374151">未落盘则先刷 redo</text>
+  <line x1="510" y1="434" x2="510" y2="456" stroke="#D97706" stroke-width="1.7" marker-end="url(#arrowInd)"/>
+  <text x="524" y="451" font-size="10.5" fill="#D97706">已落盘</text>
+
+  <!-- 5. After satisfying WAL, write the complete doublewrite copy, then tablespace. -->
+  <rect x="420" y="460" width="460" height="94" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="650" y="480" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">⑤ 刷脏页：先满足 WAL，再经双写写入表空间</text>
+  <text x="650" y="501" text-anchor="middle" font-size="11.5" fill="#374151">确认对应 redo 已落盘</text>
+  <text x="650" y="520" text-anchor="middle" font-size="11.5" fill="#374151">完整页先写双写区并刷盘，再写表空间数据页</text>
+  <text x="650" y="539" text-anchor="middle" font-size="11.5" fill="#374151">正式页若写入不完整，恢复时先取副本，再应用 redo</text>
+  <line x1="650" y1="554" x2="650" y2="586" stroke="#4B5563" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <path d="M 800 554 L 800 576 L 878 576" fill="none" stroke="#EF4444" stroke-width="1.6" marker-end="url(#arrowRed)"/>
+  <text x="792" y="570" text-anchor="end" font-size="10.5" fill="#EF4444">写入表空间</text>
+
+  <!-- 6. Completion advances checkpoint progress; this is not another page flush. -->
+  <rect x="420" y="588" width="460" height="50" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="650" y="609" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">⑥ 推进 checkpoint</text>
+  <text x="650" y="629" text-anchor="middle" font-size="11.5" fill="#374151">根据脏页刷盘进度，回收可复用的日志空间</text>
+
+  <!-- legend -->
+  <g transform="translate(40,668)">
+    <line x1="0" y1="8" x2="28" y2="8" stroke="#4B5563" stroke-width="1.8" marker-end="url(#arrow)"/>
+    <text x="36" y="12" font-size="10" fill="#374151">控制流</text>
+    <line x1="110" y1="8" x2="138" y2="8" stroke="#EF4444" stroke-width="1.8" marker-end="url(#arrowRed)"/>
+    <text x="146" y="12" font-size="10" fill="#374151">数据/落盘</text>
+    <line x1="240" y1="8" x2="268" y2="8" stroke="#D97706" stroke-width="1.8" marker-end="url(#arrowInd)"/>
+    <text x="276" y="12" font-size="10" fill="#374151">内存操作</text>
+    <rect x="370" y="1" width="12" height="14" rx="2" fill="#FEF3C7" stroke="#D97706"/>
+    <text x="388" y="12" font-size="10" fill="#374151">MySQL 相关</text>
+  </g>
+</svg>

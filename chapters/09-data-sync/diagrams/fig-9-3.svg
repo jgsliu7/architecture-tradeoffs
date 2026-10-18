@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 66 880 526" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  <!-- 两条泳道头部 -->
+  <rect x="110" y="78" width="120" height="40" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="170" y="103" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">从节点 Replica</text>
+
+  <rect x="650" y="78" width="120" height="40" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="710" y="103" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">主节点 Master</text>
+
+  <!-- 生命线 -->
+  <line x1="170" y1="118" x2="170" y2="585" stroke="#4B5563" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="710" y1="118" x2="710" y2="585" stroke="#4B5563" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- 步骤1：重连 + PSYNC replid,offset -->
+  <line x1="178" y1="150" x2="702" y2="150" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="440" y="142" text-anchor="middle" font-size="12" fill="#111827">① 断线重连：PSYNC &lt;replid&gt; &lt;offset&gt;</text>
+
+  <!-- 步骤2：主节点比对（决策框，放中线上） -->
+  <rect x="440" y="178" width="220" height="92" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="550" y="202" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">② 主节点比对</text>
+  <text x="550" y="222" text-anchor="middle" font-size="12" fill="#374151">复制 ID 及有效范围匹配？</text>
+  <text x="550" y="240" text-anchor="middle" font-size="12" fill="#374151">请求字节仍在 backlog 中？</text>
+  <text x="550" y="260" text-anchor="middle" font-size="11" fill="#6B7280">backlog 默认约 1MB</text>
+  <line x1="550" y1="178" x2="550" y2="150" stroke="#4B5563" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- 分支标签 -->
+  <text x="300" y="296" text-anchor="middle" font-size="12" font-weight="700" fill="#059669">是（两项均满足）</text>
+  <text x="774" y="290" text-anchor="middle" font-size="12" font-weight="700" fill="#EF4444">否（任一不满足）</text>
+
+  <!-- 左分支：部分重同步 -->
+  <rect x="60" y="320" width="320" height="158" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="220" y="344" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">部分重同步（Partial Resync）</text>
+  <text x="80" y="368" font-size="12" fill="#374151">③ 主节点：+CONTINUE</text>
+  <text x="80" y="388" font-size="12" fill="#374151">④ 从 backlog 中取出请求 offset 起</text>
+  <text x="92" y="406" font-size="12" fill="#374151">的命令，增量补发</text>
+  <text x="80" y="430" font-size="12" fill="#374151">⑤ 从节点回放补发的命令，offset 追平</text>
+  <text x="80" y="458" font-size="11" font-weight="600" fill="#059669">代价低：只补差额，主节点不 fork</text>
+
+  <!-- 左分支连线 -->
+  <path d="M 470 270 Q 380 290 290 320" fill="none" stroke="#059669" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+
+  <!-- 右分支：全量同步 -->
+  <rect x="500" y="320" width="340" height="158" rx="6" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="670" y="344" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">全量同步（Full Resync）</text>
+  <text x="520" y="368" font-size="12" fill="#374151">③ 主节点：+FULLRESYNC &lt;replid&gt; &lt;offset&gt;</text>
+  <text x="520" y="388" font-size="12" fill="#374151">④ fork 子进程生成 RDB，可直接传输</text>
+  <text x="520" y="408" font-size="12" fill="#374151">⑤ RDB 生成和传输期间，新写入保留在复制缓冲中</text>
+  <text x="520" y="428" font-size="12" fill="#374151">⑥ RDB 传完后，补发缓冲的命令</text>
+  <text x="520" y="458" font-size="11" font-weight="600" fill="#EF4444">代价高：fork 阻塞 + 全量网络传输</text>
+
+  <!-- 右分支连线 -->
+  <path d="M 640 270 Q 720 290 800 320" fill="none" stroke="#EF4444" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+
+  <!-- 汇合 -->
+  <path d="M 220 478 Q 220 510 350 530" fill="none" stroke="#4B5563" stroke-width="1.2" stroke-dasharray="4 4"/>
+  <path d="M 670 478 Q 670 510 540 530" fill="none" stroke="#4B5563" stroke-width="1.2" stroke-dasharray="4 4"/>
+
+  <!-- 终态 -->
+  <rect x="330" y="538" width="220" height="40" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="440" y="563" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">从节点 offset 追平，恢复增量同步</text>
+</svg>

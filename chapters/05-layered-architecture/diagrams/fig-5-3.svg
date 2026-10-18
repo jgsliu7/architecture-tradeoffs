@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 68 820 401" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arr45" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arr45r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D97706"/>
+    </marker>
+  </defs>
+
+  <!-- 四条生命线顶点 -->
+  <!-- 客户端 -->
+  <rect x="40" y="80" width="120" height="40" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="100" y="105" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">客户端</text>
+  <line x1="100" y1="120" x2="100" y2="466" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="3 4"/>
+
+  <!-- 连接层 -->
+  <rect x="220" y="80" width="140" height="40" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="290" y="105" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">连接层</text>
+  <line x1="290" y1="120" x2="290" y2="466" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="3 4"/>
+
+  <!-- 服务层 -->
+  <rect x="420" y="80" width="140" height="40" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="490" y="105" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">服务层</text>
+  <line x1="490" y1="120" x2="490" y2="466" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="3 4"/>
+
+  <!-- 存储引擎 -->
+  <rect x="620" y="80" width="140" height="40" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="690" y="105" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">存储引擎 InnoDB</text>
+  <line x1="690" y1="120" x2="690" y2="466" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="3 4"/>
+
+  <!-- THD 横条（贯穿） -->
+  <rect x="220" y="140" width="540" height="30" rx="6" fill="#FFFBEB" stroke="#D97706" stroke-width="2"/>
+  <text x="490" y="159" text-anchor="middle" font-size="13" font-weight="700" fill="#D97706">THD（连接/会话上下文 · 当前库 · 事务 · 变量 · 权限 · 错误栈）</text>
+
+  <!-- 1. 建立连接 -->
+  <line x1="100" y1="196" x2="288" y2="196" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arr45)"/>
+  <text x="110" y="190" font-size="11" fill="#111827">1. 建立连接</text>
+
+  <!-- 2. 新建 THD -->
+  <rect x="240" y="210" width="100" height="28" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1"/>
+  <text x="290" y="228" text-anchor="middle" font-size="11" fill="#111827">2. 新建 THD</text>
+  <line x1="290" y1="238" x2="290" y2="262" stroke="#D97706" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#arr45r)"/>
+  <text x="300" y="254" font-size="10" fill="#D97706">THD 初始化后认证</text>
+
+  <!-- 3. SQL 报文 -->
+  <line x1="100" y1="276" x2="288" y2="276" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arr45)"/>
+  <text x="110" y="270" font-size="11" fill="#111827">3. 发送 SQL 报文</text>
+
+  <!-- 4. 携带 THD 转交服务层 -->
+  <line x1="290" y1="298" x2="488" y2="298" stroke="#D97706" stroke-width="1.8" marker-end="url(#arr45r)"/>
+  <text x="305" y="292" font-size="11" fill="#D97706">4. 携 THD 转交服务层</text>
+
+  <!-- 5. 解析/优化/执行（在服务层内部） -->
+  <rect x="430" y="312" width="120" height="60" rx="4" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1"/>
+  <text x="490" y="332" text-anchor="middle" font-size="11" fill="#111827">5. 解析 / 优化</text>
+  <text x="490" y="348" text-anchor="middle" font-size="10" fill="#6B7280">读写 THD 中的变量</text>
+  <text x="490" y="362" text-anchor="middle" font-size="10" fill="#6B7280">事务状态</text>
+
+  <!-- 6. 执行器通过 handler 调引擎（THD 一并带入） -->
+  <line x1="490" y1="384" x2="688" y2="384" stroke="#D97706" stroke-width="1.8" marker-end="url(#arr45r)"/>
+  <text x="505" y="378" font-size="11" fill="#D97706">6. handler 虚函数 + THD</text>
+
+  <!-- 7. 引擎读行 -->
+  <rect x="640" y="398" width="100" height="28" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1"/>
+  <text x="690" y="416" text-anchor="middle" font-size="11" fill="#111827">7. 读行 / 加锁</text>
+  <text x="700" y="438" font-size="10" fill="#6B7280">从 THD 取事务上下文</text>
+
+  <!-- 8. 返回结果集 -->
+  <line x1="690" y1="456" x2="102" y2="456" stroke="#4B5563" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#arr45)"/>
+  <text x="395" y="450" text-anchor="middle" font-size="11" fill="#111827">8. 查询结果经服务层、连接层返回客户端</text>
+</svg>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 52 940 448" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+
+  <!-- Lifelines -->
+  <rect x="40" y="64" width="160" height="40" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="120" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">下线 Broker</text>
+
+  <rect x="260" y="64" width="160" height="40" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="340" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">Controller</text>
+
+  <rect x="480" y="64" width="160" height="40" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="560" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">ISR 中其他存活副本</text>
+
+  <rect x="700" y="64" width="200" height="40" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="800" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">客户端可见抖动窗口</text>
+
+  <line x1="120" y1="104" x2="120" y2="470" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="340" y1="104" x2="340" y2="470" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="560" y1="104" x2="560" y2="470" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="800" y1="104" x2="800" y2="470" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- ====== Controlled Shutdown path (left half) ====== -->
+  <text x="220" y="120" text-anchor="middle" font-size="13" font-weight="700" fill="#059669">受控关闭（Controlled Shutdown）</text>
+
+  <!-- Step 1: SIGTERM -> broker -->
+  <rect x="40" y="134" width="160" height="36" rx="4" fill="#ECFDF5" stroke="#059669" stroke-width="1"/>
+  <text x="120" y="157" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">JVM Hook 接 SIGTERM</text>
+
+  <!-- Step 2: broker -> controller 通知下线 -->
+  <path d="M120 170 L338 170" fill="none" stroke="#4B5563" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="255" y="162" text-anchor="middle" font-size="11" fill="#374151">① 通知即将退出</text>
+
+  <!-- Step 3: controller -> other replicas migrate leader -->
+  <path d="M340 200 L558 200" fill="none" stroke="#059669" stroke-width="1.6" marker-end="url(#arrowG)"/>
+  <text x="447" y="192" text-anchor="middle" font-size="11" fill="#059669">② 提前迁移该 Broker 的 Leader</text>
+
+  <rect x="480" y="214" width="160" height="36" rx="4" fill="#ECFDF5" stroke="#059669" stroke-width="1"/>
+  <text x="560" y="237" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">Leader 迁移到 ISR 存活副本</text>
+
+  <!-- Step 4: other replicas -> controller done -->
+  <path d="M560 260 L342 260" fill="none" stroke="#059669" stroke-width="1.6" marker-end="url(#arrowG)"/>
+  <text x="434" y="252" text-anchor="middle" font-size="11" fill="#059669">③ 迁移完成回执</text>
+
+  <!-- Step 5: controller -> broker 回执 -->
+  <path d="M340 292 L122 292" fill="none" stroke="#4B5563" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="232" y="284" text-anchor="middle" font-size="11" fill="#374151">④ 允许退出回执</text>
+
+  <!-- Step 6: broker 完成本地收尾 -->
+  <rect x="40" y="306" width="160" height="36" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1"/>
+  <text x="120" y="329" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">⑤ 本地收尾 → exit</text>
+
+  <!--抖动窗口标记：受控关闭 = 抖动窗口小（绿色小） -->
+  <rect x="760" y="306" width="80" height="36" rx="4" fill="#ECFDF5" stroke="#059669" stroke-width="1.2"/>
+  <text x="800" y="329" text-anchor="middle" font-size="11" font-weight="600" fill="#059669">减少分区抖动</text>
+
+  <!-- ====== Uncontrolled / ordinary shutdown path ====== -->
+  <text x="220" y="372" text-anchor="middle" font-size="13" font-weight="700" fill="#EF4444">对照：未提前交接的普通关闭</text>
+
+  <rect x="40" y="386" width="160" height="36" rx="4" fill="#ECFDF5" stroke="#059669" stroke-width="1"/>
+  <text x="120" y="409" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">本地收尾 → exit</text>
+
+  <!-- broker exits before leadership handoff: controller detects the exit and elects a new leader -->
+  <path d="M120 440 L797 440" fill="none" stroke="#EF4444" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#arrowR)"/>
+  <text x="450" y="400" text-anchor="middle" font-size="11" fill="#EF4444">退出后由 Controller 发现</text>
+  <text x="450" y="414" text-anchor="middle" font-size="11" fill="#EF4444">→ 触发 Leader 重选</text>
+
+  <!-- 抖动窗口标记：普通关闭 = 有抖动（红色大） -->
+  <rect x="715" y="386" width="170" height="36" rx="4" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.4"/>
+  <text x="800" y="409" text-anchor="middle" font-size="11" font-weight="600" fill="#EF4444">分区短暂不可用 = 客户端抖动</text>
+
+  <!-- Lifeline bottom caps -->
+  <text x="120" y="486" text-anchor="middle" font-size="11" fill="#6B7280">Broker</text>
+  <text x="340" y="486" text-anchor="middle" font-size="11" fill="#6B7280">Controller</text>
+  <text x="560" y="486" text-anchor="middle" font-size="11" fill="#6B7280">存活副本</text>
+  <text x="800" y="486" text-anchor="middle" font-size="11" fill="#6B7280">抖动窗口</text>
+
+</svg>

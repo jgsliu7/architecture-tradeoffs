@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 58 900 262" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+  <!-- Stage 1: 配置 -->
+  <rect x="60" y="70" width="240" height="96" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="180" y="96" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">① 确定配置</text>
+  <text x="76" y="124" font-size="12" fill="#374151">设默认值</text>
+  <text x="76" y="148" font-size="12" fill="#374151">读配置文件与命令行参数</text>
+
+  <!-- Stage 2: 基础设施 -->
+  <rect x="330" y="70" width="240" height="96" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="450" y="96" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">② 基础设施就位</text>
+  <text x="346" y="124" font-size="12" fill="#374151">建立事件循环与数据库结构</text>
+  <text x="346" y="148" font-size="12" fill="#374151">准备网络监听</text>
+
+  <!-- Stage 3: 数据恢复 -->
+  <rect x="600" y="70" width="240" height="96" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="720" y="96" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">③ 恢复本地数据</text>
+  <text x="616" y="124" font-size="12" fill="#374151">启用 AOF：按 AOF 路径恢复</text>
+  <text x="616" y="148" font-size="12" fill="#374151">否则：尝试加载独立 RDB</text>
+
+  <!-- arrows between top row -->
+  <path d="M300 118 L328 118" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M570 118 L598 118" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Stage 4: 事件循环 -->
+  <rect x="330" y="226" width="240" height="80" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="450" y="254" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">④ 进入事件循环</text>
+  <text x="346" y="282" font-size="12" fill="#374151">数据加载完成后，开始处理请求</text>
+
+  <!-- Stage 3 → Stage 4: 恢复完成后才对外服务 -->
+  <path d="M720 166 L720 194 Q720 202 712 202 L458 202 Q450 202 450 210 L450 224" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#arrow)"/>
+</svg>

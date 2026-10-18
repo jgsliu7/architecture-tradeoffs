@@ -1,0 +1,26 @@
+《架构取舍之道：从 Redis、MySQL、Kafka 理解系统设计》
+（以下简称“本书”）
+
+本书正文与插图采用 Creative Commons Attribution-NonCommercial-NoDerivatives 4.0
+International（CC BY-NC-ND 4.0）许可。
+
+你可以：
+
+- 自由阅读、下载、打印本书；
+- 在注明作者与出处、并附上许可链接的前提下，原样分享、转载本书的全部或部分内容。
+
+你不得：
+
+- 将本书用于商业目的；
+- 分发本书的改编作品，包括改写、翻译、汇编等。
+
+许可全文：
+https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
+
+人类可读摘要：
+https://creativecommons.org/licenses/by-nc-nd/4.0/
+
+Copyright (c) 2026 本书作者。
+
+除非另有说明，上述许可不适用于本书的构建脚本。构建脚本采用 MIT 许可，
+见 LICENSE-CODE。

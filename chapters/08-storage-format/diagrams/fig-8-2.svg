@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 88 900 356" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9CA3AF"/>
+    </marker>
+  </defs>
+
+  <!-- ============ linear byte stream ============ -->
+  <!-- magic -->
+  <rect x="40" y="100" width="70" height="56" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="75" y="124" text-anchor="middle" font-size="12" font-weight="700" fill="#4F46E5">magic</text>
+  <text x="75" y="142" text-anchor="middle" font-size="10" fill="#374151">REDIS</text>
+
+  <!-- version -->
+  <rect x="110" y="100" width="60" height="56" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="140" y="124" text-anchor="middle" font-size="12" font-weight="700" fill="#4F46E5">version</text>
+  <text x="140" y="142" text-anchor="middle" font-size="10" fill="#374151">0010 (4B)</text>
+
+  <!-- metadata (aux) -->
+  <rect x="170" y="100" width="90" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="215" y="122" text-anchor="middle" font-size="12" font-weight="600" fill="#374151">metadata</text>
+  <text x="215" y="140" text-anchor="middle" font-size="10" fill="#6B7280">aux 字段</text>
+
+  <!-- db selector -->
+  <rect x="260" y="100" width="90" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="305" y="122" text-anchor="middle" font-size="12" font-weight="600" fill="#374151">db-selector</text>
+  <text x="305" y="140" text-anchor="middle" font-size="10" fill="#6B7280">SELECT N</text>
+
+  <!-- entries (main) -->
+  <rect x="350" y="100" width="350" height="56" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="525" y="122" text-anchor="middle" font-size="13" font-weight="700" fill="#4F46E5">entries（全量键值序列）</text>
+  <text x="525" y="142" text-anchor="middle" font-size="10" fill="#374151">类型码 + 键值数据（按类型采用不同编码）</text>
+
+  <!-- EOF marker -->
+  <rect x="700" y="100" width="40" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="720" y="124" text-anchor="middle" font-size="11" font-weight="600" fill="#374151">EOF</text>
+  <text x="720" y="142" text-anchor="middle" font-size="10" fill="#6B7280">0xFF</text>
+
+  <!-- CRC64 -->
+  <rect x="740" y="100" width="120" height="56" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="800" y="124" text-anchor="middle" font-size="12" font-weight="700" fill="#4F46E5">CRC64</text>
+  <text x="800" y="142" text-anchor="middle" font-size="10" fill="#374151">8B 校验</text>
+
+  <!-- offset axis -->
+  <line x1="40" y1="175" x2="860" y2="175" stroke="#9CA3AF" stroke-width="1" marker-end="url(#arrow)"/>
+  <text x="40" y="192" font-size="11" fill="#6B7280">文件起始</text>
+  <text x="860" y="192" text-anchor="end" font-size="11" fill="#6B7280">文件末尾</text>
+
+  <!-- ============ detail: entries key-value ============ -->
+  <text x="40" y="240" font-size="14" font-weight="700" fill="#111827">一条 String entry 的编码示意</text>
+
+  <rect x="40" y="260" width="120" height="50" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="100" y="282" text-anchor="middle" font-size="11" font-weight="600" fill="#374151">RDB 类型码</text>
+  <text x="100" y="300" text-anchor="middle" font-size="10" fill="#6B7280">1 字节，标识类型</text>
+
+  <rect x="160" y="260" width="140" height="50" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="230" y="282" text-anchor="middle" font-size="11" font-weight="600" fill="#4F46E5">key 编码前缀</text>
+  <text x="230" y="300" text-anchor="middle" font-size="10" fill="#374151">长度或特殊编码</text>
+
+  <rect x="300" y="260" width="120" height="50" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="360" y="282" text-anchor="middle" font-size="11" font-weight="600" fill="#4F46E5">key 编码载荷</text>
+  <text x="360" y="300" text-anchor="middle" font-size="10" fill="#374151">字节串 / 整数等</text>
+
+  <rect x="420" y="260" width="140" height="50" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="490" y="282" text-anchor="middle" font-size="11" font-weight="600" fill="#4F46E5">value 编码前缀</text>
+  <text x="490" y="300" text-anchor="middle" font-size="10" fill="#374151">长度或特殊编码</text>
+
+  <rect x="560" y="260" width="180" height="50" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="650" y="282" text-anchor="middle" font-size="11" font-weight="600" fill="#4F46E5">value 编码载荷</text>
+  <text x="650" y="300" text-anchor="middle" font-size="10" fill="#374151">按前缀读取对应载荷</text>
+
+  <!-- varint explanation -->
+  <text x="40" y="350" font-size="14" font-weight="700" fill="#111827">长度或特殊编码：前缀高 2 位的四种取值</text>
+
+  <rect x="40" y="370" width="200" height="60" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="140" y="394" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">00 → 6 位（0–63）</text>
+  <text x="140" y="414" text-anchor="middle" font-size="11" fill="#6B7280">放进长度前缀的低 6 位</text>
+
+  <rect x="250" y="370" width="200" height="60" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="350" y="394" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">01 → 14 位（0–16383）</text>
+  <text x="350" y="414" text-anchor="middle" font-size="11" fill="#6B7280">1 字节 + 下一字节</text>
+
+  <rect x="460" y="370" width="200" height="60" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="560" y="394" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">10 → 32 / 64 位</text>
+  <text x="560" y="414" text-anchor="middle" font-size="11" fill="#6B7280">0x80 后 4B；0x81 后 8B</text>
+
+  <rect x="670" y="370" width="190" height="60" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="765" y="394" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">11 → 特殊编码</text>
+  <text x="765" y="414" text-anchor="middle" font-size="11" fill="#6B7280">int8/16/32 · LZF 压缩串</text>
+</svg>

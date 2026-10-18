@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 522" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+    <marker id="arrowLG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6B7280"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="40" font-size="14" font-weight="700" fill="#111827">图 7-2　Sentinel 的故障转移机制</text>
+
+  <!-- ============ 上排：角色 ============ -->
+  <!-- 数据层（主从） -->
+  <rect x="40" y="64" width="270" height="232" rx="8" fill="#F9FAFB" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="56" y="88" font-size="11" font-weight="700" fill="#6B7280">数据层：主从异步复制</text>
+
+  <rect x="60" y="100" width="220" height="52" rx="6" fill="#FEE2E2" stroke="#EF4444" stroke-width="2"/>
+  <text x="170" y="123" text-anchor="middle" font-size="12.5" font-weight="700" fill="#111827">主节点 Master</text>
+  <text x="170" y="141" text-anchor="middle" font-size="10.5" fill="#EF4444">超时无回应（疑似宕机）</text>
+
+  <rect x="60" y="164" width="220" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="170" y="186" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">从节点 A</text>
+  <text x="170" y="202" text-anchor="middle" font-size="10" fill="#6B7280">异步复制中</text>
+
+  <rect x="60" y="220" width="220" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="170" y="242" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">从节点 B</text>
+  <text x="170" y="258" text-anchor="middle" font-size="10" fill="#6B7280">复制进度最靠前</text>
+
+  <!-- Sentinel 集群 -->
+  <rect x="580" y="64" width="292" height="160" rx="8" fill="#F9FAFB" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="596" y="88" font-size="11" font-weight="700" fill="#6B7280">Sentinel 集群</text>
+
+  <rect x="600" y="108" width="72" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="636" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#4F46E5">S1</text>
+  <text x="636" y="150" text-anchor="middle" font-size="10" fill="#6B7280">发起询问</text>
+  <rect x="684" y="108" width="72" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="720" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#4F46E5">S2</text>
+  <text x="720" y="150" text-anchor="middle" font-size="10" fill="#6B7280">同判超时</text>
+  <rect x="768" y="108" width="72" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="804" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#4F46E5">S3</text>
+  <text x="804" y="150" text-anchor="middle" font-size="10" fill="#6B7280">同判超时</text>
+
+  <!-- 心跳监控：Sentinel 集群 → 主/从节点（水平虚线） -->
+  <text x="430" y="120" text-anchor="middle" font-size="10.5" fill="#6B7280">周期心跳：超过 down-after-milliseconds 无回应</text>
+  <line x1="578" y1="132" x2="282" y2="132" stroke="#6B7280" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#arrowLG)"/>
+  <line x1="578" y1="186" x2="282" y2="186" stroke="#6B7280" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#arrowLG)"/>
+
+  <!-- ============ 中排：判定链四步 ============ -->
+  <!-- ① SDOWN -->
+  <rect x="40" y="330" width="190" height="70" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="135" y="356" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">① S1 标记 SDOWN</text>
+  <text x="135" y="376" text-anchor="middle" font-size="10" fill="#374151">主观下线</text>
+  <text x="135" y="392" text-anchor="middle" font-size="10" fill="#6B7280">单哨兵视角的判定</text>
+
+  <!-- ② 询问 -->
+  <rect x="252" y="330" width="190" height="70" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="347" y="356" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">② 询问其他哨兵</text>
+  <text x="347" y="376" text-anchor="middle" font-size="10" fill="#374151">S2、S3 是否同判超时</text>
+  <text x="347" y="392" text-anchor="middle" font-size="10" fill="#6B7280">交换各自视角</text>
+
+  <!-- ③ ODOWN -->
+  <rect x="464" y="330" width="190" height="70" rx="6" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.8"/>
+  <text x="559" y="356" text-anchor="middle" font-size="12" font-weight="700" fill="#B91C1C">③ 故障判断达 quorum</text>
+  <text x="559" y="376" text-anchor="middle" font-size="10" fill="#374151">ODOWN（客观下线）</text>
+  <text x="559" y="392" text-anchor="middle" font-size="10" fill="#6B7280">达到故障判断门槛</text>
+
+  <!-- ④ 选 Leader -->
+  <rect x="676" y="330" width="190" height="70" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="771" y="356" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">④ 选 Leader 哨兵</text>
+  <text x="771" y="376" text-anchor="middle" font-size="10" fill="#374151">获多数派且不少于 quorum</text>
+  <text x="771" y="392" text-anchor="middle" font-size="10" fill="#6B7280">取得本次转移授权</text>
+
+  <line x1="232" y1="365" x2="250" y2="365" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="444" y1="365" x2="462" y2="365" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="656" y1="365" x2="674" y2="365" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ============ ⑤ 转移执行 ============ -->
+  <line x1="771" y1="402" x2="771" y2="438" stroke="#059669" stroke-width="1.6" marker-end="url(#arrowG)"/>
+  <rect x="360" y="440" width="480" height="74" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.8"/>
+  <text x="600" y="463" text-anchor="middle" font-size="12.5" font-weight="700" fill="#065F46">⑤ Leader 哨兵主持故障转移</text>
+  <text x="600" y="483" text-anchor="middle" font-size="10.5" fill="#374151">按优先级 → 复制 offset → 挑从节点 B 提升为新主</text>
+  <text x="600" y="501" text-anchor="middle" font-size="10.5" fill="#374151">通知其他从节点改连新主；客户端经 Sentinel 获取新主地址</text>
+
+</svg>

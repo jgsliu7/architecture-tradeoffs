@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 52 880 421" role="img" aria-label="InnoDB 崩溃恢复与后台回滚" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <title>InnoDB 崩溃恢复与后台回滚</title>
+  <desc>完成必要的 redo 恢复并确定事务状态后，服务可以接受连接；尚未结束的事务回滚可以在后台继续。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/></marker>
+    <marker id="arrowAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#D97706"/></marker>
+  </defs>
+  <text x="440" y="76" text-anchor="middle" font-size="16" font-weight="700" fill="#111827">崩溃恢复与后台回滚</text>
+  <rect x="220" y="98" width="440" height="54" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="440" y="120" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">① 从 checkpoint LSN 扫描 redo</text>
+  <text x="440" y="140" text-anchor="middle" font-size="12" fill="#374151">读取检查点之后可用的日志</text>
+  <path d="M440 152 L440 171" fill="none" stroke="#4B5563" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <rect x="220" y="174" width="440" height="58" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="440" y="197" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">② 重放需要恢复的页修改</text>
+  <text x="440" y="219" text-anchor="middle" font-size="12" fill="#374151">不按事务是否已提交筛选；已在页中的修改不重复补写</text>
+  <path d="M440 232 L440 251" fill="none" stroke="#4B5563" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <rect x="220" y="254" width="440" height="58" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="440" y="277" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">③ 确定事务状态，完成启动所需准备</text>
+  <text x="440" y="299" text-anchor="middle" font-size="12" fill="#374151">保留应提交的结果，安排撤销未提交事务</text>
+  <path d="M440 312 L440 330 L230 330 L230 348" fill="none" stroke="#4B5563" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <path d="M440 330 L650 330 L650 348" fill="none" stroke="#D97706" stroke-width="1.6" marker-end="url(#arrowAmber)"/>
+  <rect x="50" y="352" width="360" height="97" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="1.6"/>
+  <text x="230" y="379" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">接受客户端连接</text>
+  <text x="230" y="405" text-anchor="middle" font-size="13" fill="#374151">ready for connections</text>
+  <text x="230" y="435" text-anchor="middle" font-size="12" fill="#374151">系统已经能够处理新的请求</text>
+  <rect x="470" y="352" width="360" height="97" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="650" y="379" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">后台继续未完成的回滚</text>
+  <text x="650" y="405" text-anchor="middle" font-size="13" fill="#374151">使用 undo 撤销未提交事务</text>
+  <text x="650" y="435" text-anchor="middle" font-size="12" fill="#374151">回滚工作可与新请求处理交错进行</text>
+  <path d="M470 416 L414 416" fill="none" stroke="#D97706" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrowAmber)"/>
+  <text x="441" y="400" text-anchor="middle" font-size="11" fill="#92400E">锁等待</text>
+</svg>

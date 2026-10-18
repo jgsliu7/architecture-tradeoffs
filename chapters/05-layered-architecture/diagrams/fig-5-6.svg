@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 65 860 358" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arr47" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arr47r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  <!-- ===== 左侧：消费者场景 ===== -->
+  <text x="180" y="88" text-anchor="middle" font-size="14" font-weight="700" fill="#059669">场景 A：消费者按 offset 拉取</text>
+
+  <rect x="60" y="100" width="120" height="38" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.3"/>
+  <text x="120" y="124" text-anchor="middle" font-size="12" fill="#111827">Consumer</text>
+
+  <line x1="120" y1="138" x2="120" y2="166" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arr47)"/>
+  <text x="130" y="156" font-size="11" fill="#111827">FETCH 请求</text>
+
+  <rect x="60" y="170" width="240" height="36" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.3"/>
+  <text x="180" y="192" text-anchor="middle" font-size="12" fill="#111827">KafkaApis 分派请求</text>
+
+  <line x1="180" y1="206" x2="180" y2="234" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arr47)"/>
+
+  <rect x="60" y="238" width="240" height="44" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="180" y="258" text-anchor="middle" font-size="12" fill="#111827">ReplicaManager 读消息</text>
+  <text x="180" y="274" text-anchor="middle" font-size="11" fill="#6B7280">消费读：受可见性边界限制</text>
+
+  <line x1="180" y1="282" x2="180" y2="310" stroke="#EF4444" stroke-width="1.8" marker-end="url(#arr47r)"/>
+  <text x="190" y="300" font-size="11" fill="#EF4444" font-weight="600">共享日志读取</text>
+
+  <!-- ===== 右侧：Follower 场景 ===== -->
+  <text x="680" y="88" text-anchor="middle" font-size="14" font-weight="700" fill="#059669">场景 B：Follower 同步 Leader 日志</text>
+
+  <rect x="560" y="100" width="120" height="38" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.3"/>
+  <text x="620" y="124" text-anchor="middle" font-size="12" fill="#111827">Follower 副本</text>
+
+  <line x1="620" y1="138" x2="620" y2="166" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arr47)"/>
+  <text x="630" y="156" font-size="11" fill="#111827">FETCH 请求</text>
+
+  <rect x="560" y="170" width="240" height="36" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.3"/>
+  <text x="680" y="192" text-anchor="middle" font-size="12" fill="#111827">KafkaApis 分派请求</text>
+
+  <line x1="680" y1="206" x2="680" y2="234" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arr47)"/>
+
+  <rect x="560" y="238" width="240" height="44" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="680" y="258" text-anchor="middle" font-size="12" fill="#111827">ReplicaManager 读消息</text>
+  <text x="680" y="274" text-anchor="middle" font-size="11" fill="#6B7280">复制读：按副本位点追赶</text>
+
+  <line x1="620" y1="282" x2="620" y2="310" stroke="#EF4444" stroke-width="1.8" marker-end="url(#arr47r)"/>
+  <text x="630" y="300" font-size="11" fill="#EF4444" font-weight="600">共享日志读取</text>
+
+  <!-- ===== 共享存储层（汇合） ===== -->
+  <rect x="60" y="314" width="740" height="92" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="430" y="338" text-anchor="middle" font-size="14" font-weight="700" fill="#059669">Leader Log（存储层 · 共享）</text>
+
+  <rect x="150" y="352" width="230" height="44" rx="6" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1.3"/>
+  <text x="265" y="372" text-anchor="middle" font-size="12" fill="#111827">按 offset 定位日志段</text>
+  <text x="265" y="388" text-anchor="middle" font-size="10" fill="#6B7280">日志段 + 稀疏索引</text>
+
+  <rect x="480" y="352" width="230" height="44" rx="6" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1.3"/>
+  <text x="595" y="372" text-anchor="middle" font-size="12" fill="#111827">确定文件中的消息区间</text>
+  <text x="595" y="388" text-anchor="middle" font-size="10" fill="#6B7280">读取边界随请求角色而异</text>
+
+  <line x1="380" y1="374" x2="476" y2="374" stroke="#4B5563" stroke-width="1.3" marker-end="url(#arr47)"/>
+
+</svg>

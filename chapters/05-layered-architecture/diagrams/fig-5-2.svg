@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 62 820 436" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrowL43" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  <!-- robj 顶部小框 -->
+  <rect x="300" y="74" width="220" height="50" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="410" y="96" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">redisObject（robj）</text>
+  <text x="410" y="114" text-anchor="middle" font-size="11" fill="#374151">type | encoding | refcount | lru | ptr</text>
+
+  <!-- type 一列 -->
+  <rect x="60" y="150" width="280" height="300" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="200" y="176" text-anchor="middle" font-size="14" font-weight="600" fill="#4F46E5">type（类型 / 语义）</text>
+  <text x="200" y="194" text-anchor="middle" font-size="11" fill="#374151">决定能执行哪些命令</text>
+  <line x1="80" y1="206" x2="320" y2="206" stroke="#C7D2FE" stroke-width="1"/>
+
+  <rect x="84" y="220" width="232" height="32" rx="4" fill="#FFFFFF" stroke="#A5B4FC" stroke-width="1"/>
+  <text x="100" y="240" font-size="13" fill="#111827">OBJ_STRING</text>
+  <text x="312" y="240" text-anchor="end" font-size="11" fill="#6B7280">字符串</text>
+
+  <rect x="84" y="260" width="232" height="32" rx="4" fill="#FFFFFF" stroke="#A5B4FC" stroke-width="1"/>
+  <text x="100" y="280" font-size="13" fill="#111827">OBJ_LIST</text>
+  <text x="312" y="280" text-anchor="end" font-size="11" fill="#6B7280">列表</text>
+
+  <rect x="84" y="300" width="232" height="32" rx="4" fill="#FFFFFF" stroke="#A5B4FC" stroke-width="1"/>
+  <text x="100" y="320" font-size="13" fill="#111827">OBJ_HASH</text>
+  <text x="312" y="320" text-anchor="end" font-size="11" fill="#6B7280">哈希</text>
+
+  <rect x="84" y="340" width="232" height="32" rx="4" fill="#FFFFFF" stroke="#A5B4FC" stroke-width="1"/>
+  <text x="100" y="360" font-size="13" fill="#111827">OBJ_SET</text>
+  <text x="312" y="360" text-anchor="end" font-size="11" fill="#6B7280">集合</text>
+
+  <rect x="84" y="380" width="232" height="32" rx="4" fill="#FFFFFF" stroke="#A5B4FC" stroke-width="1"/>
+  <text x="100" y="400" font-size="13" fill="#111827">OBJ_ZSET</text>
+  <text x="312" y="400" text-anchor="end" font-size="11" fill="#6B7280">有序集合</text>
+
+  <text x="200" y="434" text-anchor="middle" font-size="11" fill="#4F46E5" font-weight="600">标明对象的类型语义</text>
+
+  <!-- encoding 一列 -->
+  <rect x="480" y="150" width="280" height="340" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="620" y="176" text-anchor="middle" font-size="14" font-weight="600" fill="#374151">encoding（编码 / 内存表示）</text>
+  <text x="620" y="194" text-anchor="middle" font-size="11" fill="#374151">同一 type 可用多种 encoding</text>
+  <line x1="500" y1="206" x2="740" y2="206" stroke="#D1D5DB" stroke-width="1"/>
+
+  <rect x="504" y="220" width="232" height="28" rx="4" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="520" y="238" font-size="12" fill="#111827">int</text>
+  <text x="724" y="238" text-anchor="end" font-size="10" fill="#6B7280">整数值内嵌</text>
+
+  <rect x="504" y="254" width="232" height="28" rx="4" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="520" y="272" font-size="12" fill="#111827">embstr</text>
+  <text x="724" y="272" text-anchor="end" font-size="10" fill="#6B7280">短串：单次分配</text>
+
+  <rect x="504" y="288" width="232" height="28" rx="4" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="520" y="306" font-size="12" fill="#111827">raw</text>
+  <text x="724" y="306" text-anchor="end" font-size="10" fill="#6B7280">长串：SDS</text>
+
+  <rect x="504" y="322" width="232" height="28" rx="4" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="520" y="340" font-size="12" fill="#111827">listpack</text>
+  <text x="724" y="340" text-anchor="end" font-size="10" fill="#6B7280">小型哈希 / 小型有序集合</text>
+
+  <rect x="504" y="356" width="232" height="28" rx="4" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="520" y="374" font-size="12" fill="#111827">quicklist（节点为 listpack）</text>
+  <text x="724" y="374" text-anchor="end" font-size="10" fill="#6B7280">列表</text>
+
+  <rect x="504" y="390" width="232" height="28" rx="4" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="520" y="408" font-size="12" fill="#111827">hashtable</text>
+  <text x="724" y="408" text-anchor="end" font-size="10" fill="#6B7280">较大哈希 / 较大集合</text>
+
+  <rect x="504" y="424" width="232" height="28" rx="4" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="520" y="442" font-size="12" fill="#111827">skiplist + dict</text>
+  <text x="724" y="442" text-anchor="end" font-size="10" fill="#6B7280">有序集合</text>
+
+  <text x="620" y="476" text-anchor="middle" font-size="11" fill="#374151" font-weight="600">标明对象的内存表示</text>
+
+  <!-- 中间的 ptr 指向 -->
+  <line x1="340" y1="300" x2="478" y2="300" stroke="#EF4444" stroke-width="1.6" marker-end="url(#arrowL43)"/>
+  <text x="420" y="292" text-anchor="middle" font-size="11" fill="#EF4444" font-weight="600">编码选择</text>
+  <text x="410" y="316" text-anchor="middle" font-size="10" fill="#6B7280">各 type 有相应的 encoding</text>
+</svg>

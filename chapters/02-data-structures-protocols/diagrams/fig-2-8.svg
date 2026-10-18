@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 325" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<text x="440" y="30" text-anchor="middle" font-size="17" font-weight="700" fill="#111827">图 2-8　三个软件的通信协议设计重点</text>
+
+<!-- 三列：x=20/305/590，宽 270 -->
+<!-- Redis -->
+  <rect x="20" y="55" width="270" height="255" rx="8" fill="#F9FAFB" stroke="#D1D5DB" stroke-width="1.2"/>
+  <rect x="20" y="55" width="270" height="61" rx="8" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="155" y="81" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">Redis RESP</text>
+  <text x="155" y="103" text-anchor="middle" font-size="11" fill="#374151">类型前缀 + 长度前缀</text>
+  <rect x="40" y="139" width="230" height="53" rx="6" fill="#FFFFFF" stroke="#C7D2FE" stroke-width="1"/>
+  <text x="155" y="160" text-anchor="middle" font-size="11.5" font-weight="700" fill="#374151">类型前缀区分值</text>
+  <text x="155" y="180" text-anchor="middle" font-size="11" fill="#6B7280">长度前缀界定内容字节</text>
+  <rect x="40" y="204" width="230" height="53" rx="6" fill="#FFFFFF" stroke="#C7D2FE" stroke-width="1"/>
+  <text x="155" y="225" text-anchor="middle" font-size="11.5" font-weight="700" fill="#374151">按长度接收值</text>
+  <text x="155" y="245" text-anchor="middle" font-size="11" fill="#6B7280">二进制内容也能正确分界</text>
+  <text x="155" y="296" text-anchor="middle" font-size="11" fill="#4F46E5">可读前缀便于人工检查</text>
+
+<!-- MySQL -->
+  <rect x="305" y="55" width="270" height="255" rx="8" fill="#F9FAFB" stroke="#D1D5DB" stroke-width="1.2"/>
+  <rect x="305" y="55" width="270" height="61" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="440" y="81" text-anchor="middle" font-size="15" font-weight="700" fill="#92400E">MySQL 经典协议</text>
+  <text x="440" y="103" text-anchor="middle" font-size="11" fill="#374151">二进制封帧 + 预编译</text>
+  <rect x="325" y="139" width="230" height="53" rx="6" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1"/>
+  <text x="440" y="160" text-anchor="middle" font-size="11.5" font-weight="700" fill="#374151">包头界定载荷长度</text>
+  <text x="440" y="180" text-anchor="middle" font-size="11" fill="#6B7280">预编译语句复用解析结果</text>
+  <rect x="325" y="204" width="230" height="53" rx="6" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1"/>
+  <text x="440" y="225" text-anchor="middle" font-size="11.5" font-weight="700" fill="#374151">经典结果行主要用文本</text>
+  <text x="440" y="245" text-anchor="middle" font-size="11" fill="#6B7280">预编译使用二进制结果集</text>
+  <text x="440" y="296" text-anchor="middle" font-size="11" fill="#92400E">部分类型可减少传输字节</text>
+
+<!-- Kafka -->
+  <rect x="590" y="55" width="270" height="255" rx="8" fill="#F9FAFB" stroke="#D1D5DB" stroke-width="1.2"/>
+  <rect x="590" y="55" width="270" height="61" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="725" y="81" text-anchor="middle" font-size="15" font-weight="700" fill="#065F46">Kafka 协议</text>
+  <text x="725" y="103" text-anchor="middle" font-size="11" fill="#374151">按 API 版本演进 + 批量优先</text>
+  <rect x="610" y="139" width="230" height="53" rx="6" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="725" y="160" text-anchor="middle" font-size="11.5" font-weight="700" fill="#374151">请求头标识 API 与版本</text>
+  <text x="725" y="180" text-anchor="middle" font-size="11" fill="#6B7280">correlation_id 匹配响应</text>
+  <rect x="610" y="204" width="230" height="53" rx="6" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="725" y="225" text-anchor="middle" font-size="11.5" font-weight="700" fill="#374151">Produce / Fetch 批量读写</text>
+  <text x="725" y="245" text-anchor="middle" font-size="11" fill="#6B7280">批格式贯穿传输与日志</text>
+  <text x="725" y="296" text-anchor="middle" font-size="11" fill="#065F46">每类 API 可独立演进</text>
+</svg>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 63 940 517" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  <!-- =========== 左半：多线程并行复制 =========== -->
+  <text x="235" y="86" text-anchor="middle" font-size="14" font-weight="700" fill="#D97706">① 从库多线程并行复制（LOGICAL_CLOCK）</text>
+
+  <!-- 组提交：主库一次提交了 3 个事务 -->
+  <rect x="50" y="100" width="370" height="70" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="235" y="120" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">源端 binlog 中记录事务依赖关系</text>
+  <rect x="65" y="130" width="100" height="32" rx="4" fill="#FFFFFF" stroke="#D97706"/>
+  <text x="115" y="150" text-anchor="middle" font-size="11" fill="#374151">事务 T1</text>
+  <rect x="175" y="130" width="100" height="32" rx="4" fill="#FFFFFF" stroke="#D97706"/>
+  <text x="225" y="150" text-anchor="middle" font-size="11" fill="#374151">事务 T2</text>
+  <rect x="285" y="130" width="120" height="32" rx="4" fill="#FFFFFF" stroke="#D97706"/>
+  <text x="345" y="150" text-anchor="middle" font-size="11" fill="#374151">事务 T3</text>
+
+  <!-- 传到 relay log -->
+  <line x1="235" y1="170" x2="235" y2="190" stroke="#4B5563" stroke-width="1.3" marker-end="url(#arrow)"/>
+  <text x="320" y="185" font-size="11" fill="#6B7280">写入 relay log</text>
+
+  <!-- 并行分发 -->
+  <rect x="50" y="194" width="370" height="44" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="235" y="214" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">Coordinator：按事务依赖调度 worker</text>
+  <text x="235" y="231" text-anchor="middle" font-size="11" fill="#374151">依赖已满足的事务可并行回放</text>
+
+  <!-- 三个 worker 并行回放 -->
+  <line x1="115" y1="238" x2="115" y2="258" stroke="#059669" stroke-width="1.3" marker-end="url(#arrowGreen)"/>
+  <line x1="235" y1="238" x2="235" y2="258" stroke="#059669" stroke-width="1.3" marker-end="url(#arrowGreen)"/>
+  <line x1="355" y1="238" x2="355" y2="258" stroke="#059669" stroke-width="1.3" marker-end="url(#arrowGreen)"/>
+
+  <rect x="55" y="262" width="120" height="48" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="115" y="282" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">Worker 1</text>
+  <text x="115" y="300" text-anchor="middle" font-size="11" fill="#374151">回放 T1</text>
+
+  <rect x="185" y="262" width="100" height="48" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="235" y="282" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">Worker 2</text>
+  <text x="235" y="300" text-anchor="middle" font-size="11" fill="#374151">回放 T2</text>
+
+  <rect x="295" y="262" width="120" height="48" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="355" y="282" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">Worker 3</text>
+  <text x="355" y="300" text-anchor="middle" font-size="11" fill="#374151">回放 T3</text>
+
+  <!-- 收益 -->
+  <rect x="50" y="328" width="370" height="68" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2"/>
+  <text x="235" y="350" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">收益：缓解单 SQL 线程的复制延迟</text>
+  <text x="235" y="370" text-anchor="middle" font-size="11" fill="#374151">并行度受事务依赖与 worker、资源配置限制</text>
+
+
+  <!-- 分隔线 -->
+  <line x1="470" y1="90" x2="470" y2="400" stroke="#6B7280" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- =========== 右半：MGR 共识 =========== -->
+  <text x="710" y="86" text-anchor="middle" font-size="14" font-weight="700" fill="#D97706">② 组复制（MGR）：组内排序与认证</text>
+
+  <!-- XCom 共识层 -->
+  <rect x="500" y="100" width="410" height="70" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="705" y="122" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">读写事务提交前广播写集与更新内容</text>
+  <text x="705" y="140" text-anchor="middle" font-size="11" fill="#374151">交由 XCom（Paxos 变种）仲裁：组内多数派确认</text>
+  <text x="705" y="158" text-anchor="middle" font-size="11" fill="#6B7280">先确定广播顺序，再做冲突认证</text>
+
+  <!-- 三个成员 -->
+  <line x1="600" y1="170" x2="600" y2="190" stroke="#4B5563" stroke-width="1.3" marker-end="url(#arrow)"/>
+  <line x1="705" y1="170" x2="705" y2="190" stroke="#4B5563" stroke-width="1.3" marker-end="url(#arrow)"/>
+  <line x1="810" y1="170" x2="810" y2="190" stroke="#4B5563" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+  <rect x="550" y="194" width="100" height="56" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="600" y="214" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">成员 M1（提议）</text>
+  <text x="600" y="232" text-anchor="middle" font-size="11" fill="#374151">提议事务</text>
+  <text x="600" y="246" text-anchor="middle" font-size="10" fill="#6B7280">Primary/Secondary</text>
+
+  <rect x="655" y="194" width="100" height="56" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="705" y="214" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">成员 M2</text>
+  <text x="705" y="232" text-anchor="middle" font-size="11" fill="#374151">参与组通信</text>
+  <text x="705" y="246" text-anchor="middle" font-size="10" fill="#6B7280">参与多数派协议</text>
+
+  <rect x="760" y="194" width="100" height="56" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="810" y="214" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">成员 M3</text>
+  <text x="810" y="232" text-anchor="middle" font-size="11" fill="#374151">参与组通信</text>
+  <text x="810" y="246" text-anchor="middle" font-size="10" fill="#6B7280">参与多数派协议</text>
+
+  <!-- 多数派确认 (M1+M2) -->
+  <line x1="600" y1="250" x2="690" y2="270" stroke="#EF4444" stroke-width="1.3" marker-end="url(#arrowRed)"/>
+  <line x1="705" y1="250" x2="720" y2="270" stroke="#EF4444" stroke-width="1.3" marker-end="url(#arrowRed)"/>
+  <rect x="615" y="274" width="180" height="40" rx="6" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="705" y="291" text-anchor="middle" font-size="12" font-weight="700" fill="#EF4444">多数派确认（2/3）</text>
+  <text x="705" y="307" text-anchor="middle" font-size="11" fill="#374151">确定事务广播的顺序</text>
+
+  <line x1="705" y1="314" x2="705" y2="334" stroke="#059669" stroke-width="1.3" marker-end="url(#arrowGreen)"/>
+  <rect x="500" y="338" width="410" height="58" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="705" y="358" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">各成员按同一顺序认证，通过后提交或应用事务</text>
+  <text x="705" y="376" text-anchor="middle" font-size="11" fill="#374151">冲突认证失败的事务回滚</text>
+  <text x="705" y="390" text-anchor="middle" font-size="11" fill="#6B7280">group_replication_consistency 可调读写等待强度</text>
+
+  <!-- 底部对比（定位/一致性/前提/机制六行已删；留代价与要点两行，标题基线 488、行距 28，框高 158→88，带高 220→144） -->
+  <rect x="30" y="424" width="880" height="144" rx="8" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2"/>
+  <text x="470" y="450" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">两种机制的位置与代价</text>
+
+  <rect x="60" y="466" width="400" height="88" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="260" y="488" text-anchor="middle" font-size="13" font-weight="700" fill="#D97706">多线程并行复制</text>
+  <text x="80" y="516" font-size="12" fill="#374151">作用：提升回放并行度</text>
+  <text x="80" y="544" font-size="12" font-weight="600" fill="#059669">要点：收益受事务依赖和回放资源限制</text>
+
+  <rect x="480" y="466" width="400" height="88" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="680" y="488" text-anchor="middle" font-size="13" font-weight="700" fill="#D97706">组复制 MGR</text>
+  <text x="500" y="516" font-size="12" fill="#374151">代价：读写事务提交前需要组内通信和认证</text>
+  <text x="500" y="544" font-size="12" font-weight="600" fill="#EF4444">要点：多数派维持进展，应用等待条件可调</text>
+</svg>

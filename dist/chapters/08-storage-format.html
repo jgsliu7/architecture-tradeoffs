@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 8 章 磁盘存储格式 — 文件结构的设计哲学</title>
+<style>
+*{box-sizing:border-box}
+:root{--ink:#1f2328;--mute:#57606a;--line:#d8dee4;--accent:#4f46e5;--bg:#fff;--soft:#f6f8fa}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;color:var(--ink);background:#fff;line-height:1.8;font-size:16px}
+.layout{display:grid;grid-template-columns:var(--toc-w,292px) 6px 1fr;max-width:1340px;margin:0 auto;transition:grid-template-columns .2s}
+body.toc-dragging .layout{transition:none}
+nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 24px 8px;font-size:14px;min-width:0}
+main.content{min-width:0}
+.toc-drag{position:sticky;top:0;align-self:start;height:100vh;cursor:col-resize;background:var(--line);transition:background .15s}
+.toc-drag:hover,.toc-drag.active{background:var(--accent)}
+body.toc-dragging{user-select:none;cursor:col-resize}
+.toc-collapse{position:absolute;top:16px;right:8px;border:1px solid var(--line);background:#fff;color:var(--mute);border-radius:6px;width:24px;height:24px;font-size:13px;line-height:1;cursor:pointer;padding:0}
+.toc-collapse:hover{color:var(--accent);border-color:var(--accent)}
+.toc-expand{display:none;position:fixed;left:0;top:120px;z-index:55;border:1px solid var(--line);border-left:none;background:#fff;color:var(--mute);border-radius:0 8px 8px 0;padding:10px 6px;font-size:14px;cursor:pointer;box-shadow:2px 2px 8px rgba(0,0,0,.08)}
+.toc-expand:hover{color:var(--accent)}
+body.toc-collapsed .layout{grid-template-columns:1fr}
+body.toc-collapsed nav.toc,body.toc-collapsed .toc-drag{display:none}
+body.toc-collapsed .toc-expand{display:block}
+.toc-title{font-weight:700;font-size:15px;color:var(--accent);margin:0 0 4px 8px}
+.toc-title a{color:inherit;text-decoration:none}
+.toc-sub{font-size:12px;color:var(--mute);margin:0 0 16px 8px}
+nav.toc ul{list-style:none;padding:0;margin:0}
+nav.toc li>a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.5}
+nav.toc li>a:hover{background:var(--soft)}
+nav.toc li.active>a{background:#eef2ff;color:var(--accent);font-weight:600}
+nav.toc li.nav-sub>a{padding-left:22px;font-size:13px;color:var(--mute)}
+.content{padding:32px 48px 120px;max-width:1000px;overflow-wrap:anywhere}
+.chapter-meta{color:var(--mute);font-size:13px;margin:0 0 18px}
+.page-nav{display:flex;justify-content:space-between;gap:16px;margin:40px 0 0;padding-top:20px;border-top:1px solid var(--line)}
+.page-nav a{display:block;max-width:48%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--ink);background:var(--soft);line-height:1.5}
+.page-nav a:hover{border-color:var(--accent);color:var(--accent)}
+.page-nav .empty{visibility:hidden}
+h1,h2,h3,h4{line-height:1.35;color:var(--ink);font-weight:700}
+h1{font-size:1.9em;margin:0 0 .6em;padding-bottom:.3em}
+h2{font-size:1.42em;margin:1.8em 0 .6em}
+h3{font-size:1.18em;margin:1.5em 0 .5em}
+h4{font-size:1.04em;margin:1.3em 0 .4em;color:#24292f}
+p{margin:0 0 1em}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+strong{font-weight:700;color:#111827}
+em{font-style:normal;color:var(--mute)}
+hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
+code{font-family:"SF Mono",Menlo,Consolas,monospace;background:var(--soft);padding:.12em .4em;border-radius:4px;font-size:.9em;color:#24292f}
+pre{background:#1e1e2e;color:#cdd6f4;padding:16px 18px;border-radius:8px;overflow-x:auto;line-height:1.55}
+pre code{background:none;color:inherit;padding:0;font-size:.86em}
+blockquote{margin:1.2em 0;padding:.6em 1em .6em 1.1em;border-left:4px solid var(--accent);background:#f7f8ff;color:#343a40;border-radius:0 6px 6px 0}
+blockquote strong{color:var(--accent)}
+ul,ol{margin:0 0 1em;padding-left:1.7em}
+li{margin:.25em 0}
+.table-wrap{overflow-x:auto;margin:1.2em 0}
+table{border-collapse:collapse;width:100%;font-size:.94em}
+th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+thead th{background:#eef2ff;color:#3730a3;font-weight:600}
+tbody tr:nth-child(even){background:#fafbfd}
+figure.fig{margin:2em calc((100% - 1000px)/2);text-align:center}
+.svg-wrap,.inline-svg{display:block;width:100%}
+figure.fig svg,.inline-svg svg,.svg-wrap svg,figure.fig img{width:100%;max-width:1000px;height:auto;display:block;margin:0 auto}
+figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
+.toc-toggle{display:none}
+.review-index{display:grid;gap:12px;margin:24px 0 0}
+.review-index a{display:block;padding:14px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;background:#fff}
+.review-index a:hover{border-color:var(--accent);background:#f7f8ff}
+.review-index strong{display:block;color:var(--ink)}
+.review-index span{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+@media(max-width:1200px){figure.fig{margin:2em auto}}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:fixed;left:0;top:0;width:292px;background:#fff;z-index:50;transform:translateX(-100%);transition:transform .2s;box-shadow:2px 0 12px rgba(0,0,0,.08)}
+  nav.toc.open{transform:translateX(0)}
+  body.toc-collapsed nav.toc{display:block}
+  .toc-drag,.toc-collapse,.toc-expand{display:none!important}
+  .content{padding:20px 18px 80px;max-width:100%;min-width:0}
+  .toc-toggle{display:inline-block;position:fixed;right:16px;bottom:16px;z-index:60;background:var(--accent);color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer}
+  .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:40}
+  .backdrop.show{display:block}
+  /* 窄屏宽图改为容器内横向滚动，文字保持可读 */
+  .svg-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  figure.fig svg{min-width:760px}
+}
+@media print{a.xref{color:inherit}}
+</style>
+</head>
+<body>
+<div class="backdrop" id="bd"></div>
+<button class="toc-toggle">目录</button>
+<button class="toc-expand" id="tocExpand" title="展开目录">»</button>
+<div class="layout">
+<nav class="toc" id="toc">
+  <button class="toc-collapse" id="tocCollapse" title="收起目录">«</button>
+  <div class="toc-title"><a href="../index.html">架构取舍之道</a></div>
+  <div class="toc-sub">在线阅读版</div>
+  <ul>
+<li><a href="../index.html">首页目录</a></li>
+<li><a href="00-preface.html">序言</a>
+</li>
+<li><a href="01-introduction.html">第 1 章 引言 — 为什么是这三个软件</a>
+</li>
+<li><a href="02-data-structures-protocols.html">第 2 章 数据结构与协议 — 为各自的目标而设计</a>
+</li>
+<li><a href="03-lifecycle.html">第 3 章 生命周期管理 — 优雅启动与关闭</a>
+</li>
+<li><a href="04-memory-disk.html">第 4 章 内存与磁盘 — 速度与持久化的平衡</a>
+</li>
+<li><a href="05-layered-architecture.html">第 5 章 分层架构设计 — 存储层 / 逻辑层 / 交互层</a>
+</li>
+<li><a href="06-security.html">第 6 章 安全机制 — 权限、加密、审计</a>
+</li>
+<li><a href="07-cluster.html">第 7 章 集群架构 — 从单点到分布式</a>
+</li>
+<li class="active"><a href="08-storage-format.html">第 8 章 磁盘存储格式 — 文件结构的设计哲学</a>
+<ul>
+<li class="nav-sub"><a href="#s159">本章导读</a></li>
+<li class="nav-sub"><a href="#sec-8.1">8.1 文件格式要处理哪些约束</a></li>
+<li class="nav-sub"><a href="#sec-8.2">8.2 Redis 的做法</a></li>
+<li class="nav-sub"><a href="#sec-8.3">8.3 MySQL 的做法</a></li>
+<li class="nav-sub"><a href="#sec-8.4">8.4 Kafka 的做法</a></li>
+<li class="nav-sub"><a href="#sec-8.5">8.5 横向对比</a></li>
+<li class="nav-sub"><a href="#sec-8.6">8.6 架构启示</a></li>
+<li class="nav-sub"><a href="#sec-8.7">8.7 小结</a></li>
+</ul>
+</li>
+<li><a href="09-data-sync.html">第 9 章 数据同步机制 — 集群一致性的实现</a>
+</li>
+<li><a href="10-summary.html">第 10 章 总结：架构设计的共性规律与取舍</a>
+</li>
+<li><a href="10-epilogue.html">后记</a>
+</li>
+<li><a href="11-references.html">附录　参考文献与延伸阅读（按章索引）</a>
+</li>
+</ul>
+</nav>
+<div class="toc-drag" id="tocDrag" title="拖拽调整目录宽度"></div>
+<main class="content">
+<article class="chapter"><h1 id="s158">第 8 章 磁盘存储格式 — 文件结构的设计哲学</h1>
+<h2 id="s159">本章导读</h2>
+<p>文件格式增加字段时，需要约定旧程序能否继续读取新文件。版本号用于识别格式；字段的边界与兼容规则，决定旧解析器能否跳过不认识的字段、继续读取后面的内容。</p>
+<p>文件格式需要约定字段采用定长还是变长编码、记录怎样定位、怎样检测损坏，以及新旧文件怎样读取。这些选择影响读写、恢复和升级的成本，而选择的依据是文件承担的工作：它是否参与线上查询和更新，又怎样用于恢复。</p>
+<h2 id="sec-8.1">8.1 文件格式要处理哪些约束</h2>
+<p>磁盘与内存的工程差距，远不止延迟数字。磁盘按块读写，读写位置要对齐到块边界；机械盘的随机访问还有寻道开销。持久化文件可能跨进程、跨机器，几年后仍要由新的程序读取，所以格式需要明确约定字段、字节序和版本。写到一半断电（partial write）留下的不完整数据，也会成为下次启动的恢复问题。对齐、校验、写入顺序和兼容规则因此成为磁盘格式需要共同处理的约束。</p>
+<p>Redis 的数据主要放在内存中，RDB 保存快照，AOF 记录写命令，两者用于恢复内存状态；MySQL 用定长页支持线上随机定位和更新；Kafka 将新消息顺序追加到日志段，再用索引定位已有消息。文件承担的读写工作不同，也就形成了不同的组织方式。</p>
+<figure class="fig" id="fig-8-1"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 68 880 346" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_8_1_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+
+  
+  <text x="80" y="100" text-anchor="middle" font-size="13" font-weight="600" fill="#374151">软件</text>
+  <text x="280" y="100" text-anchor="middle" font-size="13" font-weight="600" fill="#374151">内存中的作用</text>
+  <text x="560" y="100" text-anchor="middle" font-size="13" font-weight="600" fill="#374151">磁盘文件的作用</text>
+
+  
+  <line x1="160" y1="80" x2="160" y2="420" stroke="#E5E7EB" stroke-width="1"/>
+  <line x1="420" y1="80" x2="420" y2="420" stroke="#E5E7EB" stroke-width="1"/>
+
+  
+  <rect x="40" y="130" width="120" height="70" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="100" y="158" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">Redis</text>
+  <text x="100" y="180" text-anchor="middle" font-size="12" fill="#374151">内存为主</text>
+
+  
+  <rect x="190" y="135" width="220" height="60" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="300" y="162" text-anchor="middle" font-size="13" font-weight="600" fill="#4F46E5">内存数据结构（正本）</text>
+  <text x="300" y="182" text-anchor="middle" font-size="11" fill="#374151">在线查询的来源</text>
+
+  
+  <rect x="450" y="150" width="220" height="30" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="560" y="170" text-anchor="middle" font-size="11.5" fill="#374151">RDB / AOF（用于恢复）</text>
+
+  <text x="685" y="170" font-size="12" fill="#374151">崩溃后重建内存</text>
+
+  
+  <rect x="40" y="230" width="120" height="70" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="100" y="258" text-anchor="middle" font-size="15" font-weight="700" fill="#D97706">MySQL</text>
+  <text x="100" y="280" text-anchor="middle" font-size="12" fill="#374151">磁盘为主</text>
+
+  
+  <rect x="190" y="250" width="220" height="30" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="300" y="270" text-anchor="middle" font-size="12" fill="#374151">缓冲池（缓存页，可修改）</text>
+
+  
+  <rect x="450" y="235" width="220" height="60" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="560" y="262" text-anchor="middle" font-size="13" font-weight="600" fill="#D97706">表空间文件（持久数据页）</text>
+  <text x="560" y="282" text-anchor="middle" font-size="11" fill="#374151">16KB 页 · B+ 树 · 原地改</text>
+
+  <text x="685" y="270" font-size="12" fill="#374151">支持线上页级读写</text>
+
+  
+  <line x1="410" y1="265" x2="450" y2="265" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_1_arrow)" marker-start="url(#fig_8_1_arrow)"/>
+
+  
+  <rect x="40" y="330" width="120" height="70" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="100" y="358" text-anchor="middle" font-size="15" font-weight="700" fill="#059669">Kafka</text>
+  <text x="100" y="380" text-anchor="middle" font-size="12" fill="#374151">日志保存消息</text>
+
+  
+  <rect x="190" y="345" width="220" height="40" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="300" y="362" text-anchor="middle" font-size="12" fill="#374151">OS 页缓存（由内核管理）</text>
+  <text x="300" y="378" text-anchor="middle" font-size="11" fill="#6B7280">无独立缓存层</text>
+
+  
+  <rect x="450" y="335" width="220" height="60" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="560" y="362" text-anchor="middle" font-size="13" font-weight="600" fill="#059669">日志段 .log（消息本体）</text>
+  <text x="560" y="382" text-anchor="middle" font-size="11" fill="#374151">新消息追加 · 稀疏索引定位</text>
+
+  <text x="685" y="370" font-size="12" fill="#374151">可复制或存于远端</text>
+
+</svg>
+</div><figcaption>图 8-1　三个软件中数据正本、缓存与恢复文件的职责示意。</figcaption></figure>
+<p>具体到文件设计，主要涉及四类取舍。</p>
+<p><strong>读写路径</strong>。顺序追加把新数据写在文件尾部；需要快速定位历史记录时，可以用索引缩小查找范围。定长页便于计算页的位置，定位到页后再查找记录，更新时可能发生页内重组。</p>
+<p><strong>空间与解析成本</strong>。紧凑编码可以用编解码的 CPU 开销换取更小的文件与更少的 I/O。定长字段与对齐让定位和解析更直接，空间占用可能更多。</p>
+<p><strong>可靠性与开销</strong>。checksum（校验和）用于发现损坏，双写保留可用于修复不完整页的副本，WAL 记录修改以供恢复，fsync 策略决定何时要求数据落盘。它们增加的计算、写入或等待各不相同；判断开销是否值得，先要明确各自防的是哪类故障。</p>
+<p><strong>定型与演进</strong>。格式发布后，已有数据就成了后续修改的约束。加字段、换编码或修正旧问题时，兼容规则需要约定旧文件怎样继续被读取。版本号和类型码帮助读取端识别格式，保留字段为后续变化留出位置。</p>
+<p>四类取舍落到具体文件，还有三个问题：磁盘文件是否参与线上数据读取？已有记录是否需要在文件中原地更新？格式升级或回退时，新旧程序各能读取哪些文件？前两问决定访问路径和更新单位，第三问决定程序要为新旧格式保留哪些读取路径。</p>
+<h2 id="sec-8.2">8.2 Redis 的做法</h2>
+<h3 id="sec-8.2.1">8.2.1 定位先行：磁盘服务于内存</h3>
+<p>Redis 的线上键查询不依赖持久化文件。RDB 可以紧凑地顺序保存内存状态，不必建立按 key 定位的磁盘索引；AOF 顺序记录写命令，重写时可以根据当前内存状态生成新文件，不必沿用旧文件的内部布局。两者都不需为线上查询维护可原地改写的磁盘页。</p>
+<h3 id="sec-8.2.2">8.2.2 RDB：紧凑二进制快照</h3>
+<p>RDB（快照文件）保存 Redis 某一时刻的全量数据，采用紧凑二进制编码。文件以魔数 <code>REDIS</code> 和 4 字节 ASCII 格式版本号开头，加载器据此识别文件，并判断是否支持该版本。尾部留有 CRC64 校验字段。启用校验时，Redis 在加载过程中计算 CRC64；若尾部字段非零且计算值与文件值不一致，恢复会中止。</p>
+<figure class="fig" id="fig-8-2"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 88 900 356" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_8_2_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9CA3AF"/>
+    </marker>
+  </defs>
+
+  
+  
+  <rect x="40" y="100" width="70" height="56" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="75" y="124" text-anchor="middle" font-size="12" font-weight="700" fill="#4F46E5">magic</text>
+  <text x="75" y="142" text-anchor="middle" font-size="10" fill="#374151">REDIS</text>
+
+  
+  <rect x="110" y="100" width="60" height="56" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="140" y="124" text-anchor="middle" font-size="12" font-weight="700" fill="#4F46E5">version</text>
+  <text x="140" y="142" text-anchor="middle" font-size="10" fill="#374151">0010 (4B)</text>
+
+  
+  <rect x="170" y="100" width="90" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="215" y="122" text-anchor="middle" font-size="12" font-weight="600" fill="#374151">metadata</text>
+  <text x="215" y="140" text-anchor="middle" font-size="10" fill="#6B7280">aux 字段</text>
+
+  
+  <rect x="260" y="100" width="90" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="305" y="122" text-anchor="middle" font-size="12" font-weight="600" fill="#374151">db-selector</text>
+  <text x="305" y="140" text-anchor="middle" font-size="10" fill="#6B7280">SELECT N</text>
+
+  
+  <rect x="350" y="100" width="350" height="56" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="525" y="122" text-anchor="middle" font-size="13" font-weight="700" fill="#4F46E5">entries（全量键值序列）</text>
+  <text x="525" y="142" text-anchor="middle" font-size="10" fill="#374151">类型码 + 键值数据（按类型采用不同编码）</text>
+
+  
+  <rect x="700" y="100" width="40" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="720" y="124" text-anchor="middle" font-size="11" font-weight="600" fill="#374151">EOF</text>
+  <text x="720" y="142" text-anchor="middle" font-size="10" fill="#6B7280">0xFF</text>
+
+  
+  <rect x="740" y="100" width="120" height="56" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="800" y="124" text-anchor="middle" font-size="12" font-weight="700" fill="#4F46E5">CRC64</text>
+  <text x="800" y="142" text-anchor="middle" font-size="10" fill="#374151">8B 校验</text>
+
+  
+  <line x1="40" y1="175" x2="860" y2="175" stroke="#9CA3AF" stroke-width="1" marker-end="url(#fig_8_2_arrow)"/>
+  <text x="40" y="192" font-size="11" fill="#6B7280">文件起始</text>
+  <text x="860" y="192" text-anchor="end" font-size="11" fill="#6B7280">文件末尾</text>
+
+  
+  <text x="40" y="240" font-size="14" font-weight="700" fill="#111827">一条 String entry 的编码示意</text>
+
+  <rect x="40" y="260" width="120" height="50" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="100" y="282" text-anchor="middle" font-size="11" font-weight="600" fill="#374151">RDB 类型码</text>
+  <text x="100" y="300" text-anchor="middle" font-size="10" fill="#6B7280">1 字节，标识类型</text>
+
+  <rect x="160" y="260" width="140" height="50" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="230" y="282" text-anchor="middle" font-size="11" font-weight="600" fill="#4F46E5">key 编码前缀</text>
+  <text x="230" y="300" text-anchor="middle" font-size="10" fill="#374151">长度或特殊编码</text>
+
+  <rect x="300" y="260" width="120" height="50" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="360" y="282" text-anchor="middle" font-size="11" font-weight="600" fill="#4F46E5">key 编码载荷</text>
+  <text x="360" y="300" text-anchor="middle" font-size="10" fill="#374151">字节串 / 整数等</text>
+
+  <rect x="420" y="260" width="140" height="50" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="490" y="282" text-anchor="middle" font-size="11" font-weight="600" fill="#4F46E5">value 编码前缀</text>
+  <text x="490" y="300" text-anchor="middle" font-size="10" fill="#374151">长度或特殊编码</text>
+
+  <rect x="560" y="260" width="180" height="50" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="650" y="282" text-anchor="middle" font-size="11" font-weight="600" fill="#4F46E5">value 编码载荷</text>
+  <text x="650" y="300" text-anchor="middle" font-size="10" fill="#374151">按前缀读取对应载荷</text>
+
+  
+  <text x="40" y="350" font-size="14" font-weight="700" fill="#111827">长度或特殊编码：前缀高 2 位的四种取值</text>
+
+  <rect x="40" y="370" width="200" height="60" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="140" y="394" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">00 → 6 位（0–63）</text>
+  <text x="140" y="414" text-anchor="middle" font-size="11" fill="#6B7280">放进长度前缀的低 6 位</text>
+
+  <rect x="250" y="370" width="200" height="60" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="350" y="394" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">01 → 14 位（0–16383）</text>
+  <text x="350" y="414" text-anchor="middle" font-size="11" fill="#6B7280">1 字节 + 下一字节</text>
+
+  <rect x="460" y="370" width="200" height="60" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="560" y="394" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">10 → 32 / 64 位</text>
+  <text x="560" y="414" text-anchor="middle" font-size="11" fill="#6B7280">0x80 后 4B；0x81 后 8B</text>
+
+  <rect x="670" y="370" width="190" height="60" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="765" y="394" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">11 → 特殊编码</text>
+  <text x="765" y="414" text-anchor="middle" font-size="11" fill="#6B7280">int8/16/32 · LZF 压缩串</text>
+</svg>
+</div><figcaption>图 8-2　RDB 文件布局</figcaption></figure>
+<p>文件中的长度字段按数值大小选择编码：短长度只用一个字节，较大的长度使用更多字节；整数形式的字符串直接存数值，长字符串可用 LZF 压缩。短字段省下的字节累积起来，能减少整个快照的体积。</p>
+<p>数据对象通过 RDB 类型码衔接存储态与内存态。以 Hash 为例，Redis 7.0 对 listpack 编码保存其紧凑字节序列，对 hashtable 编码则逐项保存字段和值；加载器按类型码恢复对象，并在相应条件下根据当前阈值转换编码。</p>
+<p>类型码也为格式演进提供了区分新旧编码的依据：Redis 7.0 用 listpack 取代旧版 ziplist 时，没有改变 RDB 的整体布局，而是新增类型码，并把 RDB 版本号从 v9 升到 v10，加载器保留新旧编码的读取与转换路径，让新版 Redis 继续读取旧文件。listpack 取代 ziplist 的背景见第 <a class="xref" href="02-data-structures-protocols.html#sec-2.2.1">2.2.1 节</a>。</p>
+<h3 id="sec-8.2.3">8.2.3 AOF：命令记录复用协议编码</h3>
+<p>AOF（仅追加文件）顺序记录写命令，按客户端请求所用的 RESP 格式写入，参数可以包含二进制数据。恢复时，Redis 沿用命令的解析和执行能力，无需为命令记录另行定义编码。</p>
+<p>若以命令重建完整状态，AOF 通常比保存同一状态的 RDB 更大。恢复时，文件中积累的命令都要逐条解析和执行；刷盘频率决定同步等待与故障丢失窗口的取舍，三档参数见<a class="xref" href="04-memory-disk.html">第 4 章</a>。</p>
+<h3 id="sec-8.2.4">8.2.4 AOF 重写：从单文件到 Multi-Part AOF</h3>
+<p>持续追加而不重写时，即使数据已被覆盖或删除，相应的旧命令仍会保留在 AOF 中，文件随之增长。比如对同一个 key 执行一百万次 INCR，重建当前值不必逐次重放这一百万条命令，可以改写成设置最终计数值的命令。AOF 重写正是根据当前状态重新生成记录：子进程从 fork 时的内存状态生成新文件的全量部分，不必遍历旧 AOF，这部分工作的规模主要随当时的内存数据量变化。</p>
+<p>7.0 之前，混合持久化把重写后的 AOF 放在单个文件里：前段是 RDB 全量快照，后段是快照时点之后的 AOF 命令。恢复时先加载快照，再重放增量，缩短了全量部分的加载时间。重写期间父进程继续接收新写入，既向旧 AOF 追加命令，也要把增量补进新 AOF。同一批增量要走两条路径，增加了内存与 I/O 开销。等新文件完整后才能切换；切换前若发生故障，仍可用旧文件恢复。</p>
+<p>7.0 起，AOF 拆成基础文件（base）与增量文件（incr），由清单文件（manifest）记录恢复时应读取的文件组合。base 可以采用 RDB 格式，缩短全量部分的加载时间，也可以采用 AOF 命令格式；重写期间的新写入都由 incr 文件保存。</p>
+<p>重写开始时，父进程新开 incr 文件承接后续写入，子进程从当前内存生成新 base。新 base 完成后，Redis 原子替换 manifest，恢复所用的文件组合才切换到新 base 与后续 incr；重写失败，恢复仍读原有 base 与原有 incr，加上重写期间新开的 incr。文件分开生成，生效时只需切换一份清单，不必再把重写期间的增量补进新 base。</p>
+<figure class="fig" id="fig-8-3"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 62 940 498" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_8_3_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_8_3_arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="40" y="76" width="420" height="464" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+  <rect x="480" y="76" width="420" height="464" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+  <text x="250" y="105" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">7.0 之前：单文件 AOF</text>
+  <text x="690" y="105" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">7.0 起：Multi-Part AOF</text>
+  <line x1="60" y1="120" x2="440" y2="120" stroke="#CBD5E1"/>
+  <line x1="500" y1="120" x2="880" y2="120" stroke="#CBD5E1"/>
+
+  
+  <rect x="65" y="146" width="180" height="72" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="155" y="169" text-anchor="middle" font-size="13" font-weight="700" fill="#4F46E5">父进程</text>
+  <text x="155" y="190" text-anchor="middle" font-size="11" fill="#374151">旧 AOF 继续追加新写入</text>
+  <text x="155" y="207" text-anchor="middle" font-size="11" fill="#374151">增量另存，待补新文件</text>
+
+  <rect x="255" y="146" width="180" height="72" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="345" y="169" text-anchor="middle" font-size="13" font-weight="700" fill="#4F46E5">子进程</text>
+  <text x="345" y="190" text-anchor="middle" font-size="11" fill="#374151">从当前内存生成新 AOF</text>
+  <text x="345" y="207" text-anchor="middle" font-size="11" fill="#374151">写出全量部分</text>
+
+  <rect x="505" y="146" width="180" height="72" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="595" y="169" text-anchor="middle" font-size="13" font-weight="700" fill="#4F46E5">父进程</text>
+  <text x="595" y="190" text-anchor="middle" font-size="11" fill="#374151">新开 incr 承接后续写入</text>
+  <text x="595" y="207" text-anchor="middle" font-size="11" fill="#374151">增量独立保存</text>
+
+  <rect x="695" y="146" width="180" height="72" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="785" y="169" text-anchor="middle" font-size="13" font-weight="700" fill="#4F46E5">子进程</text>
+  <text x="785" y="190" text-anchor="middle" font-size="11" fill="#374151">从当前内存生成新 base</text>
+  <text x="785" y="207" text-anchor="middle" font-size="11" fill="#374151">可用 RDB 或 AOF 格式</text>
+
+  
+  <path d="M 155 218 L 155 247 L 205 247 L 205 277" fill="none" stroke="#EF4444" stroke-width="1.5" marker-end="url(#fig_8_3_arrowR)"/>
+  <path d="M 345 218 L 345 247 L 295 247 L 295 277" fill="none" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_3_arrow)"/>
+  <path d="M 595 218 L 595 247 L 645 247 L 645 277" fill="none" stroke="#EF4444" stroke-width="1.5" marker-end="url(#fig_8_3_arrowR)"/>
+  <path d="M 785 218 L 785 247 L 735 247 L 735 277" fill="none" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_3_arrow)"/>
+
+  <rect x="115" y="280" width="270" height="74" rx="6" fill="#FEF2F7" stroke="#EF4444" stroke-width="1.7"/>
+  <text x="250" y="305" text-anchor="middle" font-size="13" font-weight="700" fill="#EF4444">新 AOF 单文件</text>
+  <text x="250" y="327" text-anchor="middle" font-size="11" fill="#374151">全量部分 + 补入的重写增量</text>
+  <text x="250" y="344" text-anchor="middle" font-size="10.5" fill="#6B7280">切换前旧 AOF 继续有效</text>
+
+  <rect x="555" y="280" width="270" height="74" rx="6" fill="#FEF2F7" stroke="#EF4444" stroke-width="1.7"/>
+  <text x="690" y="305" text-anchor="middle" font-size="13" font-weight="700" fill="#EF4444">分立的新 base 与新 incr</text>
+  <text x="690" y="327" text-anchor="middle" font-size="11" fill="#374151">增量保存在 incr，不补入 base</text>
+  <text x="690" y="344" text-anchor="middle" font-size="10.5" fill="#6B7280">切换前旧组合连同新 incr 可恢复</text>
+
+  
+  <line x1="250" y1="354" x2="250" y2="384" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_3_arrow)"/>
+  <line x1="690" y1="354" x2="690" y2="384" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_3_arrow)"/>
+  <rect x="115" y="387" width="270" height="50" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="250" y="417" text-anchor="middle" font-size="12.5" font-weight="700" fill="#111827">完整后原子替换旧单文件</text>
+  <rect x="555" y="387" width="270" height="50" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="690" y="417" text-anchor="middle" font-size="12.5" font-weight="700" fill="#111827">原子替换 manifest</text>
+
+  
+  <line x1="250" y1="437" x2="250" y2="465" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_3_arrow)"/>
+  <line x1="690" y1="437" x2="690" y2="465" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_3_arrow)"/>
+  <rect x="115" y="468" width="270" height="48" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="250" y="497" text-anchor="middle" font-size="12.5" font-weight="700" fill="#4F46E5">恢复读取：新 AOF 单文件</text>
+  <rect x="555" y="468" width="270" height="48" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="690" y="497" text-anchor="middle" font-size="12.5" font-weight="700" fill="#4F46E5">恢复读取：新 base + 新 incr</text>
+</svg>
+</div><figcaption>图 8-3　单文件 AOF 与 Multi-Part AOF 的重写增量衔接</figcaption></figure>
+<h2 id="sec-8.3">8.3 MySQL 的做法</h2>
+<h3 id="sec-8.3.1">8.3.1 定位先行：磁盘为主，内存是缓存</h3>
+<p>InnoDB 将数据页保存在表空间文件中，缓冲池按需缓存这些页。缓存命中时从内存读取，未命中时再访问磁盘。</p>
+<p>线上事务需要随机定位并更新已有记录，因此页要能独立读取、写入和淘汰。UPDATE 可能修改页中的记录，记录变长时也可能触发页内重组或页分裂。InnoDB 用定长页支持定位和原地修改，并用 WAL 与双写机制处理崩溃恢复。</p>
+<h3 id="sec-8.3.2">8.3.2 四层结构：表空间 → 段 → 区 → 页</h3>
+<p>InnoDB 的存储从大到小可以分为表空间、段（segment）、区（extent）、页。段是逻辑聚合单位，一棵 B+ 树索引有叶子段与非叶子段，分别管理两类页，便于分配和回收空间。默认 16KB 页下，一个区由 64 个连续页组成，共 1MB。段初期逐页分配，增长后再整区申请，以改善数据的连续性。</p>
+<p>页号标识页在表空间中的位置。以单文件、未压缩的 16KB 页表空间为例，页号为 N 的页，其文件内字节偏移为 <code>N × 16KB</code>，可以直接计算。定长页把定位所需的信息简化为表空间、页号和页大小。在 B+ 树中，同一层的页又通过页头的前后指针连接，范围扫描可以沿叶子页向后走。页号负责定位，页间链接则支持连续读取相邻键。</p>
+<p>页大小影响一次读入的数据量。较大的页可容纳更多记录，有利于顺序访问；较小的页在随机读取少量数据时，可能减少同时读入的无关数据。MySQL 默认使用 16KB 页，也允许在实例初始化时通过 <code>innodb_page_size</code> 设置页大小。</p>
+<h3 id="sec-8.3.3">8.3.3 数据页内布局：一行行记录如何放进 16KB</h3>
+<p><a class="xref" href="#fig-8-4">图 8-4</a> 展示数据页的七段布局。页头记录页号、页类型和日志序列号（LSN）等信息，其中 LSN 标记该页已包含的修改进度；用户记录与空闲区占据页的主体，页目录辅助查找。对于未压缩的数据页，InnoDB 会核对页尾与页头中相应的 LSN 内容是否一致，并结合页 checksum 检测损坏。</p>
+<figure class="fig" id="fig-8-4"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 66 876 430" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_8_4_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_8_4_arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="120" y="78" width="420" height="398" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="560" y="92" font-size="13" font-weight="700" fill="#D97706">16KB 数据页</text>
+
+  
+  <rect x="135" y="90" width="390" height="46" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="330" y="110" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">① FIL Header（38B）</text>
+  <text x="330" y="127" text-anchor="middle" font-size="10" fill="#374151">页号 · 前后指针 · LSN · 页类型</text>
+  <text x="560" y="117" font-size="10" fill="#6B7280">页间双向链表</text>
+
+  
+  <rect x="135" y="141" width="390" height="40" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="330" y="160" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">② Page Header（56B）</text>
+  <text x="330" y="176" text-anchor="middle" font-size="10" fill="#6B7280">页内记录数 · 空闲指针 · 槽数等</text>
+
+  
+  <rect x="135" y="186" width="390" height="40" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="330" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">③ Infimum / Supremum（虚拟记录）</text>
+  <text x="330" y="221" text-anchor="middle" font-size="10" fill="#6B7280">界定页内记录链的起点与终点</text>
+
+  
+  <rect x="135" y="231" width="390" height="80" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="330" y="252" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">④ User Records（按索引键顺序链接）</text>
+  
+  <rect x="150" y="262" width="60" height="38" rx="3" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="180" y="286" text-anchor="middle" font-size="10" fill="#374151">rec 1</text>
+  <rect x="215" y="262" width="60" height="38" rx="3" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="245" y="286" text-anchor="middle" font-size="10" fill="#374151">rec 2</text>
+  <rect x="280" y="262" width="60" height="38" rx="3" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="310" y="286" text-anchor="middle" font-size="10" fill="#374151">rec 3</text>
+  <rect x="345" y="262" width="60" height="38" rx="3" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="375" y="286" text-anchor="middle" font-size="10" fill="#374151">rec 4</text>
+  <rect x="410" y="262" width="60" height="38" rx="3" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="440" y="286" text-anchor="middle" font-size="10" fill="#374151">rec 5</text>
+
+  
+  <rect x="135" y="316" width="390" height="46" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="330" y="336" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">⑤ Free Space（空闲空间）</text>
+  <text x="330" y="354" text-anchor="middle" font-size="10" fill="#6B7280">插入新记录占用空闲空间；空间不足时可能页分裂</text>
+
+  
+  <rect x="135" y="367" width="390" height="56" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="330" y="388" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">⑥ Page Directory（页目录，稀疏槽）</text>
+  
+  <rect x="160" y="398" width="40" height="20" rx="2" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="180" y="412" text-anchor="middle" font-size="10.5" fill="#374151">slot</text>
+  <rect x="210" y="398" width="40" height="20" rx="2" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="230" y="412" text-anchor="middle" font-size="10.5" fill="#374151">slot</text>
+  <rect x="260" y="398" width="40" height="20" rx="2" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="280" y="412" text-anchor="middle" font-size="10.5" fill="#374151">slot</text>
+  <rect x="310" y="398" width="40" height="20" rx="2" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="330" y="412" text-anchor="middle" font-size="10.5" fill="#374151">slot</text>
+  <text x="380" y="414" font-size="10" fill="#6B7280">二分定位 → 顺序扫几条</text>
+
+  
+  <rect x="135" y="430" width="390" height="46" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="330" y="450" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">⑦ FIL Trailer（8B）</text>
+  <text x="330" y="468" text-anchor="middle" font-size="10" fill="#374151">LSN 低 4 字节 + 校验相关字段</text>
+
+  
+  <path d="M 135 453 C 80 453, 80 113, 115 113 L 135 113" fill="none" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#fig_8_4_arrowR)"/>
+  <text x="55" y="285" text-anchor="middle" font-size="10" fill="#EF4444" transform="rotate(-90 55 285)">头尾 LSN 对应部分配对，辅助检测损坏</text>
+
+  
+  <rect x="580" y="231" width="280" height="80" rx="6" fill="#FEF2F7" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="720" y="253" text-anchor="middle" font-size="12" font-weight="700" fill="#EF4444">大字段溢出页</text>
+  <text x="720" y="272" text-anchor="middle" font-size="11" fill="#374151">长行的变长列可移到溢出页</text>
+  <text x="720" y="290" text-anchor="middle" font-size="11" fill="#374151">行内保留指向溢出数据的引用</text>
+  <text x="720" y="306" text-anchor="middle" font-size="10" fill="#6B7280">减少长列占用的页内空间</text>
+
+  <line x1="475" y1="271" x2="580" y2="271" stroke="#EF4444" stroke-width="1.5" marker-end="url(#fig_8_4_arrowR)"/>
+
+  
+  <rect x="580" y="335" width="280" height="100" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="720" y="359" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">页大小的取舍</text>
+  <text x="720" y="380" text-anchor="middle" font-size="11" fill="#374151">页大：一次读入更多记录</text>
+  <text x="720" y="398" text-anchor="middle" font-size="11" fill="#374151">页小：点查少读无关数据</text>
+</svg>
+</div><figcaption>图 8-4　InnoDB 16KB 数据页内部七段布局。</figcaption></figure>
+<p>页内记录按索引键连接成链表。Page Directory 是页内的稀疏索引，每个槽指向一组记录的末记录。查找时先在槽数组中二分，缩小范围后沿记录链比较，无需从头遍历整页。</p>
+<p>InnoDB 默认使用 Dynamic 行格式。行内内容过长时，部分长列移到溢出页，聚簇索引叶子页内保留引用，能容纳更多行内记录。读取被移出的列时，按引用额外访问溢出页。</p>
+<h3 id="sec-8.3.4">8.3.4 redo log 与双写：原地改页后的恢复</h3>
+<p>redo log 是循环写入的 WAL。内存中的页可以先被修改；脏页写入数据文件前，相应 redo 必须先落盘。对于页内修改，InnoDB 的 redo log 记录所在页及具体的修改操作。崩溃恢复时，InnoDB 依据日志与页 LSN 应用所需修改，不必重新执行原来的 SQL。日志因此与页结构联系紧密。</p>
+<p>原地写页时，断电可能留下半新半旧的内容，导致页结构损坏或 checksum 校验失败。redo log 能重放修改，却不能直接修复任意损坏的页。启用双写时，InnoDB 先把脏页写入双写区并刷盘，再写到正式位置；若正式页发生不完整写入，恢复时可从双写区取得有效的完整副本，再应用后续可用的 redo。多写一份页副本会增加写入量，批量顺序写可以分摊部分 I/O 开销。如果下层存储能保证一页写入的原子性，例如写时复制的文件系统或支持原子写的设备，双写也可以省去。</p>
+<p>checkpoint（检查点）标记已写入数据文件的修改进度。恢复过程从 checkpoint 向后扫描 redo log；随着脏页刷盘和 checkpoint 推进，较早的 redo 空间才能复用。</p>
+<figure class="fig" id="fig-8-5"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 67 940 460" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_8_5_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_8_5_arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="fig_8_5_arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  
+  <text x="40" y="90" font-size="14" font-weight="700" fill="#111827">正常落盘顺序</text>
+
+  
+  <rect x="40" y="110" width="150" height="60" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="115" y="135" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">缓冲池脏页</text>
+  <text x="115" y="155" text-anchor="middle" font-size="11" fill="#374151">内存中被改过的页</text>
+
+  
+  <rect x="240" y="110" width="150" height="60" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="315" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">相应 redo log</text>
+  <text x="315" y="150" text-anchor="middle" font-size="10" fill="#374151">先于对应脏页落盘（WAL）</text>
+
+  <line x1="190" y1="140" x2="240" y2="140" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_5_arrow)"/>
+  <text x="215" y="132" text-anchor="middle" font-size="10" fill="#374151">WAL</text>
+
+  
+  <rect x="440" y="110" width="170" height="60" rx="6" fill="#FEF2F7" stroke="#EF4444" stroke-width="2"/>
+  <text x="525" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#EF4444">双写区（完整页）</text>
+  <text x="525" y="150" text-anchor="middle" font-size="10" fill="#374151">先写入完整页并刷盘</text>
+
+  <line x1="390" y1="140" x2="440" y2="140" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_5_arrow)"/>
+
+  
+  <rect x="660" y="110" width="170" height="60" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="745" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">正式数据页</text>
+  <text x="745" y="150" text-anchor="middle" font-size="10" fill="#374151">.ibd 独立表空间</text>
+  <text x="745" y="164" text-anchor="middle" font-size="10" fill="#374151">原地改写</text>
+
+  <line x1="610" y1="140" x2="660" y2="140" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_5_arrow)"/>
+  <text x="635" y="132" text-anchor="middle" font-size="10" fill="#374151">再写</text>
+
+  
+  <rect x="845" y="110" width="85" height="60" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="887" y="135" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">风险</text>
+  <text x="887" y="152" text-anchor="middle" font-size="10.5" fill="#6B7280">断电半写</text>
+  <text x="887" y="164" text-anchor="middle" font-size="10.5" fill="#6B7280">页损坏</text>
+  <line x1="830" y1="140" x2="845" y2="140" stroke="#EF4444" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#fig_8_5_arrowR)"/>
+
+  
+  <text x="40" y="230" font-size="14" font-weight="700" fill="#111827">崩溃恢复路径</text>
+
+  
+  <rect x="40" y="250" width="130" height="60" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="105" y="278" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">重启 / 恢复</text>
+  <text x="105" y="297" text-anchor="middle" font-size="10" fill="#6B7280">checkpoint 后扫描 redo</text>
+
+  
+  <rect x="220" y="250" width="170" height="60" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="305" y="275" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">检查页 checksum</text>
+  <text x="305" y="294" text-anchor="middle" font-size="10" fill="#374151">核对头尾 LSN 对应部分</text>
+
+  <line x1="170" y1="280" x2="220" y2="280" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_5_arrow)"/>
+
+  
+  <polygon points="500,280 560,250 620,280 560,310" fill="#FEF2F7" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="560" y="278" text-anchor="middle" font-size="11" font-weight="700" fill="#EF4444">页完整？</text>
+  <text x="560" y="294" text-anchor="middle" font-size="10" fill="#374151">checksum</text>
+
+  <line x1="390" y1="280" x2="500" y2="280" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_5_arrow)"/>
+
+  
+  <rect x="690" y="250" width="200" height="60" rx="6" fill="#FEF2F7" stroke="#EF4444" stroke-width="2"/>
+  <text x="790" y="272" text-anchor="middle" font-size="12" font-weight="700" fill="#EF4444">否：若有有效副本则修复</text>
+  <text x="790" y="290" text-anchor="middle" font-size="10" fill="#374151">从双写缓冲取完整页</text>
+  <text x="790" y="304" text-anchor="middle" font-size="10" fill="#374151">覆盖损坏的正式页</text>
+
+  <line x1="620" y1="280" x2="687" y2="280" stroke="#EF4444" stroke-width="1.5" marker-end="url(#fig_8_5_arrowR)"/>
+  <text x="655" y="272" text-anchor="middle" font-size="11" font-weight="700" fill="#EF4444">否</text>
+
+  
+  <line x1="560" y1="310" x2="560" y2="357" stroke="#059669" stroke-width="1.5" marker-end="url(#fig_8_5_arrowG)"/>
+  <text x="575" y="335" font-size="11" font-weight="700" fill="#059669">是</text>
+
+  
+  <rect x="430" y="360" width="260" height="60" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="560" y="384" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">按页 LSN 应用 redo</text>
+  <text x="560" y="405" text-anchor="middle" font-size="10" fill="#374151">从有效完整页继续恢复</text>
+
+  
+  <rect x="430" y="460" width="260" height="50" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="560" y="482" text-anchor="middle" font-size="12" font-weight="700" fill="#059669">页到达一致状态</text>
+  <text x="560" y="500" text-anchor="middle" font-size="10" fill="#374151">随后完成事务恢复</text>
+
+  <line x1="560" y1="420" x2="560" y2="460" stroke="#059669" stroke-width="1.5" marker-end="url(#fig_8_5_arrowG)"/>
+
+  
+  <path d="M 790 310 Q 790 360, 690 380" fill="none" stroke="#EF4444" stroke-width="1.5" marker-end="url(#fig_8_5_arrowR)"/>
+  <text x="805" y="343" font-size="10" font-weight="700" fill="#EF4444">修复后</text>
+
+</svg>
+</div><figcaption>图 8-5　页校验与 LSN 用于判断页状态</figcaption></figure>
+<h2 id="sec-8.4">8.4 Kafka 的做法</h2>
+<h3 id="sec-8.4.1">8.4.1 定位先行：磁盘就是日志本体</h3>
+<p>Kafka 的分区日志保存消息本体。本地读取优先使用操作系统页缓存，未命中时再访问磁盘。新消息顺序追加到活跃日志段；稀疏索引缩小按偏移量（offset）定位已有消息时的扫描范围；RecordBatch 让一批消息共享元数据，并可一起压缩。</p>
+<h3 id="sec-8.4.2">8.4.2 日志段（Log Segment）：日志文件与两类索引</h3>
+<p>Kafka 的分区在磁盘上是一串日志段（segment），每段的主要文件配套管理：<code>.log</code> 存消息数据本体，<code>.index</code> 存偏移量索引，<code>.timeindex</code> 存时间戳索引。删除日志段时删除相应索引，压实时重建相应索引。</p>
+<p>文件名使用日志段的起始偏移量，也就是段内偏移量的下界。Kafka 按起始偏移量定位日志段，再在段内查找。</p>
+<figure class="fig" id="fig-8-6"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 78 960 509" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_8_6_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_8_6_arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="40" y="90" width="180" height="100" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="130" y="118" text-anchor="middle" font-size="14" font-weight="700" fill="#059669">分区（Partition）</text>
+  <text x="130" y="138" text-anchor="middle" font-size="11" fill="#374151">topic-0</text>
+  <text x="130" y="158" text-anchor="middle" font-size="11" fill="#374151">= 一串日志段</text>
+  <text x="130" y="178" text-anchor="middle" font-size="10" fill="#6B7280">按偏移量有序排列</text>
+
+  
+  <line x1="220" y1="140" x2="318" y2="140" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_6_arrow)"/>
+
+  
+  <rect x="320" y="95" width="130" height="90" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="385" y="118" text-anchor="middle" font-size="12" font-weight="700" fill="#059669">日志段 A</text>
+  <text x="385" y="138" text-anchor="middle" font-size="10" fill="#374151">文件名 00000</text>
+  <text x="385" y="158" text-anchor="middle" font-size="10" fill="#6B7280">起始偏移量 = 0</text>
+  <text x="385" y="174" text-anchor="middle" font-size="10.5" fill="#6B7280">（旧，可能被删）</text>
+
+  <rect x="535" y="95" width="130" height="90" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="600" y="118" text-anchor="middle" font-size="12" font-weight="700" fill="#059669">日志段 B</text>
+  <text x="600" y="138" text-anchor="middle" font-size="10" fill="#374151">文件名 00150</text>
+  <text x="600" y="158" text-anchor="middle" font-size="10" fill="#6B7280">起始偏移量 = 150</text>
+  <text x="600" y="174" text-anchor="middle" font-size="10.5" fill="#6B7280">（已关闭）</text>
+
+  <rect x="750" y="95" width="130" height="90" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="815" y="118" text-anchor="middle" font-size="12" font-weight="700" fill="#059669">日志段 C</text>
+  <text x="815" y="138" text-anchor="middle" font-size="10" fill="#374151">文件名 00320</text>
+  <text x="815" y="158" text-anchor="middle" font-size="10" fill="#6B7280">起始偏移量 = 320</text>
+  <text x="815" y="174" text-anchor="middle" font-size="10.5" fill="#6B7280">（当前写入）</text>
+
+  <line x1="450" y1="140" x2="533" y2="140" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_8_6_arrow)"/>
+  <line x1="665" y1="140" x2="748" y2="140" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_8_6_arrow)"/>
+
+  
+  <line x1="600" y1="185" x2="600" y2="258" stroke="#059669" stroke-width="1.5" marker-end="url(#fig_8_6_arrowG)"/>
+  <text x="612" y="225" font-size="11" font-weight="700" fill="#059669">展开</text>
+
+  
+  <text x="40" y="240" font-size="14" font-weight="700" fill="#111827">一个日志段的三个主要文件（以日志段 B = 00150 为例）</text>
+
+  
+  <rect x="40" y="260" width="280" height="220" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="180" y="284" text-anchor="middle" font-size="13" font-weight="700" fill="#059669">00150.log（消息数据）</text>
+
+  
+  <rect x="55" y="296" width="250" height="44" rx="4" fill="#F0FDF4" stroke="#059669" stroke-width="1"/>
+  <text x="180" y="314" text-anchor="middle" font-size="11" font-weight="600" fill="#059669">Batch：BaseOffset=150</text>
+  <text x="180" y="330" text-anchor="middle" font-size="10.5" fill="#6B7280">头 61B + N 条 Record（增量编码）</text>
+
+  <rect x="55" y="346" width="250" height="44" rx="4" fill="#F0FDF4" stroke="#059669" stroke-width="1"/>
+  <text x="180" y="364" text-anchor="middle" font-size="11" font-weight="600" fill="#059669">Batch：BaseOffset=180</text>
+  <text x="180" y="380" text-anchor="middle" font-size="10.5" fill="#6B7280">Attributes 标记压缩算法</text>
+
+  <rect x="55" y="396" width="250" height="44" rx="4" fill="#F0FDF4" stroke="#059669" stroke-width="1"/>
+  <text x="180" y="414" text-anchor="middle" font-size="11" font-weight="600" fill="#059669">Batch：BaseOffset=210</text>
+  <text x="180" y="430" text-anchor="middle" font-size="10.5" fill="#6B7280">Batch 按偏移量排列</text>
+
+  <text x="180" y="468" text-anchor="middle" font-size="10" fill="#374151">物理位置 = 文件内字节偏移</text>
+
+  
+  <rect x="340" y="260" width="280" height="220" rx="8" fill="#F3F4F6" stroke="#6B7280" stroke-width="2"/>
+  <text x="480" y="284" text-anchor="middle" font-size="13" font-weight="700" fill="#374151">00150.index（偏移量索引）</text>
+
+  <rect x="355" y="296" width="250" height="32" rx="3" fill="#F9FAFB" stroke="#6B7280" stroke-width="1"/>
+  <text x="480" y="316" text-anchor="middle" font-size="11" fill="#374151">相对偏移量 4B · 物理位置 4B = 8B</text>
+
+  <rect x="355" y="334" width="250" height="28" rx="3" fill="#F9FAFB" stroke="#6B7280" stroke-width="1"/>
+  <text x="480" y="352" text-anchor="middle" font-size="10" fill="#374151">条目：(offsetΔ=30, pos=512)</text>
+
+  <rect x="355" y="368" width="250" height="28" rx="3" fill="#F9FAFB" stroke="#6B7280" stroke-width="1"/>
+  <text x="480" y="386" text-anchor="middle" font-size="10" fill="#374151">条目：(offsetΔ=60, pos=1200)</text>
+
+  <text x="480" y="420" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">稀疏：按近似字节间隔建条目</text>
+  <text x="480" y="438" text-anchor="middle" font-size="10" fill="#6B7280">log.index.interval.bytes 默认 4KB</text>
+  <text x="480" y="462" text-anchor="middle" font-size="10" fill="#374151">二分定位 ≤ 目标 → 进 .log 顺序扫</text>
+
+  
+  <rect x="640" y="260" width="280" height="220" rx="8" fill="#F3F4F6" stroke="#6B7280" stroke-width="2"/>
+  <text x="780" y="284" text-anchor="middle" font-size="13" font-weight="700" fill="#374151">00150.timeindex（时间戳索引）</text>
+
+  <rect x="655" y="296" width="250" height="32" rx="3" fill="#F9FAFB" stroke="#6B7280" stroke-width="1"/>
+  <text x="780" y="316" text-anchor="middle" font-size="11" fill="#374151">时间戳 8B · 相对偏移量 4B = 12B</text>
+
+  <rect x="655" y="334" width="250" height="28" rx="3" fill="#F9FAFB" stroke="#6B7280" stroke-width="1"/>
+  <text x="780" y="352" text-anchor="middle" font-size="10" fill="#374151">条目：(ts=10:00, offsetΔ=30)</text>
+
+  <rect x="655" y="368" width="250" height="28" rx="3" fill="#F9FAFB" stroke="#6B7280" stroke-width="1"/>
+  <text x="780" y="386" text-anchor="middle" font-size="10" fill="#374151">条目：(ts=10:05, offsetΔ=60)</text>
+
+  <text x="780" y="420" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">服务按时间消费</text>
+  <text x="780" y="438" text-anchor="middle" font-size="10" fill="#6B7280">“从昨天 10 点开始消费”</text>
+  <text x="780" y="462" text-anchor="middle" font-size="10" fill="#374151">先用 ts 找偏移量，再回 .index</text>
+
+  
+  <text x="40" y="510" font-size="14" font-weight="700" fill="#111827">按偏移量查找：先选段，再查稀疏索引</text>
+
+  <rect x="40" y="525" width="190" height="50" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="135" y="546" text-anchor="middle" font-size="11" font-weight="700" fill="#059669">① 有序段映射定位</text>
+  <text x="135" y="564" text-anchor="middle" font-size="10" fill="#374151">定位到日志段 B</text>
+
+  <rect x="260" y="525" width="190" height="50" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="355" y="546" text-anchor="middle" font-size="11" font-weight="700" fill="#374151">② .index 二分</text>
+  <text x="355" y="564" text-anchor="middle" font-size="10" fill="#374151">找到 ≤ 目标的条目</text>
+
+  <rect x="480" y="525" width="190" height="50" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="575" y="546" text-anchor="middle" font-size="11" font-weight="700" fill="#059669">③ .log 顺序扫描</text>
+  <text x="575" y="564" text-anchor="middle" font-size="10" fill="#374151">从对应物理位置开始扫描</text>
+
+  <rect x="700" y="525" width="220" height="50" rx="6" fill="#FEF2F7" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="810" y="546" text-anchor="middle" font-size="11" font-weight="700" fill="#EF4444">④ 找到目标或其后的现存记录</text>
+  <text x="810" y="564" text-anchor="middle" font-size="10" fill="#374151">稀疏索引 + 局部顺序扫描</text>
+
+  <line x1="230" y1="550" x2="260" y2="550" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_8_6_arrow)"/>
+  <line x1="450" y1="550" x2="480" y2="550" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_8_6_arrow)"/>
+  <line x1="670" y1="550" x2="700" y2="550" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_8_6_arrow)"/>
+</svg>
+</div><figcaption>图 8-6　分区 → 日志段 → 三个主要文件的目录与内部结构。</figcaption></figure>
+<p>日志段可以按大小或时间切分。段切得太小，文件数量和管理开销会增加；切得太大，单段重写工作量变大，按保留策略整段删除的粒度也更粗。压实（compaction）则按 key 清理旧值，通过重写日志段回收空间，与整段删除互补。</p>
+<h3 id="sec-8.4.3">8.4.3 RecordBatch V2：把一批消息当成一个存储单元</h3>
+<p>V0、V1 即使把多条消息包装后压缩，内部消息仍各带一份元数据，一批中的消息越多，重复开销越明显。</p>
+<p>V2 把一批消息共享的信息集中到 RecordBatch 固定 61 字节的批头中，保存 BaseOffset 等字段；批内记录用相对差值表示时间戳和偏移量。</p>
+<p>批头还保存 ProducerId、ProducerEpoch 和 BaseSequence。这些字段为 Broker 重启后恢复幂等生产所需的状态提供依据。</p>
+<p>批同时是压缩的边界：同批消息往往来自同一生产者、字段结构相同，一起压缩的压缩比更高。读取压缩批中的记录，需要解码该批的压缩流，不能把每条记录当成独立压缩单元直接读取；客户端可以边解压边逐条读取。一次读同批多条记录，批头解析与解压的开销由这些记录共同分摊。</p>
+<h3 id="sec-8.4.4">8.4.4 双索引：偏移量索引 + 时间戳索引</h3>
+<p>Kafka 用偏移量索引和时间戳索引定位已有消息，两套索引都只记录部分位置。</p>
+<p>偏移量索引的条目是 8 字节定长：4 字节相对偏移量（相对日志段起始偏移量）加 4 字节物理位置（在 <code>.log</code> 文件中的字节偏移）。<code>log.index.interval.bytes</code> 控制索引间隔，默认约每 4KB 建一个条目。查找时，先按起始偏移量定位日志段，再在 <code>.index</code> 内二分找到不大于目标的最大偏移量条目，得到物理位置，最后从那里顺序扫描 <code>.log</code>，找到目标或其后的首条现存记录。</p>
+<p>时间戳索引服务于按时间消费的场景，比如“从昨天上午 10 点开始消费”。条目是 12 字节：8 字节时间戳加 4 字节相对偏移量。查询时先用时间戳索引缩小偏移量范围，再通过偏移量索引定位 <code>.log</code> 中的读取位置，继续扫描以找到符合时间条件的记录。</p>
+<p>索引间隔较大时，条目较少，索引体积较小，常用部分更有机会留在页缓存中，定位后通常也需要扫描更长的一段日志。</p>
+<h3 id="sec-8.4.5">8.4.5 格式演进 V0 → V1 → V2</h3>
+<p>Magic 字段标识消息格式版本，供读取端选择解析路径。</p>
+<p class="tab-label"><strong>表 8-1　Kafka 消息格式 V0 / V1 / V2 的字段对比与演进动机</strong></p>
+<div class="table-wrap"><table id="table-8-1"><thead><tr><th>维度</th><th>V0（原始单消息）</th><th>V1（加时间戳）</th><th>V2（RecordBatch）</th></tr></thead><tbody><tr><td>存储单元</td><td>MessageSet 内的 Message</td><td>MessageSet 内的 Message</td><td>RecordBatch（可含一条或多条 Record）</td></tr><tr><td>时间戳</td><td>无</td><td>每条 8 字节</td><td>每条存与 BaseTimestamp 的差值</td></tr><tr><td>偏移量</td><td>每条绝对偏移量</td><td>普通消息为绝对量；压缩内层为相对量</td><td>Batch 存 BaseOffset，每条存差值</td></tr><tr><td>CRC</td><td>每条消息一个 checksum</td><td>每条消息一个 checksum</td><td>每个 Batch 一个 checksum</td></tr><tr><td>压缩</td><td>整包 wrapper 压缩，内层各带元数据</td><td>整包 wrapper 压缩，内层各带元数据</td><td>Batch 级压缩，记录共用批头元数据</td></tr><tr><td>幂等/事务</td><td>不支持</td><td>不支持</td><td>支持（ProducerId/Epoch/BaseSequence）</td></tr><tr><td>演进动机</td><td>——</td><td>加入消息时间语义</td><td>减少重复元数据，支持幂等与事务状态</td></tr></tbody></table></div>
+<h3 id="sec-8.4.6">8.4.6 Tiered Storage：从本地日志到分层存储</h3>
+<p>Kafka 的 Tiered Storage 允许将已关闭的旧日志段保存到远程存储，本地继续保存活跃日志段。</p>
+<p>异步上传前，日志段必须已关闭，段内记录也必须都位于最后稳定偏移量之前。该偏移量之前的消息已达到副本复制的提交条件，涉及的事务也已有提交或中止结果。上传成功后，本地的这段日志可按保留策略删除，节省本地空间。</p>
+<p>历史数据移到远端后，文件格式可以沿用。消费者请求远端数据时，Broker 从远程存储读取，不必把整段重新建成本地日志段。</p>
+<p>副本追赶采用另一条路径。若落后副本所需的数据仍保存在远端，且已不在 Leader 本地，该副本不必将这些旧段重新复制到本地。该副本先恢复与远端段相关的复制辅助状态（如生产者状态快照），再继续拉取 Leader 的本地日志。</p>
+<figure class="fig" id="fig-8-7"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 48 880 248" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_8_7_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_8_7_arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  
+
+  
+  <text x="160" y="70" text-anchor="middle" font-size="13" font-weight="600" fill="#059669">① 本地热段</text>
+  <text x="440" y="70" text-anchor="middle" font-size="13" font-weight="600" fill="#059669">② 段关闭且稳定 → 上传</text>
+  <text x="720" y="70" text-anchor="middle" font-size="13" font-weight="600" fill="#059669">③ 远程已存，本地按策略保留</text>
+
+  
+  <rect x="40" y="90" width="240" height="100" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="160" y="115" text-anchor="middle" font-size="14" font-weight="700" fill="#059669">Kafka Broker 本地磁盘</text>
+  <rect x="60" y="125" width="60" height="30" rx="4" fill="#D1FAE5" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="90" y="145" text-anchor="middle" font-size="11" fill="#374151">.log</text>
+  <rect x="125" y="125" width="60" height="30" rx="4" fill="#D1FAE5" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="155" y="145" text-anchor="middle" font-size="11" fill="#374151">.index</text>
+  <rect x="190" y="125" width="60" height="30" rx="4" fill="#D1FAE5" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="220" y="145" text-anchor="middle" font-size="11" fill="#374151">.timeindex</text>
+  <text x="160" y="178" text-anchor="middle" font-size="11" fill="#6B7280">活跃段：正在追加写入</text>
+
+  
+  <line x1="280" y1="140" x2="338" y2="140" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_7_arrow)"/>
+  <text x="305" y="130" text-anchor="middle" font-size="10" fill="#6B7280">关闭</text>
+
+  
+  <rect x="340" y="90" width="200" height="100" rx="8" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="440" y="115" text-anchor="middle" font-size="14" font-weight="700" fill="#374151">RemoteStorageManager</text>
+  <text x="440" y="140" text-anchor="middle" font-size="12" fill="#374151">异步上传到远程存储</text>
+  <text x="440" y="160" text-anchor="middle" font-size="11" fill="#6B7280">上传日志、索引及辅助状态</text>
+  <text x="440" y="180" text-anchor="middle" font-size="11" fill="#6B7280">上传完成后才可清理本地</text>
+
+  
+  <line x1="540" y1="140" x2="598" y2="140" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_7_arrow)"/>
+
+  
+  <rect x="600" y="90" width="250" height="100" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="725" y="115" text-anchor="middle" font-size="14" font-weight="700" fill="#059669">远程存储</text>
+  <rect x="620" y="125" width="60" height="30" rx="4" fill="#D1FAE5" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="650" y="145" text-anchor="middle" font-size="11" fill="#374151">.log</text>
+  <rect x="685" y="125" width="60" height="30" rx="4" fill="#D1FAE5" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="715" y="145" text-anchor="middle" font-size="11" fill="#374151">.index</text>
+  <rect x="750" y="125" width="60" height="30" rx="4" fill="#D1FAE5" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="780" y="145" text-anchor="middle" font-size="11" fill="#374151">.timeindex</text>
+  <text x="725" y="178" text-anchor="middle" font-size="11" fill="#6B7280">冷段：低频访问</text>
+
+  
+  <rect x="40" y="250" width="810" height="32" rx="6" fill="#F3F4F6" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="445" y="271" text-anchor="middle" font-size="12" font-weight="600" fill="#374151">读取路径：本地段可用则从本地读；本地段已移除则从远端读</text>
+
+  
+  <line x1="120" y1="250" x2="120" y2="195" stroke="#059669" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#fig_8_7_arrow-green)"/>
+  <text x="108" y="225" text-anchor="end" font-size="10" fill="#059669">本地段可用</text>
+
+  
+  <line x1="700" y1="250" x2="700" y2="195" stroke="#059669" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#fig_8_7_arrow-green)"/>
+  <text x="688" y="225" text-anchor="end" font-size="10" fill="#059669">本地段已移除，读远端</text>
+</svg>
+</div><figcaption>图 8-7　Kafka Tiered Storage 日志段生命周期：本地段关闭并满足稳定性条件后异步上传，消费者可经 Broker 读取远端数据。</figcaption></figure>
+<h2 id="sec-8.5">8.5 横向对比</h2>
+<p class="tab-label"><strong>表 8-2　三个软件的存储格式与读写、恢复方式</strong></p>
+<div class="table-wrap"><table id="table-8-2"><thead><tr><th>维度</th><th>Redis</th><th>MySQL</th><th>Kafka</th></tr></thead><tbody><tr><td>数据的主存储位置</td><td>内存</td><td>磁盘</td><td>本地磁盘；启用分层存储时，旧日志段可存于远端</td></tr><tr><td>磁盘文件组织</td><td>RDB 快照文件 / AOF 文件组</td><td>表空间文件，由定长页组成</td><td>分区日志段，由日志文件与索引文件组成</td></tr><tr><td>写方式</td><td>全量重写（RDB）/ 追加与重写（AOF）</td><td>原地改页 + WAL</td><td>新消息追加，压实时重写日志段</td></tr><tr><td>读方式</td><td>加载后在内存中查询</td><td>B+ 树定位与页内查找</td><td>稀疏索引 + 顺序扫描</td></tr><tr><td>索引形态</td><td>持久化文件无 key 索引，查询使用内存结构</td><td>B+ 树 + 页内 Page Directory</td><td>稀疏偏移量 / 时间戳索引</td></tr><tr><td>崩溃恢复</td><td>按配置加载 RDB 或 AOF（可含 RDB base）</td><td>redo 重放 + 双写修页</td><td>以日志为正本，校验并截断残缺尾部</td></tr><tr><td>演进机制</td><td>RDB 版本号 + 编码类型</td><td>行格式与页内格式标记</td><td>Magic 版本号</td></tr><tr><td>损坏检测</td><td>RDB 尾部 CRC64</td><td>页 checksum 与 LSN 对应部分</td><td>Batch 级 CRC</td></tr></tbody></table></div>
+<p>Redis 的线上查询使用内存，持久化文件主要在恢复时加载或重放，无须为查询维护磁盘索引。MySQL 的数据页参与线上随机读取和更新，管理数据页、维护 redo log 与执行双写也就成为持续运行的工作。Kafka 将新消息追加到日志段，把旧记录的淘汰或压实留待之后。</p>
+<h2 id="sec-8.6">8.6 架构启示</h2>
+<h3 id="s180">启示一：使用场景决定文件结构</h3>
+<p>RDB 文件在恢复时顺序读取整份快照，以重建全量内存状态；线上按 key 查询仍使用内存结构。InnoDB 的数据文件参与线上查询和更新，默认用 16KB 页保存多条长短不同的记录。Kafka 让一批消息共享 RecordBatch 的元数据，压缩也以批为单位；读取压缩批内的记录时，需要解码所在批的压缩流。一次读取同批多条记录，可以分摊批头解析和解压的开销。</p>
+<p>文件、页和消息批的划分分别服务于这些读写过程，不能直接由一条业务记录的大小决定。</p>
+<p>随机读取也不要求所有记录等长。在单文件、未压缩的表空间中，InnoDB 可以按页号和页大小计算文件内偏移，页内记录仍可长短不同。Kafka 的偏移量索引条目采用定长编码，保存消息偏移量与实际日志字节位置；找到条目后就能从对应位置读取日志，消息本身仍可变长。RDB 从头顺序恢复，长度字段按数值大小选择编码：加载器先识别首字节中的编码标记，需要额外字节时再读取相应字节，解析出长度后读取内容。定长页和索引条目省去了查找位置的部分工作，顺序读取则允许逐项解析变长字段。</p>
+<h3 id="s181">启示二：索引设计服务于查询需求</h3>
+<p>是否需要磁盘索引、索引保存哪些位置，都与查询怎样使用文件有关。Redis 的线上查询使用内存结构，RDB 因而无须保存用于线上查询的 key 索引。InnoDB 先通过 B+ 树找到数据页，再用页目录把查找范围缩小到一组记录，沿页内记录链逐条比较索引键。Kafka 则先按起始偏移量定位日志段，再用段内索引缩小顺序扫描范围。</p>
+<p>索引也不必为每条记录都保存一个条目。Kafka 的段内索引与 InnoDB 的页目录都只记录部分位置，定位后再作局部查找。Kafka 的段内索引默认约每 4KB 日志数据记录一个条目；增大这个间隔会减少索引条目，定位后通常需要扫描更长的一段日志。索引保存在独立文件中，常用部分能否命中操作系统页缓存，也会影响查找开销。InnoDB 的页目录则和记录放在同一数据页中，一起进入缓冲池。页目录中的条目称为槽，槽数会影响目录占用的页内空间，也会影响在这一页内查找记录时的比较次数。</p>
+<h3 id="s182">启示三：已有数据约束格式升级</h3>
+<p>Redis 用 listpack 取代 ziplist 时，RDB 新增类型码、把版本号升到 v10，加载器保留旧编码的读取与转换路径。MySQL 8.0 支持 Dynamic、Compact 等行格式，改变新表默认采用的行格式，不会自动转换已有表。Kafka 用消息或批中的 Magic 字段识别格式，读取时选用对应的解析路径。三者都需要处理已经写出的数据。</p>
+<p>RDB 可以根据内存中的完整状态重新生成；MySQL 的既有表空间持续参与线上读写；Kafka 追加新消息时，保留期内的历史日志仍供消费者读取。旧数据能在什么环节被替换，三者的条件不同。新的 RDB 可以替换旧快照，已有表需要另行安排转换，历史日志可以继续按受支持的旧格式读取，或在保留期结束后淘汰。只要仍需读取旧文件，对应的解析路径就还要维护。</p>
+<p>这些做法解决的是新程序怎样读取已有文件。旧程序读取新文件时，还要约定不认识的字段怎样处理。以新增一个只用于展示的备注字段为例，旧解析器需要能识别这个未知字段的边界，并按约定跳过它，才能继续读取后面的内容；新字段若改变了记录的解释方式，旧程序拒绝读取反而更安全。</p>
+<p>格式升级时，可以让新程序同时读取新旧两种格式，也可以在交接窗口里把旧文件一次性转换掉。前一种做法允许旧文件继续使用，兼容代码也需要继续维护；后一种做法把文件转换集中到交接窗口，转换时机要与新旧程序的切换配合。</p>
+<figure class="fig" id="fig-8-8"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 420" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_8_8_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+
+  
+
+  
+  <rect x="40" y="84" width="250" height="100" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="165" y="111" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">第一问</text>
+  <text x="165" y="139" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">磁盘文件是否参与</text>
+  <text x="165" y="162" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">线上数据读取？</text>
+
+  <rect x="350" y="84" width="250" height="100" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="475" y="111" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">第二问</text>
+  <text x="475" y="139" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">已有记录是否需要</text>
+  <text x="475" y="162" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">在文件中原地更新？</text>
+
+  
+  <line x1="165" y1="184" x2="165" y2="246" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_8_arrow)"/>
+  <text x="181" y="217" font-size="11" font-weight="700" fill="#374151">否</text>
+  <line x1="290" y1="134" x2="346" y2="134" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_8_arrow)"/>
+  <text x="318" y="123" text-anchor="middle" font-size="11" font-weight="700" fill="#374151">是</text>
+
+  
+  <line x1="475" y1="184" x2="475" y2="246" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_8_arrow)"/>
+  <text x="491" y="217" font-size="11" font-weight="700" fill="#374151">是</text>
+  <path d="M 600 134 L 775 134 L 775 246" fill="none" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_8_8_arrow)"/>
+  <text x="682" y="123" text-anchor="middle" font-size="11" font-weight="700" fill="#374151">否</text>
+
+  
+  <rect x="40" y="250" width="250" height="156" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.8"/>
+  <text x="165" y="280" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">Redis：内存为主</text>
+  <text x="165" y="311" text-anchor="middle" font-size="12" fill="#374151">线上查询使用内存数据</text>
+  <text x="165" y="336" text-anchor="middle" font-size="12" fill="#374151">RDB：从内存全量生成</text>
+  <text x="165" y="361" text-anchor="middle" font-size="12" fill="#374151">AOF：追加命令并重写</text>
+  <text x="165" y="386" text-anchor="middle" font-size="12" fill="#374151">磁盘文件用于恢复内存状态</text>
+
+  <rect x="350" y="250" width="250" height="156" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.8"/>
+  <text x="475" y="280" text-anchor="middle" font-size="15" font-weight="700" fill="#D97706">InnoDB：定长页</text>
+  <text x="475" y="316" text-anchor="middle" font-size="12" fill="#374151">磁盘页参与线上数据读取</text>
+  <text x="475" y="344" text-anchor="middle" font-size="12" fill="#374151">按页定位并修改已有记录</text>
+  <text x="475" y="372" text-anchor="middle" font-size="12" fill="#374151">页内可保存变长记录</text>
+
+  <rect x="650" y="250" width="250" height="156" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.8"/>
+  <text x="775" y="280" text-anchor="middle" font-size="15" font-weight="700" fill="#059669">Kafka：日志段</text>
+  <text x="775" y="316" text-anchor="middle" font-size="12" fill="#374151">磁盘日志保存消息</text>
+  <text x="775" y="344" text-anchor="middle" font-size="12" fill="#374151">新消息顺序追加</text>
+  <text x="775" y="372" text-anchor="middle" font-size="12" fill="#374151">按 offset 经稀疏索引定位</text>
+  <text x="775" y="393" text-anchor="middle" font-size="11" fill="#6B7280">再作局部顺序扫描</text>
+</svg>
+</div><figcaption>图 8-8　本章三个样本的文件职责与访问路径。</figcaption></figure>
+<h2 id="sec-8.7">8.7 小结</h2>
+<p>存储格式限定了记录怎样定位和更新，也影响重启时的数据重建与运行中的旧数据清理。<a class="xref" href="09-data-sync.html">第 9 章</a>接着讨论数据同步：当增量无法继续衔接时，系统从哪里重新取得完整状态。</p><nav class="page-nav"><a href="07-cluster.html">← 第 7 章 集群架构 — 从单点到分布式</a><a href="09-data-sync.html">第 9 章 数据同步机制 — 集群一致性的实现 →</a></nav></article>
+</main>
+</div>
+<script>
+(function(){
+  var btn=document.querySelector('.toc-toggle'),nav=document.getElementById('toc'),bd=document.getElementById('bd');
+  if(btn){btn.addEventListener('click',function(){nav.classList.toggle('open');if(bd)bd.classList.toggle('show',nav.classList.contains('open'))});}
+  if(bd){bd.addEventListener('click',function(){nav.classList.remove('open');bd.classList.remove('show');});}
+  // 当前章节高亮
+  var secs=Array.prototype.slice.call(document.querySelectorAll('section.chapter'));
+  var links=Array.prototype.slice.call(document.querySelectorAll('nav.toc a[data-target]'));
+  if('IntersectionObserver' in window && links.length){
+    var map={};links.forEach(function(a){map[a.getAttribute('data-target')]=a;});
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){a.parentElement.classList.remove('active');});
+          var a=map[e.target.id]; if(a)a.parentElement.classList.add('active');
+        }
+      });
+    },{rootMargin:'-10% 0px -75% 0px',threshold:0});
+    secs.forEach(function(s){io.observe(s);});
+  }
+})();
+</script>
+<script>
+(function(){
+  var layout=document.querySelector('.layout'),drag=document.getElementById('tocDrag');
+  var colBtn=document.getElementById('tocCollapse'),expBtn=document.getElementById('tocExpand');
+  var KEY_W='paged.tocW',KEY_C='paged.tocCollapsed';
+  try{
+    var w=localStorage.getItem(KEY_W);
+    if(w&&layout)layout.style.setProperty('--toc-w',w);
+    if(localStorage.getItem(KEY_C)==='1')document.body.classList.add('toc-collapsed');
+  }catch(e){}
+  if(colBtn){colBtn.addEventListener('click',function(){
+    document.body.classList.add('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'1');}catch(e){}
+  });}
+  if(expBtn){expBtn.addEventListener('click',function(){
+    document.body.classList.remove('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'0');}catch(e){}
+  });}
+  if(drag&&layout){
+    drag.addEventListener('pointerdown',function(e){
+      e.preventDefault();
+      document.body.classList.add('toc-dragging');
+      drag.classList.add('active');
+      function mv(ev){
+        var left=layout.getBoundingClientRect().left;
+        var w=Math.min(Math.max(ev.clientX-left,200),520);
+        layout.style.setProperty('--toc-w',Math.round(w)+'px');
+      }
+      function up(){
+        document.body.classList.remove('toc-dragging');
+        drag.classList.remove('active');
+        try{localStorage.setItem(KEY_W,layout.style.getPropertyValue('--toc-w'));}catch(e2){}
+        window.removeEventListener('pointermove',mv);
+        window.removeEventListener('pointerup',up);
+      }
+      window.addEventListener('pointermove',mv);
+      window.addEventListener('pointerup',up);
+    });
+  }
+})();
+</script>
+</body>
+</html>

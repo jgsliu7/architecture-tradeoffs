@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 420" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+
+  <text x="470" y="36" text-anchor="middle" font-size="18" font-weight="700" fill="#111827">图 8-8　本章三个样本的文件职责与访问路径</text>
+
+  <!-- 两个问题：先看磁盘文件是否参与线上读取，再看是否原地修改。 -->
+  <rect x="40" y="84" width="250" height="100" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="165" y="111" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">第一问</text>
+  <text x="165" y="139" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">磁盘文件是否参与</text>
+  <text x="165" y="162" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">线上数据读取？</text>
+
+  <rect x="350" y="84" width="250" height="100" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="475" y="111" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">第二问</text>
+  <text x="475" y="139" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">已有记录是否需要</text>
+  <text x="475" y="162" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">在文件中原地更新？</text>
+
+  <!-- 第一问：否到 Redis，是进入第二问。 -->
+  <line x1="165" y1="184" x2="165" y2="246" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="181" y="217" font-size="11" font-weight="700" fill="#374151">否</text>
+  <line x1="290" y1="134" x2="346" y2="134" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="318" y="123" text-anchor="middle" font-size="11" font-weight="700" fill="#374151">是</text>
+
+  <!-- 第二问：是到 InnoDB，否到 Kafka。 -->
+  <line x1="475" y1="184" x2="475" y2="246" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="491" y="217" font-size="11" font-weight="700" fill="#374151">是</text>
+  <path d="M 600 134 L 775 134 L 775 246" fill="none" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="682" y="123" text-anchor="middle" font-size="11" font-weight="700" fill="#374151">否</text>
+
+  <!-- 本章三个样本的主要文件职责与访问方式。 -->
+  <rect x="40" y="250" width="250" height="156" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.8"/>
+  <text x="165" y="280" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">Redis：内存为主</text>
+  <text x="165" y="311" text-anchor="middle" font-size="12" fill="#374151">线上查询使用内存数据</text>
+  <text x="165" y="336" text-anchor="middle" font-size="12" fill="#374151">RDB：从内存全量生成</text>
+  <text x="165" y="361" text-anchor="middle" font-size="12" fill="#374151">AOF：追加命令并重写</text>
+  <text x="165" y="386" text-anchor="middle" font-size="12" fill="#374151">磁盘文件用于恢复内存状态</text>
+
+  <rect x="350" y="250" width="250" height="156" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.8"/>
+  <text x="475" y="280" text-anchor="middle" font-size="15" font-weight="700" fill="#D97706">InnoDB：定长页</text>
+  <text x="475" y="316" text-anchor="middle" font-size="12" fill="#374151">磁盘页参与线上数据读取</text>
+  <text x="475" y="344" text-anchor="middle" font-size="12" fill="#374151">按页定位并修改已有记录</text>
+  <text x="475" y="372" text-anchor="middle" font-size="12" fill="#374151">页内可保存变长记录</text>
+
+  <rect x="650" y="250" width="250" height="156" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.8"/>
+  <text x="775" y="280" text-anchor="middle" font-size="15" font-weight="700" fill="#059669">Kafka：日志段</text>
+  <text x="775" y="316" text-anchor="middle" font-size="12" fill="#374151">磁盘日志保存消息</text>
+  <text x="775" y="344" text-anchor="middle" font-size="12" fill="#374151">新消息顺序追加</text>
+  <text x="775" y="372" text-anchor="middle" font-size="12" fill="#374151">按 offset 经稀疏索引定位</text>
+  <text x="775" y="393" text-anchor="middle" font-size="11" fill="#6B7280">再作局部顺序扫描</text>
+</svg>

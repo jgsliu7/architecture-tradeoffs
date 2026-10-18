@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 10 章 总结：架构设计的共性规律与取舍</title>
+<style>
+*{box-sizing:border-box}
+:root{--ink:#1f2328;--mute:#57606a;--line:#d8dee4;--accent:#4f46e5;--bg:#fff;--soft:#f6f8fa}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;color:var(--ink);background:#fff;line-height:1.8;font-size:16px}
+.layout{display:grid;grid-template-columns:var(--toc-w,292px) 6px 1fr;max-width:1340px;margin:0 auto;transition:grid-template-columns .2s}
+body.toc-dragging .layout{transition:none}
+nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 24px 8px;font-size:14px;min-width:0}
+main.content{min-width:0}
+.toc-drag{position:sticky;top:0;align-self:start;height:100vh;cursor:col-resize;background:var(--line);transition:background .15s}
+.toc-drag:hover,.toc-drag.active{background:var(--accent)}
+body.toc-dragging{user-select:none;cursor:col-resize}
+.toc-collapse{position:absolute;top:16px;right:8px;border:1px solid var(--line);background:#fff;color:var(--mute);border-radius:6px;width:24px;height:24px;font-size:13px;line-height:1;cursor:pointer;padding:0}
+.toc-collapse:hover{color:var(--accent);border-color:var(--accent)}
+.toc-expand{display:none;position:fixed;left:0;top:120px;z-index:55;border:1px solid var(--line);border-left:none;background:#fff;color:var(--mute);border-radius:0 8px 8px 0;padding:10px 6px;font-size:14px;cursor:pointer;box-shadow:2px 2px 8px rgba(0,0,0,.08)}
+.toc-expand:hover{color:var(--accent)}
+body.toc-collapsed .layout{grid-template-columns:1fr}
+body.toc-collapsed nav.toc,body.toc-collapsed .toc-drag{display:none}
+body.toc-collapsed .toc-expand{display:block}
+.toc-title{font-weight:700;font-size:15px;color:var(--accent);margin:0 0 4px 8px}
+.toc-title a{color:inherit;text-decoration:none}
+.toc-sub{font-size:12px;color:var(--mute);margin:0 0 16px 8px}
+nav.toc ul{list-style:none;padding:0;margin:0}
+nav.toc li>a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.5}
+nav.toc li>a:hover{background:var(--soft)}
+nav.toc li.active>a{background:#eef2ff;color:var(--accent);font-weight:600}
+nav.toc li.nav-sub>a{padding-left:22px;font-size:13px;color:var(--mute)}
+.content{padding:32px 48px 120px;max-width:1000px;overflow-wrap:anywhere}
+.chapter-meta{color:var(--mute);font-size:13px;margin:0 0 18px}
+.page-nav{display:flex;justify-content:space-between;gap:16px;margin:40px 0 0;padding-top:20px;border-top:1px solid var(--line)}
+.page-nav a{display:block;max-width:48%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--ink);background:var(--soft);line-height:1.5}
+.page-nav a:hover{border-color:var(--accent);color:var(--accent)}
+.page-nav .empty{visibility:hidden}
+h1,h2,h3,h4{line-height:1.35;color:var(--ink);font-weight:700}
+h1{font-size:1.9em;margin:0 0 .6em;padding-bottom:.3em}
+h2{font-size:1.42em;margin:1.8em 0 .6em}
+h3{font-size:1.18em;margin:1.5em 0 .5em}
+h4{font-size:1.04em;margin:1.3em 0 .4em;color:#24292f}
+p{margin:0 0 1em}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+strong{font-weight:700;color:#111827}
+em{font-style:normal;color:var(--mute)}
+hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
+code{font-family:"SF Mono",Menlo,Consolas,monospace;background:var(--soft);padding:.12em .4em;border-radius:4px;font-size:.9em;color:#24292f}
+pre{background:#1e1e2e;color:#cdd6f4;padding:16px 18px;border-radius:8px;overflow-x:auto;line-height:1.55}
+pre code{background:none;color:inherit;padding:0;font-size:.86em}
+blockquote{margin:1.2em 0;padding:.6em 1em .6em 1.1em;border-left:4px solid var(--accent);background:#f7f8ff;color:#343a40;border-radius:0 6px 6px 0}
+blockquote strong{color:var(--accent)}
+ul,ol{margin:0 0 1em;padding-left:1.7em}
+li{margin:.25em 0}
+.table-wrap{overflow-x:auto;margin:1.2em 0}
+table{border-collapse:collapse;width:100%;font-size:.94em}
+th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+thead th{background:#eef2ff;color:#3730a3;font-weight:600}
+tbody tr:nth-child(even){background:#fafbfd}
+figure.fig{margin:2em calc((100% - 1000px)/2);text-align:center}
+.svg-wrap,.inline-svg{display:block;width:100%}
+figure.fig svg,.inline-svg svg,.svg-wrap svg,figure.fig img{width:100%;max-width:1000px;height:auto;display:block;margin:0 auto}
+figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
+.toc-toggle{display:none}
+.review-index{display:grid;gap:12px;margin:24px 0 0}
+.review-index a{display:block;padding:14px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;background:#fff}
+.review-index a:hover{border-color:var(--accent);background:#f7f8ff}
+.review-index strong{display:block;color:var(--ink)}
+.review-index span{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+@media(max-width:1200px){figure.fig{margin:2em auto}}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:fixed;left:0;top:0;width:292px;background:#fff;z-index:50;transform:translateX(-100%);transition:transform .2s;box-shadow:2px 0 12px rgba(0,0,0,.08)}
+  nav.toc.open{transform:translateX(0)}
+  body.toc-collapsed nav.toc{display:block}
+  .toc-drag,.toc-collapse,.toc-expand{display:none!important}
+  .content{padding:20px 18px 80px;max-width:100%;min-width:0}
+  .toc-toggle{display:inline-block;position:fixed;right:16px;bottom:16px;z-index:60;background:var(--accent);color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer}
+  .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:40}
+  .backdrop.show{display:block}
+  /* 窄屏宽图改为容器内横向滚动，文字保持可读 */
+  .svg-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  figure.fig svg{min-width:760px}
+}
+@media print{a.xref{color:inherit}}
+</style>
+</head>
+<body>
+<div class="backdrop" id="bd"></div>
+<button class="toc-toggle">目录</button>
+<button class="toc-expand" id="tocExpand" title="展开目录">»</button>
+<div class="layout">
+<nav class="toc" id="toc">
+  <button class="toc-collapse" id="tocCollapse" title="收起目录">«</button>
+  <div class="toc-title"><a href="../index.html">架构取舍之道</a></div>
+  <div class="toc-sub">在线阅读版</div>
+  <ul>
+<li><a href="../index.html">首页目录</a></li>
+<li><a href="00-preface.html">序言</a>
+</li>
+<li><a href="01-introduction.html">第 1 章 引言 — 为什么是这三个软件</a>
+</li>
+<li><a href="02-data-structures-protocols.html">第 2 章 数据结构与协议 — 为各自的目标而设计</a>
+</li>
+<li><a href="03-lifecycle.html">第 3 章 生命周期管理 — 优雅启动与关闭</a>
+</li>
+<li><a href="04-memory-disk.html">第 4 章 内存与磁盘 — 速度与持久化的平衡</a>
+</li>
+<li><a href="05-layered-architecture.html">第 5 章 分层架构设计 — 存储层 / 逻辑层 / 交互层</a>
+</li>
+<li><a href="06-security.html">第 6 章 安全机制 — 权限、加密、审计</a>
+</li>
+<li><a href="07-cluster.html">第 7 章 集群架构 — 从单点到分布式</a>
+</li>
+<li><a href="08-storage-format.html">第 8 章 磁盘存储格式 — 文件结构的设计哲学</a>
+</li>
+<li><a href="09-data-sync.html">第 9 章 数据同步机制 — 集群一致性的实现</a>
+</li>
+<li class="active"><a href="10-summary.html">第 10 章 总结：架构设计的共性规律与取舍</a>
+<ul>
+<li class="nav-sub"><a href="#s222">本章导读</a></li>
+<li class="nav-sub"><a href="#sec-10.1">10.1 前九章的关键选择</a></li>
+<li class="nav-sub"><a href="#sec-10.2">10.2 从三个软件归纳的共性规律</a></li>
+<li class="nav-sub"><a href="#sec-10.3">10.3 把规律用于具体选择</a></li>
+<li class="nav-sub"><a href="#sec-10.4">10.4 验证关键判断</a></li>
+<li class="nav-sub"><a href="#sec-10.5">10.5 小结</a></li>
+</ul>
+</li>
+<li><a href="10-epilogue.html">后记</a>
+</li>
+<li><a href="11-references.html">附录　参考文献与延伸阅读（按章索引）</a>
+</li>
+</ul>
+</nav>
+<div class="toc-drag" id="tocDrag" title="拖拽调整目录宽度"></div>
+<main class="content">
+<article class="chapter"><h1 id="s221">第 10 章 总结：架构设计的共性规律与取舍</h1>
+<h2 id="s222">本章导读</h2>
+<p>前九章以 Redis、MySQL、Kafka 为样本，讨论了同一组设计问题；内存结构、事务恢复和批量日志等不同选择，都有各自成立的条件。本章从这些选择归纳能用于自己系统的取舍规律。</p>
+<hr>
+<h2 id="sec-10.1">10.1 前九章的关键选择</h2>
+<p><a class="xref" href="01-introduction.html">第 1 章</a>说明为什么选 Redis、MySQL、Kafka 作为观察样本；<a class="xref" href="#table-10-1">表 10-1</a> 对照第 2 至<a class="xref" href="09-data-sync.html">第 9 章</a>三个软件的关键决策。</p>
+<p class="tab-label"><strong>表 10-1　八个主题的关键决策</strong></p>
+<div class="table-wrap"><table id="table-10-1"><thead><tr><th>章</th><th>核心问题</th><th>Redis 的关键决策</th><th>MySQL 的关键决策</th><th>Kafka 的关键决策</th><th>一句话共性启示</th></tr></thead><tbody><tr><td><a class="xref" href="02-data-structures-protocols.html">第 2 章</a> 数据结构与协议</td><td>如何按主要访问方式组织数据与通信</td><td>RESP 分帧 + 按类型和数据规模选择结构与编码</td><td>B+ 树 + Dynamic 行格式 + 文本/二进制协议与预编译</td><td>RecordBatch V2 批量编码 + 变长整数/增量时间戳</td><td>数据结构与编码服务主要访问方式，协议减少每次访问重复的工作</td></tr><tr><td><a class="xref" href="03-lifecycle.html">第 3 章</a> 生命周期</td><td>启动和关闭各要完成哪些工作</td><td>启动时加载 RDB 或重放 AOF；关闭时完成已启用的 AOF 刷盘，并选择是否生成 RDB</td><td>崩溃恢复时重放 redo log、用 undo log 回滚未提交事务；关闭档位决定刷盘与清理工作如何安排</td><td>检查并恢复分区日志、取得所需元数据；受控关闭先交接分区 Leader</td><td>启动重建运行状态；关闭完成必要收尾，职责可在退出前交接或退出后接管</td></tr><tr><td><a class="xref" href="04-memory-disk.html">第 4 章</a> 内存与磁盘</td><td>内存和磁盘怎么分工</td><td>内存保存运行数据，磁盘文件用于恢复</td><td>磁盘保存数据页和日志，内存作缓冲</td><td>分区日志保存消息，PageCache 加速访问</td><td>访问模式影响内存与磁盘的分工，以及故障后的恢复方式</td></tr><tr><td><a class="xref" href="05-layered-architecture.html">第 5 章</a> 分层架构</td><td>怎样划分职责与变化边界</td><td>redisObject 的 type/encoding 分离</td><td>THD + Handler 虚函数（可插拔引擎）</td><td>RequestChannel 队列 + 对象调用，跨 Broker 使用网络协议</td><td>分层隔离职责与变化，接口契约影响替换范围与演进成本</td></tr><tr><td><a class="xref" href="06-security.html">第 6 章</a> 安全</td><td>怎样确认身份、限制访问、保护数据和追查操作</td><td>requirepass 与 ACL</td><td>用户、角色与对象权限，授权表持久保存</td><td>SASL + ACL + 按连接配置 TLS</td><td>安全设计需要区分身份、权限范围及每段连接的保护</td></tr><tr><td><a class="xref" href="07-cluster.html">第 7 章</a> 集群</td><td>数据怎么分片，故障怎么接管</td><td>主从复制、Sentinel 自动接管与 Cluster 槽分片 + Gossip</td><td>异步或半同步复制；MGR 通过基于 Paxos 的组通信进行多数派协调</td><td>分区 + ISR + KRaft（去 ZooKeeper）</td><td>复制确认与故障处理提供不同保证，按业务需求权衡代价</td></tr><tr><td><a class="xref" href="08-storage-format.html">第 8 章</a> 存储格式</td><td>字节怎么排列才好访问</td><td>RDB/AOF 为“全量加载 + 增量重放”优化</td><td>默认 16KB 页 + B+ 树为“点查 + 范围扫描”优化</td><td>日志段 + 稀疏索引为“顺序追加 + 偏移量定位”优化</td><td>格式需要协调访问、恢复与兼容，发布后就是一笔长期债务</td></tr><tr><td><a class="xref" href="09-data-sync.html">第 9 章</a> 数据同步</td><td>怎么让副本对齐数据</td><td>PSYNC2（部分重同步 + 全量回退）</td><td>binlog + GTID 集合（识别已接收和执行事务）</td><td>ISR + leader epoch 日志对齐 + acks/幂等/事务</td><td>在匹配的复制历史内确认进度，并依靠保留的日志或快照补齐数据</td></tr></tbody></table></div>
+<p>这些选择串起来只有一条主线：<strong>约束决定哪些选项可行，目标决定在可行选项里怎么选</strong>。三个软件面对的是同一组物理约束：内存有限、磁盘慢、网络会分区、机器会宕。</p>
+<hr>
+<h2 id="sec-10.2">10.2 从三个软件归纳的共性规律</h2>
+<h3 id="sec-10.2.1">10.2.1 规律一：先确定数据的正本</h3>
+<blockquote><strong>先为每类数据确定权威来源（source of truth），再区分副本和派生结果。权威来源可以由多个物理副本共同保存；保留它和必要的恢复材料，其他数据才有重建依据。</strong></blockquote>
+<p>在 Redis 中，内存键空间是运行时处理命令的依据，RDB 保存快照，AOF 保存恢复数据所需的日志。崩溃后能恢复到哪里，取决于已保存的持久化内容。</p>
+<p>在 MySQL 中，磁盘上的数据页和已持久化的 redo log 共同提供崩溃恢复依据，缓冲池里尚未刷回的修改可以通过 redo 恢复。</p>
+<p>在 Kafka 中，消息保存在分区日志中，PageCache 缓存日志内容，多个副本共同提供容错能力。消费组的进度是另一份需要单独保存的状态，提交的偏移量标记下次从哪里继续消费。</p>
+<p>如果把缓存和数据库都当正本，两者不一致时就难以确定应恢复哪份数据。</p>
+<p>系统以哪份数据为准，与数据平时放在哪里，是两个问题。Redis 以内存保存运行数据；MySQL 的缓冲池和 Kafka 使用的 PageCache 则缓存磁盘内容。<a class="xref" href="#fig-10-1">图 10-1</a> 将这些安排与处理器、内存、磁盘的存储层次对照。硬件的访问延迟与容量约束，会影响这三个软件的数据放置方式。</p>
+<figure class="fig" id="fig-10-1"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 486" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_10_1_arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6B7280"/>
+    </marker>
+  </defs>
+
+  
+  
+
+  
+  <text x="255" y="64" text-anchor="middle" font-size="15" font-weight="700" fill="#374151">处理器：硬件的存储层次</text>
+  <text x="665" y="64" text-anchor="middle" font-size="15" font-weight="700" fill="#374151">三个软件：内存与磁盘的分工</text>
+  <text x="665" y="84" text-anchor="middle" font-size="11.5" fill="#6B7280"><tspan fill="#4F46E5">Redis</tspan> · <tspan fill="#D97706">MySQL</tspan> · <tspan fill="#059669">Kafka</tspan> 在内存与磁盘之间</text>
+
+  
+  
+  <rect x="155" y="96" width="200" height="52" rx="6" fill="#F9FAFB" stroke="#6B7280" stroke-width="1.4"/>
+  <text x="255" y="127" text-anchor="middle" font-size="13.5" font-weight="700" fill="#111827">寄存器</text>
+
+  
+  <rect x="130" y="164" width="250" height="68" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4"/>
+  <text x="255" y="192" text-anchor="middle" font-size="13.5" font-weight="700" fill="#111827">L1 / L2 缓存</text>
+  <text x="255" y="212" text-anchor="middle" font-size="11" fill="#4B5563">缓存近期访问的数据</text>
+
+  
+  <rect x="110" y="248" width="290" height="84" rx="6" fill="#E5E7EB" stroke="#6B7280" stroke-width="1.4"/>
+  <text x="255" y="282" text-anchor="middle" font-size="13.5" font-weight="700" fill="#111827">内存（DRAM）</text>
+  <text x="255" y="304" text-anchor="middle" font-size="11" fill="#4B5563">主存，容量与速度居中</text>
+
+  
+  <rect x="90" y="348" width="330" height="108" rx="6" fill="#D1D5DB" stroke="#6B7280" stroke-width="1.4"/>
+  <text x="255" y="388" text-anchor="middle" font-size="13.5" font-weight="700" fill="#111827">磁盘</text>
+  <text x="255" y="410" text-anchor="middle" font-size="11" fill="#4B5563">机械盘 / SSD，持久化介质</text>
+  <text x="255" y="430" text-anchor="middle" font-size="11" fill="#4B5563">最慢也最大的一层</text>
+
+  
+
+  
+  <rect x="540" y="164" width="250" height="68" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.4"/>
+  <text x="665" y="192" text-anchor="middle" font-size="13.5" font-weight="700" fill="#111827">进程内缓存 · 缓冲池</text>
+  <text x="665" y="212" text-anchor="middle" font-size="11" fill="#4B5563"><tspan fill="#D97706">MySQL</tspan> Buffer Pool、应用内缓存</text>
+
+  
+  <rect x="520" y="248" width="290" height="84" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4"/>
+  <text x="665" y="282" text-anchor="middle" font-size="13.5" font-weight="700" fill="#111827">PageCache · Redis 内存主存储</text>
+  <text x="665" y="304" text-anchor="middle" font-size="11" fill="#4B5563"><tspan fill="#059669">Kafka</tspan> 读写日志段走 PageCache</text>
+  <text x="665" y="322" text-anchor="middle" font-size="11" fill="#4B5563"><tspan fill="#4F46E5">Redis</tspan> 全量数据驻内存</text>
+
+  
+  <rect x="500" y="348" width="330" height="108" rx="6" fill="#D1D5DB" stroke="#6B7280" stroke-width="1.4"/>
+  <text x="665" y="388" text-anchor="middle" font-size="13.5" font-weight="700" fill="#111827">磁盘：数据页 · 日志段</text>
+  <text x="665" y="410" text-anchor="middle" font-size="11" fill="#4B5563"><tspan fill="#D97706">MySQL</tspan> 数据页 · <tspan fill="#059669">Kafka</tspan> 日志段</text>
+  <text x="665" y="430" text-anchor="middle" font-size="11" fill="#4B5563"><tspan fill="#4F46E5">Redis</tspan> RDB / AOF 也在此落盘</text>
+
+  
+  <line x1="380" y1="198" x2="540" y2="198" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <text x="460" y="190" text-anchor="middle" font-size="11" fill="#6B7280">缓存作用</text>
+  <line x1="400" y1="290" x2="520" y2="290" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <text x="460" y="282" text-anchor="middle" font-size="11" fill="#6B7280">内存层</text>
+  <line x1="420" y1="402" x2="500" y2="402" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <text x="460" y="394" text-anchor="middle" font-size="11" fill="#6B7280">磁盘层</text>
+
+  
+  <line x1="54" y1="102" x2="54" y2="450" stroke="#6B7280" stroke-width="1.4" marker-start="url(#fig_10_1_arrowGray)" marker-end="url(#fig_10_1_arrowGray)"/>
+  <text x="54" y="88" text-anchor="middle" font-size="11.5" fill="#374151">更快 · 更小</text>
+  <text x="54" y="470" text-anchor="middle" font-size="11.5" fill="#374151">更慢 · 更大</text>
+
+
+</svg>
+</div><figcaption>图 10-1　存储层次的对照：左侧为处理器与存储介质，右侧为三个软件使用内存与磁盘的方式。</figcaption></figure>
+<h3 id="sec-10.2.2">10.2.2 规律二：分层隔离实现变化</h3>
+<blockquote><strong>稳定的契约留在层间，多变的实现隔离在层内——这是一个比“高内聚低耦合”更可操作的判据。</strong></blockquote>
+<p>分层要隔离具体的变化。Redis 区分数据类型与底层编码，让内部表示可以改变，而命令语义保持稳定；MySQL 用 Handler 接口分开 SQL 处理与存储引擎；Kafka 在增加远程存储后，客户端仍按分区和 offset 读取日志。它们保留的是对外约定，把需要调整的实现放在内部。</p>
+<p>两套实现是否需要相互替换、接口契约由谁长期维护，是决定是否抽接口的前提。若替换需求还不明确，只是猜测未来可能发生变化，抽接口反而多了一处维护成本；替换需求明确时，才值得用接口限定变化范围。</p>
+<h3 id="sec-10.2.3">10.2.3 规律三：顺序访问与批量处理降低开销</h3>
+<blockquote><strong>顺序访问可以减少定位开销，批量处理可以摊薄系统调用和网络往返的成本。</strong></blockquote>
+<p>Redis 的 pipeline 连续发送多条命令，减少逐条等待网络往返。MySQL 用修改缓冲延后处理符合条件的二级索引页修改，减少立即读页的随机 I/O；组提交让多个事务共享日志刷盘。Kafka 把消息组织成 RecordBatch，生产与副本拉取都可以成批进行。它们通过集中处理原本分散的工作，减少或分摊重复开销。</p>
+<p>机械盘寻道、网络往返和系统调用都有固定开销。合并循环中的单条调用，可以减少反复调用的开销；调整访问顺序和数据布局，则可能减少随机 I/O。改访问方式带来的收益，应在换硬件之前核算。</p>
+<h3 id="sec-10.2.4">10.2.4 规律四：可靠性要求决定持久化与复制策略</h3>
+<blockquote><strong>提高可靠性，常要增加同步等待、复制或持久化工作。</strong></blockquote>
+<p>Redis 的 AOF 和 MySQL 的提交日志配置决定何时刷盘；MySQL 半同步复制与 Kafka 的 <code>acks</code>、最小 ISR 约束决定等待多少副本确认，以及确认不足时能否继续写入。本地持久化与复制确认处理的是不同故障，等待也发生在不同位置。</p>
+<p>业务方与 SRE 共同确定要防哪类故障、愿意承担多少延迟、能容忍多少数据丢失，这些约束才是选择刷盘和副本确认条件的依据。</p>
+<h3 id="sec-10.2.5">10.2.5 规律五：故障恢复依赖明确的状态记录</h3>
+<blockquote><strong>复杂状态必须显式建模，并为影响恢复的关键状态预先写定恢复路径。</strong></blockquote>
+<p>Redis 根据 RDB/AOF 重建键空间；MySQL 用 redo 重放尚未写回数据页的修改，用 undo 回滚未提交事务；Kafka 根据分区日志与副本进度判断副本能否接管。恢复动作取决于留下了哪些状态记录。</p>
+<p>例如，同一项任务尚未开始、已经完成且调用方收到确认，或已经完成但调用方未收到确认时，需要的处理就不一样。重试和恢复的设计需要以这些状态及其记录方式为依据。</p>
+<hr>
+<h2 id="sec-10.3">10.3 把规律用于具体选择</h2>
+<p>每类数据丢失后能否重建、故障时哪些请求必须拒绝、恢复要等多久，决定了系统需要提供的保证；访问模式、负载增长和团队的维护能力则影响实现方式。</p>
+<p>以网约车系统为例。假设团队人手有限，第一版的重点是按期上线，当前负载也不大；评估表明，单个 MySQL 实例已能满足位置检索与订单处理的要求。</p>
+<p>第一版可以用 MySQL 保存订单和司机近期位置。若高频位置查询后来成为主要压力，再引入 Redis 的 GEO 索引保存近期位置、筛选候选司机；订单的权威状态仍由 MySQL 保存。</p>
+<p>两类数据的恢复方式不同。近期位置可以由后续上报更新，已经确认的订单不能靠下一次请求补回来。如果以后引入 Redis，它用于筛选候选司机，最终接单仍要在订单更新时核验状态。订单更新结果不明时，先查询 MySQL 中的订单状态，再决定是否重新派单。</p>
+<p>第一版不因为“以后可能有用”就加入 Kafka。等到轨迹、计费或分析系统需要分别消费、追赶和重放事件时，再比较日志方案带来的收益与维护成本。</p>
+<hr>
+<h2 id="sec-10.4">10.4 验证关键判断</h2>
+<p>方案是否成立，还要在上线前按预期负载与故障条件实测延迟、容量和恢复表现。源码阅读和实验可以围绕具体问题展开：刷盘策略改变了哪段写入等待，副本不足时 Kafka 生产者拿到什么确认，重启后系统依靠哪份记录恢复运行。实验时把配置、负载、故障方式和观察结果一并记下。</p>
+<hr>
+<h2 id="sec-10.5">10.5 小结</h2>
+<p>约束决定哪些选项可行，目标决定在可行选项里怎么选。架构方案要先满足约束，再比较实现的复杂度。一个组件、一项配置或一层抽象，若说不清它解决的具体问题，就不宜急着加入；约束改变后，原有选择也需要重新评估。</p><nav class="page-nav"><a href="09-data-sync.html">← 第 9 章 数据同步机制 — 集群一致性的实现</a><a href="10-epilogue.html">后记 →</a></nav></article>
+</main>
+</div>
+<script>
+(function(){
+  var btn=document.querySelector('.toc-toggle'),nav=document.getElementById('toc'),bd=document.getElementById('bd');
+  if(btn){btn.addEventListener('click',function(){nav.classList.toggle('open');if(bd)bd.classList.toggle('show',nav.classList.contains('open'))});}
+  if(bd){bd.addEventListener('click',function(){nav.classList.remove('open');bd.classList.remove('show');});}
+  // 当前章节高亮
+  var secs=Array.prototype.slice.call(document.querySelectorAll('section.chapter'));
+  var links=Array.prototype.slice.call(document.querySelectorAll('nav.toc a[data-target]'));
+  if('IntersectionObserver' in window && links.length){
+    var map={};links.forEach(function(a){map[a.getAttribute('data-target')]=a;});
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){a.parentElement.classList.remove('active');});
+          var a=map[e.target.id]; if(a)a.parentElement.classList.add('active');
+        }
+      });
+    },{rootMargin:'-10% 0px -75% 0px',threshold:0});
+    secs.forEach(function(s){io.observe(s);});
+  }
+})();
+</script>
+<script>
+(function(){
+  var layout=document.querySelector('.layout'),drag=document.getElementById('tocDrag');
+  var colBtn=document.getElementById('tocCollapse'),expBtn=document.getElementById('tocExpand');
+  var KEY_W='paged.tocW',KEY_C='paged.tocCollapsed';
+  try{
+    var w=localStorage.getItem(KEY_W);
+    if(w&&layout)layout.style.setProperty('--toc-w',w);
+    if(localStorage.getItem(KEY_C)==='1')document.body.classList.add('toc-collapsed');
+  }catch(e){}
+  if(colBtn){colBtn.addEventListener('click',function(){
+    document.body.classList.add('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'1');}catch(e){}
+  });}
+  if(expBtn){expBtn.addEventListener('click',function(){
+    document.body.classList.remove('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'0');}catch(e){}
+  });}
+  if(drag&&layout){
+    drag.addEventListener('pointerdown',function(e){
+      e.preventDefault();
+      document.body.classList.add('toc-dragging');
+      drag.classList.add('active');
+      function mv(ev){
+        var left=layout.getBoundingClientRect().left;
+        var w=Math.min(Math.max(ev.clientX-left,200),520);
+        layout.style.setProperty('--toc-w',Math.round(w)+'px');
+      }
+      function up(){
+        document.body.classList.remove('toc-dragging');
+        drag.classList.remove('active');
+        try{localStorage.setItem(KEY_W,layout.style.getPropertyValue('--toc-w'));}catch(e2){}
+        window.removeEventListener('pointermove',mv);
+        window.removeEventListener('pointerup',up);
+      }
+      window.addEventListener('pointermove',mv);
+      window.addEventListener('pointerup',up);
+    });
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 3 章 生命周期管理 — 优雅启动与关闭</title>
+<style>
+*{box-sizing:border-box}
+:root{--ink:#1f2328;--mute:#57606a;--line:#d8dee4;--accent:#4f46e5;--bg:#fff;--soft:#f6f8fa}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;color:var(--ink);background:#fff;line-height:1.8;font-size:16px}
+.layout{display:grid;grid-template-columns:var(--toc-w,292px) 6px 1fr;max-width:1340px;margin:0 auto;transition:grid-template-columns .2s}
+body.toc-dragging .layout{transition:none}
+nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 24px 8px;font-size:14px;min-width:0}
+main.content{min-width:0}
+.toc-drag{position:sticky;top:0;align-self:start;height:100vh;cursor:col-resize;background:var(--line);transition:background .15s}
+.toc-drag:hover,.toc-drag.active{background:var(--accent)}
+body.toc-dragging{user-select:none;cursor:col-resize}
+.toc-collapse{position:absolute;top:16px;right:8px;border:1px solid var(--line);background:#fff;color:var(--mute);border-radius:6px;width:24px;height:24px;font-size:13px;line-height:1;cursor:pointer;padding:0}
+.toc-collapse:hover{color:var(--accent);border-color:var(--accent)}
+.toc-expand{display:none;position:fixed;left:0;top:120px;z-index:55;border:1px solid var(--line);border-left:none;background:#fff;color:var(--mute);border-radius:0 8px 8px 0;padding:10px 6px;font-size:14px;cursor:pointer;box-shadow:2px 2px 8px rgba(0,0,0,.08)}
+.toc-expand:hover{color:var(--accent)}
+body.toc-collapsed .layout{grid-template-columns:1fr}
+body.toc-collapsed nav.toc,body.toc-collapsed .toc-drag{display:none}
+body.toc-collapsed .toc-expand{display:block}
+.toc-title{font-weight:700;font-size:15px;color:var(--accent);margin:0 0 4px 8px}
+.toc-title a{color:inherit;text-decoration:none}
+.toc-sub{font-size:12px;color:var(--mute);margin:0 0 16px 8px}
+nav.toc ul{list-style:none;padding:0;margin:0}
+nav.toc li>a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.5}
+nav.toc li>a:hover{background:var(--soft)}
+nav.toc li.active>a{background:#eef2ff;color:var(--accent);font-weight:600}
+nav.toc li.nav-sub>a{padding-left:22px;font-size:13px;color:var(--mute)}
+.content{padding:32px 48px 120px;max-width:1000px;overflow-wrap:anywhere}
+.chapter-meta{color:var(--mute);font-size:13px;margin:0 0 18px}
+.page-nav{display:flex;justify-content:space-between;gap:16px;margin:40px 0 0;padding-top:20px;border-top:1px solid var(--line)}
+.page-nav a{display:block;max-width:48%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--ink);background:var(--soft);line-height:1.5}
+.page-nav a:hover{border-color:var(--accent);color:var(--accent)}
+.page-nav .empty{visibility:hidden}
+h1,h2,h3,h4{line-height:1.35;color:var(--ink);font-weight:700}
+h1{font-size:1.9em;margin:0 0 .6em;padding-bottom:.3em}
+h2{font-size:1.42em;margin:1.8em 0 .6em}
+h3{font-size:1.18em;margin:1.5em 0 .5em}
+h4{font-size:1.04em;margin:1.3em 0 .4em;color:#24292f}
+p{margin:0 0 1em}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+strong{font-weight:700;color:#111827}
+em{font-style:normal;color:var(--mute)}
+hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
+code{font-family:"SF Mono",Menlo,Consolas,monospace;background:var(--soft);padding:.12em .4em;border-radius:4px;font-size:.9em;color:#24292f}
+pre{background:#1e1e2e;color:#cdd6f4;padding:16px 18px;border-radius:8px;overflow-x:auto;line-height:1.55}
+pre code{background:none;color:inherit;padding:0;font-size:.86em}
+blockquote{margin:1.2em 0;padding:.6em 1em .6em 1.1em;border-left:4px solid var(--accent);background:#f7f8ff;color:#343a40;border-radius:0 6px 6px 0}
+blockquote strong{color:var(--accent)}
+ul,ol{margin:0 0 1em;padding-left:1.7em}
+li{margin:.25em 0}
+.table-wrap{overflow-x:auto;margin:1.2em 0}
+table{border-collapse:collapse;width:100%;font-size:.94em}
+th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+thead th{background:#eef2ff;color:#3730a3;font-weight:600}
+tbody tr:nth-child(even){background:#fafbfd}
+figure.fig{margin:2em calc((100% - 1000px)/2);text-align:center}
+.svg-wrap,.inline-svg{display:block;width:100%}
+figure.fig svg,.inline-svg svg,.svg-wrap svg,figure.fig img{width:100%;max-width:1000px;height:auto;display:block;margin:0 auto}
+figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
+.toc-toggle{display:none}
+.review-index{display:grid;gap:12px;margin:24px 0 0}
+.review-index a{display:block;padding:14px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;background:#fff}
+.review-index a:hover{border-color:var(--accent);background:#f7f8ff}
+.review-index strong{display:block;color:var(--ink)}
+.review-index span{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+@media(max-width:1200px){figure.fig{margin:2em auto}}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:fixed;left:0;top:0;width:292px;background:#fff;z-index:50;transform:translateX(-100%);transition:transform .2s;box-shadow:2px 0 12px rgba(0,0,0,.08)}
+  nav.toc.open{transform:translateX(0)}
+  body.toc-collapsed nav.toc{display:block}
+  .toc-drag,.toc-collapse,.toc-expand{display:none!important}
+  .content{padding:20px 18px 80px;max-width:100%;min-width:0}
+  .toc-toggle{display:inline-block;position:fixed;right:16px;bottom:16px;z-index:60;background:var(--accent);color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer}
+  .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:40}
+  .backdrop.show{display:block}
+  /* 窄屏宽图改为容器内横向滚动，文字保持可读 */
+  .svg-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  figure.fig svg{min-width:760px}
+}
+@media print{a.xref{color:inherit}}
+</style>
+</head>
+<body>
+<div class="backdrop" id="bd"></div>
+<button class="toc-toggle">目录</button>
+<button class="toc-expand" id="tocExpand" title="展开目录">»</button>
+<div class="layout">
+<nav class="toc" id="toc">
+  <button class="toc-collapse" id="tocCollapse" title="收起目录">«</button>
+  <div class="toc-title"><a href="../index.html">架构取舍之道</a></div>
+  <div class="toc-sub">在线阅读版</div>
+  <ul>
+<li><a href="../index.html">首页目录</a></li>
+<li><a href="00-preface.html">序言</a>
+</li>
+<li><a href="01-introduction.html">第 1 章 引言 — 为什么是这三个软件</a>
+</li>
+<li><a href="02-data-structures-protocols.html">第 2 章 数据结构与协议 — 为各自的目标而设计</a>
+</li>
+<li class="active"><a href="03-lifecycle.html">第 3 章 生命周期管理 — 优雅启动与关闭</a>
+<ul>
+<li class="nav-sub"><a href="#s41">本章导读</a></li>
+<li class="nav-sub"><a href="#sec-3.1">3.1 问题的本质</a></li>
+<li class="nav-sub"><a href="#sec-3.2">3.2 Redis 的做法</a></li>
+<li class="nav-sub"><a href="#sec-3.3">3.3 MySQL 的做法</a></li>
+<li class="nav-sub"><a href="#sec-3.4">3.4 Kafka 的做法</a></li>
+<li class="nav-sub"><a href="#s53">延伸：容器环境给三类软件增加的启停约束</a></li>
+<li class="nav-sub"><a href="#sec-3.5">3.5 横向对比</a></li>
+<li class="nav-sub"><a href="#sec-3.6">3.6 架构启示</a></li>
+<li class="nav-sub"><a href="#sec-3.7">3.7 小结</a></li>
+</ul>
+</li>
+<li><a href="04-memory-disk.html">第 4 章 内存与磁盘 — 速度与持久化的平衡</a>
+</li>
+<li><a href="05-layered-architecture.html">第 5 章 分层架构设计 — 存储层 / 逻辑层 / 交互层</a>
+</li>
+<li><a href="06-security.html">第 6 章 安全机制 — 权限、加密、审计</a>
+</li>
+<li><a href="07-cluster.html">第 7 章 集群架构 — 从单点到分布式</a>
+</li>
+<li><a href="08-storage-format.html">第 8 章 磁盘存储格式 — 文件结构的设计哲学</a>
+</li>
+<li><a href="09-data-sync.html">第 9 章 数据同步机制 — 集群一致性的实现</a>
+</li>
+<li><a href="10-summary.html">第 10 章 总结：架构设计的共性规律与取舍</a>
+</li>
+<li><a href="10-epilogue.html">后记</a>
+</li>
+<li><a href="11-references.html">附录　参考文献与延伸阅读（按章索引）</a>
+</li>
+</ul>
+</nav>
+<div class="toc-drag" id="tocDrag" title="拖拽调整目录宽度"></div>
+<main class="content">
+<article class="chapter"><h1 id="s40">第 3 章 生命周期管理 — 优雅启动与关闭</h1>
+<h2 id="s41">本章导读</h2>
+<p>发版时用 <code>kill -9</code> 结束进程，再重新启动，进程就没有机会完成清理和持久化收尾。启动时要恢复数据、确认事务状态、准备对外服务；关闭时要处理在途请求、保存必要的数据、交接集群职责。忽略其中一步，重启就可能变成一次事故。</p>
+<p>同样是 <code>kill -9</code>，Redis 可能丢失尚未持久化的数据（丢多少取决于持久化配置，详见<a class="xref" href="04-memory-disk.html">第 4 章</a>），MySQL 重新启动时进入 InnoDB 的崩溃恢复（crash recovery）流程，Kafka 则可能触发分区的 Leader 重选、让上游业务短暂抖动。影响范围还取决于部署方式：单机实例需要恢复本地状态，Redis、MySQL 的复制或集群部署也可能触发故障转移，Kafka Broker 下线则会影响它承载的分区。</p>
+<h2 id="sec-3.1">3.1 问题的本质</h2>
+<p>对有状态软件，启动的门槛不是进程存在，而是已恢复到能够处理请求的状态。Redis 要重建内存键空间，MySQL 要确定事务状态，Kafka 要恢复分区日志和节点职责。</p>
+<p>关闭时则要确定：哪些数据必须保存，哪些工作可以留到以后处理，哪些职责要在退出前交接。<a class="xref" href="#fig-3-1">图 3-1</a> 概括了启动与关闭各自处理的状态变化；崩溃或强制退出跳过正常收尾，可能造成数据损失或把工作留到下次启动。</p>
+<figure class="fig" id="fig-3-1"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 880 272" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_3_1_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_3_1_arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  
+
+  
+  
+  <rect x="40" y="190" width="160" height="90" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="120" y="222" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">启动前的状态</text>
+  <text x="120" y="244" text-anchor="middle" font-size="12" fill="#374151">已有持久化数据</text>
+  <text x="120" y="262" text-anchor="middle" font-size="12" fill="#374151">或集群状态（若有）</text>
+
+  
+  <rect x="360" y="190" width="160" height="90" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="440" y="222" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">可服务状态</text>
+  <text x="440" y="244" text-anchor="middle" font-size="12" fill="#374151">必要状态已恢复，</text>
+  <text x="440" y="262" text-anchor="middle" font-size="12" fill="#374151">可对外承接请求</text>
+
+  
+  <rect x="680" y="190" width="160" height="90" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="760" y="222" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">正常退出</text>
+  <text x="760" y="244" text-anchor="middle" font-size="12" fill="#374151">按方案完成必要收尾</text>
+  <text x="760" y="262" text-anchor="middle" font-size="12" fill="#374151">有职责时交接或待接管</text>
+
+  
+  <path d="M210 215 L355 215" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#fig_3_1_arrow)"/>
+  <text x="282" y="178" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">启动：恢复必要状态</text>
+  <text x="282" y="205" text-anchor="middle" font-size="11" fill="#374151">完成恢复后才可服务</text>
+
+  
+  <path d="M525 255 L675 255" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#fig_3_1_arrow)"/>
+  <text x="600" y="295" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">关闭：必要收尾与职责处理</text>
+  <text x="600" y="318" text-anchor="middle" font-size="12" fill="#374151">刷盘、交接或后移工作依配置和部署决定</text>
+
+  
+  <path d="M440 290 C 440 400, 120 410, 120 285" fill="none" stroke="#EF4444" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#fig_3_1_arrowR)"/>
+  <text x="260" y="410" text-anchor="middle" font-size="12" fill="#EF4444">崩溃 / kill -9：跳过正常收尾，下次启动可能需要恢复</text>
+</svg>
+</div><figcaption>图 3-1　启动依据已有持久化数据或集群状态恢复到可服务状态；正常关闭按方案完成必要收尾，集群职责可在退出前交接，也可留待退出后接管。</figcaption></figure>
+<h2 id="sec-3.2">3.2 Redis 的做法</h2>
+<p>Redis 运行时的键空间在内存中。有本地持久化时，重启要从 AOF 或 RDB 重建键空间；关闭时则要决定是否再生成一次 RDB，同时完成已开启的 AOF 刷盘。</p>
+<h3 id="sec-3.2.1">3.2.1 启动四阶段</h3>
+<p><strong>第一段：确定配置。</strong> Redis 先设默认值，再读配置文件和命令行参数，供后续初始化使用。</p>
+<p><strong>第二段：建立基础设施。</strong> Redis 创建事件循环和内存中的数据库结构，并准备网络监听。监听端口打开，还不表示已有数据恢复完成。</p>
+<p><strong>第三段：恢复数据。</strong> 启用 AOF 时，Redis 按 AOF 路径恢复；未启用时，才尝试加载独立 RDB。AOF 通常比定期快照保留更多近期写入，因此这一顺序关系到恢复点。<a class="xref" href="#fig-3-2">图 3-2</a> 展示了数据恢复在启动过程中的位置。</p>
+<figure class="fig" id="fig-3-2"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 58 900 262" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_3_2_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+  
+  <rect x="60" y="70" width="240" height="96" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="180" y="96" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">① 确定配置</text>
+  <text x="76" y="124" font-size="12" fill="#374151">设默认值</text>
+  <text x="76" y="148" font-size="12" fill="#374151">读配置文件与命令行参数</text>
+
+  
+  <rect x="330" y="70" width="240" height="96" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="450" y="96" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">② 基础设施就位</text>
+  <text x="346" y="124" font-size="12" fill="#374151">建立事件循环与数据库结构</text>
+  <text x="346" y="148" font-size="12" fill="#374151">准备网络监听</text>
+
+  
+  <rect x="600" y="70" width="240" height="96" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="720" y="96" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">③ 恢复本地数据</text>
+  <text x="616" y="124" font-size="12" fill="#374151">启用 AOF：按 AOF 路径恢复</text>
+  <text x="616" y="148" font-size="12" fill="#374151">否则：尝试加载独立 RDB</text>
+
+  
+  <path d="M300 118 L328 118" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#fig_3_2_arrow)"/>
+  <path d="M570 118 L598 118" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#fig_3_2_arrow)"/>
+
+  
+  <rect x="330" y="226" width="240" height="80" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="450" y="254" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">④ 进入事件循环</text>
+  <text x="346" y="282" font-size="12" fill="#374151">数据加载完成后，开始处理请求</text>
+
+  
+  <path d="M720 166 L720 194 Q720 202 712 202 L458 202 Q450 202 450 210 L450 224" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#fig_3_2_arrow)"/>
+</svg>
+</div><figcaption>图 3-2　Redis 启动四段式：配置 → 基础设施 → 数据恢复 → 事件循环，数据恢复段含 AOF/RDB 分支。</figcaption></figure>
+<p><strong>第四段：开始处理请求。</strong> 本地数据加载完成后，Redis 才进入事件循环，对外提供服务。</p>
+<h3 id="sec-3.2.2">3.2.2 关闭：两种触发，一套流程</h3>
+<p>客户端发出 <code>SHUTDOWN</code>，或进程收到 SIGTERM/SIGINT，都会进入正常关闭流程。有副本时，Redis 7.0 起可在退出前短暂等待副本追平；等待超时后继续退出。随后才是本地持久化与连接收尾。</p>
+<figure class="fig" id="fig-3-3"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 52 880 500" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_3_3_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+  
+  <rect x="300" y="64" width="280" height="70" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="440" y="92" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">关闭触发</text>
+  <text x="316" y="116" font-size="12" fill="#374151">SHUTDOWN 命令 · SIGTERM/SIGINT</text>
+
+  
+  <path d="M440 134 L440 164" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#fig_3_3_arrow)"/>
+
+  
+  <rect x="300" y="166" width="280" height="76" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="440" y="192" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">① 处理后台任务</text>
+  <text x="316" y="220" font-size="12" fill="#374151">检查并处理后台快照 / AOF 重写</text>
+
+  
+  <path d="M440 242 L440 272" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#fig_3_3_arrow)"/>
+
+  
+  <rect x="300" y="274" width="280" height="60" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="440" y="300" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">② 刷 AOF 缓冲（若 AOF 开启）</text>
+  <text x="316" y="322" font-size="12" fill="#374151">把待写入的数据刷盘</text>
+
+  
+  <path d="M440 334 L440 344" fill="none" stroke="#4B5563" stroke-width="2"/>
+  <path d="M440 344 L288 344 Q280 344 280 352 L280 364" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#fig_3_3_arrow)"/>
+  <path d="M440 344 L592 344 Q600 344 600 352 L600 364" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#fig_3_3_arrow)"/>
+
+  
+  <rect x="160" y="366" width="240" height="86" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="280" y="392" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">③a SHUTDOWN SAVE</text>
+  <text x="176" y="420" font-size="12" fill="#374151">生成本次 RDB 快照</text>
+
+  <rect x="480" y="366" width="240" height="86" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="600" y="392" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">③b SHUTDOWN NOSAVE</text>
+  <text x="496" y="420" font-size="12" fill="#374151">跳过本次 RDB 快照</text>
+
+  
+  <path d="M280 452 L280 458 Q280 464 286 464 L440 464" fill="none" stroke="#4B5563" stroke-width="2"/>
+  <path d="M600 452 L600 458 Q600 464 594 464 L440 464" fill="none" stroke="#4B5563" stroke-width="2"/>
+  <path d="M440 464 L440 482" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#fig_3_3_arrow)"/>
+
+  
+  <rect x="300" y="484" width="280" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="440" y="510" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">④ 断开连接并退出</text>
+  <text x="316" y="530" font-size="12" fill="#374151">释放本地资源</text>
+</svg>
+</div><figcaption>图 3-3　Redis 正常关闭时的本地收尾顺序与 SAVE/NOSAVE 分支。</figcaption></figure>
+<p>关闭时，Redis 先处理未完成的后台快照或 AOF 重写，再把已开启的 AOF 缓冲刷盘。<code>SHUTDOWN SAVE</code> 在退出前生成 RDB；<code>SHUTDOWN NOSAVE</code> 跳过本次 RDB 快照，仍会完成 AOF 刷盘。随后断开客户端并释放资源。</p>
+<h3 id="sec-3.2.3">3.2.3 用信号触发优雅关闭</h3>
+<p>SIGTERM/SIGINT 让 Redis 有机会执行上述收尾；SIGKILL（<code>kill -9</code>）直接结束进程，无法等待 AOF 刷盘或 RDB 保存完成。MySQL 也通过退出信号进入正常关闭流程；Kafka 的 SIGTERM 则经 JVM Shutdown Hook 交给应用处理。</p>
+<h2 id="sec-3.3">3.3 MySQL 的做法</h2>
+<p>MySQL 比 Redis 多了事务状态的约束。异常退出后重新启动时，要处理崩溃恢复；关闭时可以选择把部分清理留到以后。</p>
+<h3 id="sec-3.3.1">3.3.1 启动链路：事务恢复是关键环节</h3>
+<p>MySQL 异常退出后重新启动，也要完成配置、存储引擎和网络准备，但决定何时能接请求的关键工作是 InnoDB 的事务恢复。它从 checkpoint（检查点）标记的位置扫描 redo log，补上已记录但尚未写回数据页的修改；redo 重放不按事务是否提交来筛选。未提交事务还要由 undo log 撤销。<a class="xref" href="#fig-3-4">图 3-4</a> 区分了接受连接前必须完成的恢复与可以继续进行的回滚。</p>
+<figure class="fig" id="fig-3-4"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 52 880 421" role="img" aria-label="InnoDB 崩溃恢复与后台回滚" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <title>InnoDB 崩溃恢复与后台回滚</title>
+  <desc>完成必要的 redo 恢复并确定事务状态后，服务可以接受连接；尚未结束的事务回滚可以在后台继续。</desc>
+  <defs>
+    <marker id="fig_3_4_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/></marker>
+    <marker id="fig_3_4_arrowAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#D97706"/></marker>
+  </defs>
+  <text x="440" y="76" text-anchor="middle" font-size="16" font-weight="700" fill="#111827">崩溃恢复与后台回滚</text>
+  <rect x="220" y="98" width="440" height="54" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="440" y="120" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">① 从 checkpoint LSN 扫描 redo</text>
+  <text x="440" y="140" text-anchor="middle" font-size="12" fill="#374151">读取检查点之后可用的日志</text>
+  <path d="M440 152 L440 171" fill="none" stroke="#4B5563" stroke-width="1.6" marker-end="url(#fig_3_4_arrow)"/>
+  <rect x="220" y="174" width="440" height="58" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="440" y="197" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">② 重放需要恢复的页修改</text>
+  <text x="440" y="219" text-anchor="middle" font-size="12" fill="#374151">不按事务是否已提交筛选；已在页中的修改不重复补写</text>
+  <path d="M440 232 L440 251" fill="none" stroke="#4B5563" stroke-width="1.6" marker-end="url(#fig_3_4_arrow)"/>
+  <rect x="220" y="254" width="440" height="58" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="440" y="277" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">③ 确定事务状态，完成启动所需准备</text>
+  <text x="440" y="299" text-anchor="middle" font-size="12" fill="#374151">保留应提交的结果，安排撤销未提交事务</text>
+  <path d="M440 312 L440 330 L230 330 L230 348" fill="none" stroke="#4B5563" stroke-width="1.6" marker-end="url(#fig_3_4_arrow)"/>
+  <path d="M440 330 L650 330 L650 348" fill="none" stroke="#D97706" stroke-width="1.6" marker-end="url(#fig_3_4_arrowAmber)"/>
+  <rect x="50" y="352" width="360" height="97" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="1.6"/>
+  <text x="230" y="379" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">接受客户端连接</text>
+  <text x="230" y="405" text-anchor="middle" font-size="13" fill="#374151">ready for connections</text>
+  <text x="230" y="435" text-anchor="middle" font-size="12" fill="#374151">系统已经能够处理新的请求</text>
+  <rect x="470" y="352" width="360" height="97" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="650" y="379" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">后台继续未完成的回滚</text>
+  <text x="650" y="405" text-anchor="middle" font-size="13" fill="#374151">使用 undo 撤销未提交事务</text>
+  <text x="650" y="435" text-anchor="middle" font-size="12" fill="#374151">回滚工作可与新请求处理交错进行</text>
+  <path d="M470 416 L414 416" fill="none" stroke="#D97706" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#fig_3_4_arrowAmber)"/>
+  <text x="441" y="400" text-anchor="middle" font-size="11" fill="#92400E">锁等待</text>
+</svg>
+</div><figcaption>图 3-4　InnoDB 崩溃恢复</figcaption></figure>
+<p><code>ready for connections</code> 表示 InnoDB 已完成必要的 redo 恢复，可以接受连接；未完成的回滚可在后台继续。回滚事务持有的锁可能阻塞新请求，大事务会增加回滚工作量。</p>
+<h3 id="sec-3.3.2">3.3.2 innodb_fast_shutdown：把清理工作在关机与开机之间分摊</h3>
+<p>MySQL 用 <code>innodb_fast_shutdown</code> 的 0、1、2 三档决定把多少清理工作放在关机前，多少留到下次启动或运行期。<a class="xref" href="#table-3-1">表 3-1</a> 比较的是工作时机，不是一致性等级；三档都以保留已提交事务为前提。</p>
+<p class="tab-label"><strong>表 3-1　innodb_fast_shutdown 三档对比</strong></p>
+<div class="table-wrap"><table id="table-3-1"><thead><tr><th>维度</th><th>0 = 完全关闭</th><th>1 = 快速关闭（默认）</th><th>2 = 模拟崩溃</th></tr></thead><tbody><tr><td>关闭时完成</td><td>刷脏页，并完成 purge、修改缓冲合并等清理</td><td>刷脏页，跳过完整 purge 与修改缓冲合并</td><td>刷 redo，不刷数据页</td></tr><tr><td>留给之后</td><td>下次启动需要处理的清理较少</td><td>运行期继续完成未做完的清理</td><td>下次启动执行崩溃恢复</td></tr></tbody></table></div>
+<p>默认档位 1 保留了脏页刷盘，把完整清理留到运行期，避免日常重启等待这部分工作。关闭时间还取决于脏页和长事务等遗留工作量，不能仅由档位预测。</p>
+<h2 id="sec-3.4">3.4 Kafka 的做法</h2>
+<p>Kafka 的消息保存在分区日志中。启动时，Broker 既要检查本地日志，也要取得集群元数据；关闭时，除了本地收尾，还可能需要交出分区 Leader 职责。</p>
+<h3 id="sec-3.4.1">3.4.1 启动链路：服务就绪前的依赖</h3>
+<p>以 KRaft 模式为例，Broker 要知道自己负责哪些分区，检查相应的日志和索引，并追上所需的元数据。网络组件准备好，并不表示这些工作已经完成；满足恢复、授权和控制面的条件后，Broker 才处理请求。请求最终由 Handler 线程池执行，它的分工在<a class="xref" href="05-layered-architecture.html">第 5 章</a>讨论。</p>
+<p>异常退出后，Broker 检查追加日志的完整性，截断残缺尾部，并恢复索引及生产者等状态。消息本身保存在日志里，不需要像 InnoDB 那样再重放成另一套业务数据页。</p>
+<h3 id="sec-3.4.2">3.4.2 关闭：普通关闭 vs 受控关闭</h3>
+<p><strong>普通关闭</strong>会停止请求处理、断开连接并完成本地日志收尾，但不保证在途请求都能把结果返回客户端。如果 Broker 承担的 Leader 职责尚未迁移，Controller（集群控制器）要在它退出后重新选主，分区可能短暂不可用。</p>
+<p><strong>受控关闭（Controlled Shutdown）</strong>在退出前通知 Controller，让其他存活的同步副本接替 Leader，得到交接确认后再完成本地收尾。交接的是已有副本的角色，不是关机时复制全部消息。<a class="xref" href="#fig-3-5">图 3-5</a> 对照了退出前交接与退出后重选的区别。</p>
+<figure class="fig" id="fig-3-5"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 52 940 448" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_3_5_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_3_5_arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="fig_3_5_arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+
+  
+  <rect x="40" y="64" width="160" height="40" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="120" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">下线 Broker</text>
+
+  <rect x="260" y="64" width="160" height="40" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="340" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">Controller</text>
+
+  <rect x="480" y="64" width="160" height="40" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="560" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">ISR 中其他存活副本</text>
+
+  <rect x="700" y="64" width="200" height="40" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="800" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">客户端可见抖动窗口</text>
+
+  <line x1="120" y1="104" x2="120" y2="470" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="340" y1="104" x2="340" y2="470" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="560" y1="104" x2="560" y2="470" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="800" y1="104" x2="800" y2="470" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>
+
+  
+  <text x="220" y="120" text-anchor="middle" font-size="13" font-weight="700" fill="#059669">受控关闭（Controlled Shutdown）</text>
+
+  
+  <rect x="40" y="134" width="160" height="36" rx="4" fill="#ECFDF5" stroke="#059669" stroke-width="1"/>
+  <text x="120" y="157" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">JVM Hook 接 SIGTERM</text>
+
+  
+  <path d="M120 170 L338 170" fill="none" stroke="#4B5563" stroke-width="1.6" marker-end="url(#fig_3_5_arrow)"/>
+  <text x="255" y="162" text-anchor="middle" font-size="11" fill="#374151">① 通知即将退出</text>
+
+  
+  <path d="M340 200 L558 200" fill="none" stroke="#059669" stroke-width="1.6" marker-end="url(#fig_3_5_arrowG)"/>
+  <text x="447" y="192" text-anchor="middle" font-size="11" fill="#059669">② 提前迁移该 Broker 的 Leader</text>
+
+  <rect x="480" y="214" width="160" height="36" rx="4" fill="#ECFDF5" stroke="#059669" stroke-width="1"/>
+  <text x="560" y="237" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">Leader 迁移到 ISR 存活副本</text>
+
+  
+  <path d="M560 260 L342 260" fill="none" stroke="#059669" stroke-width="1.6" marker-end="url(#fig_3_5_arrowG)"/>
+  <text x="434" y="252" text-anchor="middle" font-size="11" fill="#059669">③ 迁移完成回执</text>
+
+  
+  <path d="M340 292 L122 292" fill="none" stroke="#4B5563" stroke-width="1.6" marker-end="url(#fig_3_5_arrow)"/>
+  <text x="232" y="284" text-anchor="middle" font-size="11" fill="#374151">④ 允许退出回执</text>
+
+  
+  <rect x="40" y="306" width="160" height="36" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1"/>
+  <text x="120" y="329" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">⑤ 本地收尾 → exit</text>
+
+  
+  <rect x="760" y="306" width="80" height="36" rx="4" fill="#ECFDF5" stroke="#059669" stroke-width="1.2"/>
+  <text x="800" y="329" text-anchor="middle" font-size="11" font-weight="600" fill="#059669">减少分区抖动</text>
+
+  
+  <text x="220" y="372" text-anchor="middle" font-size="13" font-weight="700" fill="#EF4444">对照：未提前交接的普通关闭</text>
+
+  <rect x="40" y="386" width="160" height="36" rx="4" fill="#ECFDF5" stroke="#059669" stroke-width="1"/>
+  <text x="120" y="409" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">本地收尾 → exit</text>
+
+  
+  <path d="M120 440 L797 440" fill="none" stroke="#EF4444" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#fig_3_5_arrowR)"/>
+  <text x="450" y="400" text-anchor="middle" font-size="11" fill="#EF4444">退出后由 Controller 发现</text>
+  <text x="450" y="414" text-anchor="middle" font-size="11" fill="#EF4444">→ 触发 Leader 重选</text>
+
+  
+  <rect x="715" y="386" width="170" height="36" rx="4" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.4"/>
+  <text x="800" y="409" text-anchor="middle" font-size="11" font-weight="600" fill="#EF4444">分区短暂不可用 = 客户端抖动</text>
+
+  
+  <text x="120" y="486" text-anchor="middle" font-size="11" fill="#6B7280">Broker</text>
+  <text x="340" y="486" text-anchor="middle" font-size="11" fill="#6B7280">Controller</text>
+  <text x="560" y="486" text-anchor="middle" font-size="11" fill="#6B7280">存活副本</text>
+  <text x="800" y="486" text-anchor="middle" font-size="11" fill="#6B7280">抖动窗口</text>
+
+</svg>
+</div><figcaption>图 3-5　受控关闭先迁移 Leader；普通关闭可能在 Broker 退出后才触发重选。</figcaption></figure>
+<p>受控关闭要求 Controller 可达，且相关分区的同步副本集合（ISR）中有位于其他 Broker 的存活副本，能在期限内完成迁移。条件不满足或等待超时，Broker 就转入普通关闭。默认启用的受控路径增加退出前的协调时间，减少正常下线造成的分区抖动。</p>
+<h2 id="s53">延伸：容器环境给三类软件增加的启停约束</h2>
+<p>部署到 Kubernetes（K8s）后，终止宽限期覆盖摘流（停止向实例分配新流量）、hook（终止钩子）和进程收尾；超时仍未退出，进程会被强制结束。Redis 的持久化、MySQL 的事务收尾、Kafka 的 Leader 交接所需时间不同，不能只按进程收到信号来判断关闭完成。摘流信息的传播需要时间；保存或交接则要看各自的完成信号，而不只是等待了多久。</p>
+<p>启动也会受探针影响。如果把“数据库还在恢复”当成存活探针（liveness probe）检查失败，编排系统就可能反复重启它，恢复一次次被打断重来。配置启动探针（startup probe）后，存活探针和就绪探针（readiness probe）会等待它成功再开始执行，给启动恢复留出时间；随后由就绪探针判断实例是否具备接收流量的条件。</p>
+<h2 id="sec-3.5">3.5 横向对比</h2>
+<p><a class="xref" href="#table-3-2">表 3-2</a> 把三家的就绪条件、关闭收尾与职责交接放在一起比较。</p>
+<p class="tab-label"><strong>表 3-2　三个软件的启动与关闭</strong></p>
+<div class="table-wrap"><table id="table-3-2"><thead><tr><th>维度</th><th>Redis</th><th>MySQL</th><th>Kafka</th></tr></thead><tbody><tr><td>开始处理请求的门槛</td><td>按配置恢复内存键空间</td><td>完成必要的 redo 恢复；未完成的回滚可在后台继续</td><td>分区日志、元数据与授权等准备就绪</td></tr><tr><td>退出前的本地数据收尾</td><td>已开启的 AOF 刷盘；是否生成本次 RDB 可选</td><td>按档位刷数据页或 redo</td><td>日志刷盘与本地收尾</td></tr><tr><td>可以省略或留到之后的工作</td><td>NOSAVE 省略本次 RDB 快照</td><td>完整清理可后移；档位 2 留待下次崩溃恢复</td><td>普通关闭把 Leader 重选留到退出后</td></tr><tr><td>退出时的集群职责</td><td>可等待落后副本追平；接管取决于部署方式</td><td>角色接管取决于复制或集群方案，不由关闭档位决定</td><td>受控关闭先协调 Leader 交接</td></tr></tbody></table></div>
+<h2 id="sec-3.6">3.6 架构启示</h2>
+<h3 id="s56">启示一：就绪条件取决于请求需要的状态</h3>
+<p>进程已启动、端口已监听，都不足以说明请求能得到正确结果。反过来，要求所有后台清理完成后才接受请求，会无谓延长停服。划定就绪门槛的依据，是未完成的工作是否影响新请求的正确性。InnoDB 的必要 redo 恢复要在接受请求前完成；未完成的回滚可以留在后台，回滚事务持有的锁可能增加新请求的延迟。</p>
+<h3 id="s57">启示二：退出要有可确认的完成条件</h3>
+<p>退出方案需要分别定义数据保存、在途请求处理和职责交接的完成条件，并约定等待超时后如何退出。Kafka 的受控关闭在具备可接替副本、交接按时完成时，能减少计划下线时的分区抖动；否则转入普通关闭。</p>
+<h3 id="s58">启示三：快速关闭改变后续工作的安排</h3>
+<p>Redis 可以省略本次快照，MySQL 可以把清理留到运行期，Kafka 则可以把选主留到 Broker 退出后。它们缩短的是同一个关闭阶段，改变的保证和后续负担却不同。快速关闭的代价，取决于被省去的工作是否需要补做、由谁完成，以及它会延长哪个阶段。</p>
+<p>退出后能保住哪些数据，取决于持久化配置与退出流程。</p>
+<h2 id="sec-3.7">3.7 小结</h2>
+<p>启动的门槛是必要状态已恢复。关闭时要确认必要的收尾工作已完成，并说明进程退出后，哪些集群职责还需要其他节点接手。把工作移到运行期、下次启动或其他节点，可以缩短本次关闭前的等待；方案也要说明后续工作由谁完成，以及超时会带来什么后果。</p><nav class="page-nav"><a href="02-data-structures-protocols.html">← 第 2 章 数据结构与协议 — 为各自的目标而设计</a><a href="04-memory-disk.html">第 4 章 内存与磁盘 — 速度与持久化的平衡 →</a></nav></article>
+</main>
+</div>
+<script>
+(function(){
+  var btn=document.querySelector('.toc-toggle'),nav=document.getElementById('toc'),bd=document.getElementById('bd');
+  if(btn){btn.addEventListener('click',function(){nav.classList.toggle('open');if(bd)bd.classList.toggle('show',nav.classList.contains('open'))});}
+  if(bd){bd.addEventListener('click',function(){nav.classList.remove('open');bd.classList.remove('show');});}
+  // 当前章节高亮
+  var secs=Array.prototype.slice.call(document.querySelectorAll('section.chapter'));
+  var links=Array.prototype.slice.call(document.querySelectorAll('nav.toc a[data-target]'));
+  if('IntersectionObserver' in window && links.length){
+    var map={};links.forEach(function(a){map[a.getAttribute('data-target')]=a;});
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){a.parentElement.classList.remove('active');});
+          var a=map[e.target.id]; if(a)a.parentElement.classList.add('active');
+        }
+      });
+    },{rootMargin:'-10% 0px -75% 0px',threshold:0});
+    secs.forEach(function(s){io.observe(s);});
+  }
+})();
+</script>
+<script>
+(function(){
+  var layout=document.querySelector('.layout'),drag=document.getElementById('tocDrag');
+  var colBtn=document.getElementById('tocCollapse'),expBtn=document.getElementById('tocExpand');
+  var KEY_W='paged.tocW',KEY_C='paged.tocCollapsed';
+  try{
+    var w=localStorage.getItem(KEY_W);
+    if(w&&layout)layout.style.setProperty('--toc-w',w);
+    if(localStorage.getItem(KEY_C)==='1')document.body.classList.add('toc-collapsed');
+  }catch(e){}
+  if(colBtn){colBtn.addEventListener('click',function(){
+    document.body.classList.add('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'1');}catch(e){}
+  });}
+  if(expBtn){expBtn.addEventListener('click',function(){
+    document.body.classList.remove('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'0');}catch(e){}
+  });}
+  if(drag&&layout){
+    drag.addEventListener('pointerdown',function(e){
+      e.preventDefault();
+      document.body.classList.add('toc-dragging');
+      drag.classList.add('active');
+      function mv(ev){
+        var left=layout.getBoundingClientRect().left;
+        var w=Math.min(Math.max(ev.clientX-left,200),520);
+        layout.style.setProperty('--toc-w',Math.round(w)+'px');
+      }
+      function up(){
+        document.body.classList.remove('toc-dragging');
+        drag.classList.remove('active');
+        try{localStorage.setItem(KEY_W,layout.style.getPropertyValue('--toc-w'));}catch(e2){}
+        window.removeEventListener('pointermove',mv);
+        window.removeEventListener('pointerup',up);
+      }
+      window.addEventListener('pointermove',mv);
+      window.addEventListener('pointerup',up);
+    });
+  }
+})();
+</script>
+</body>
+</html>

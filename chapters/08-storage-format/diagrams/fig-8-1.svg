@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 68 880 346" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+
+  <!-- Column headers -->
+  <text x="80" y="100" text-anchor="middle" font-size="13" font-weight="600" fill="#374151">软件</text>
+  <text x="280" y="100" text-anchor="middle" font-size="13" font-weight="600" fill="#374151">内存中的作用</text>
+  <text x="560" y="100" text-anchor="middle" font-size="13" font-weight="600" fill="#374151">磁盘文件的作用</text>
+
+  <!-- vertical separator lines -->
+  <line x1="160" y1="80" x2="160" y2="420" stroke="#E5E7EB" stroke-width="1"/>
+  <line x1="420" y1="80" x2="420" y2="420" stroke="#E5E7EB" stroke-width="1"/>
+
+  <!-- ============ Redis row ============ -->
+  <rect x="40" y="130" width="120" height="70" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="100" y="158" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">Redis</text>
+  <text x="100" y="180" text-anchor="middle" font-size="12" fill="#374151">内存为主</text>
+
+  <!-- memory big -->
+  <rect x="190" y="135" width="220" height="60" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="300" y="162" text-anchor="middle" font-size="13" font-weight="600" fill="#4F46E5">内存数据结构（正本）</text>
+  <text x="300" y="182" text-anchor="middle" font-size="11" fill="#374151">在线查询的来源</text>
+
+  <!-- disk small -->
+  <rect x="450" y="150" width="220" height="30" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="560" y="170" text-anchor="middle" font-size="11.5" fill="#374151">RDB / AOF（用于恢复）</text>
+
+  <text x="685" y="170" font-size="12" fill="#374151">崩溃后重建内存</text>
+
+  <!-- ============ MySQL row ============ -->
+  <rect x="40" y="230" width="120" height="70" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="100" y="258" text-anchor="middle" font-size="15" font-weight="700" fill="#D97706">MySQL</text>
+  <text x="100" y="280" text-anchor="middle" font-size="12" fill="#374151">磁盘为主</text>
+
+  <!-- memory small -->
+  <rect x="190" y="250" width="220" height="30" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="300" y="270" text-anchor="middle" font-size="12" fill="#374151">缓冲池（缓存页，可修改）</text>
+
+  <!-- disk big -->
+  <rect x="450" y="235" width="220" height="60" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="560" y="262" text-anchor="middle" font-size="13" font-weight="600" fill="#D97706">表空间文件（持久数据页）</text>
+  <text x="560" y="282" text-anchor="middle" font-size="11" fill="#374151">16KB 页 · B+ 树 · 原地改</text>
+
+  <text x="685" y="270" font-size="12" fill="#374151">支持线上页级读写</text>
+
+  <!-- sync arrow MySQL mem<->disk -->
+  <line x1="410" y1="265" x2="450" y2="265" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+
+  <!-- ============ Kafka row ============ -->
+  <rect x="40" y="330" width="120" height="70" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="100" y="358" text-anchor="middle" font-size="15" font-weight="700" fill="#059669">Kafka</text>
+  <text x="100" y="380" text-anchor="middle" font-size="12" fill="#374151">日志保存消息</text>
+
+  <!-- memory none-ish -->
+  <rect x="190" y="345" width="220" height="40" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="300" y="362" text-anchor="middle" font-size="12" fill="#374151">OS 页缓存（由内核管理）</text>
+  <text x="300" y="378" text-anchor="middle" font-size="11" fill="#6B7280">无独立缓存层</text>
+
+  <!-- disk = body -->
+  <rect x="450" y="335" width="220" height="60" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="560" y="362" text-anchor="middle" font-size="13" font-weight="600" fill="#059669">日志段 .log（消息本体）</text>
+  <text x="560" y="382" text-anchor="middle" font-size="11" fill="#374151">新消息追加 · 稀疏索引定位</text>
+
+  <text x="685" y="370" font-size="12" fill="#374151">可复制或存于远端</text>
+
+</svg>

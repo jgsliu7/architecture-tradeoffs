@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 66 876 430" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  <!-- page outline -->
+  <rect x="120" y="78" width="420" height="398" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="560" y="92" font-size="13" font-weight="700" fill="#D97706">16KB 数据页</text>
+
+  <!-- 1. FIL Header -->
+  <rect x="135" y="90" width="390" height="46" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="330" y="110" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">① FIL Header（38B）</text>
+  <text x="330" y="127" text-anchor="middle" font-size="10" fill="#374151">页号 · 前后指针 · LSN · 页类型</text>
+  <text x="560" y="117" font-size="10" fill="#6B7280">页间双向链表</text>
+
+  <!-- 2. Page Header -->
+  <rect x="135" y="141" width="390" height="40" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="330" y="160" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">② Page Header（56B）</text>
+  <text x="330" y="176" text-anchor="middle" font-size="10" fill="#6B7280">页内记录数 · 空闲指针 · 槽数等</text>
+
+  <!-- 3. Infimum/Supremum -->
+  <rect x="135" y="186" width="390" height="40" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="330" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">③ Infimum / Supremum（虚拟记录）</text>
+  <text x="330" y="221" text-anchor="middle" font-size="10" fill="#6B7280">界定页内记录链的起点与终点</text>
+
+  <!-- 4. User Records -->
+  <rect x="135" y="231" width="390" height="80" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="330" y="252" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">④ User Records（按索引键顺序链接）</text>
+  <!-- mini record slots -->
+  <rect x="150" y="262" width="60" height="38" rx="3" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="180" y="286" text-anchor="middle" font-size="10" fill="#374151">rec 1</text>
+  <rect x="215" y="262" width="60" height="38" rx="3" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="245" y="286" text-anchor="middle" font-size="10" fill="#374151">rec 2</text>
+  <rect x="280" y="262" width="60" height="38" rx="3" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="310" y="286" text-anchor="middle" font-size="10" fill="#374151">rec 3</text>
+  <rect x="345" y="262" width="60" height="38" rx="3" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="375" y="286" text-anchor="middle" font-size="10" fill="#374151">rec 4</text>
+  <rect x="410" y="262" width="60" height="38" rx="3" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="440" y="286" text-anchor="middle" font-size="10" fill="#374151">rec 5</text>
+
+  <!-- 5. Free Space -->
+  <rect x="135" y="316" width="390" height="46" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="330" y="336" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">⑤ Free Space（空闲空间）</text>
+  <text x="330" y="354" text-anchor="middle" font-size="10" fill="#6B7280">插入新记录占用空闲空间；空间不足时可能页分裂</text>
+
+  <!-- 6. Page Directory -->
+  <rect x="135" y="367" width="390" height="56" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="330" y="388" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">⑥ Page Directory（页目录，稀疏槽）</text>
+  <!-- slots -->
+  <rect x="160" y="398" width="40" height="20" rx="2" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="180" y="412" text-anchor="middle" font-size="10.5" fill="#374151">slot</text>
+  <rect x="210" y="398" width="40" height="20" rx="2" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="230" y="412" text-anchor="middle" font-size="10.5" fill="#374151">slot</text>
+  <rect x="260" y="398" width="40" height="20" rx="2" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="280" y="412" text-anchor="middle" font-size="10.5" fill="#374151">slot</text>
+  <rect x="310" y="398" width="40" height="20" rx="2" fill="#FFFBEB" stroke="#D97706" stroke-width="1"/>
+  <text x="330" y="412" text-anchor="middle" font-size="10.5" fill="#374151">slot</text>
+  <text x="380" y="414" font-size="10" fill="#6B7280">二分定位 → 顺序扫几条</text>
+
+  <!-- 7. FIL Trailer -->
+  <rect x="135" y="430" width="390" height="46" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="330" y="450" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">⑦ FIL Trailer（8B）</text>
+  <text x="330" y="468" text-anchor="middle" font-size="10" fill="#374151">LSN 低 4 字节 + 校验相关字段</text>
+
+  <!-- link between trailer and header LSN -->
+  <path d="M 135 453 C 80 453, 80 113, 115 113 L 135 113" fill="none" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrowR)"/>
+  <text x="55" y="285" text-anchor="middle" font-size="10" fill="#EF4444" transform="rotate(-90 55 285)">头尾 LSN 对应部分配对，辅助检测损坏</text>
+
+  <!-- overflow page callout -->
+  <rect x="580" y="231" width="280" height="80" rx="6" fill="#FEF2F7" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="720" y="253" text-anchor="middle" font-size="12" font-weight="700" fill="#EF4444">大字段溢出页</text>
+  <text x="720" y="272" text-anchor="middle" font-size="11" fill="#374151">长行的变长列可移到溢出页</text>
+  <text x="720" y="290" text-anchor="middle" font-size="11" fill="#374151">行内保留指向溢出数据的引用</text>
+  <text x="720" y="306" text-anchor="middle" font-size="10" fill="#6B7280">减少长列占用的页内空间</text>
+
+  <line x1="475" y1="271" x2="580" y2="271" stroke="#EF4444" stroke-width="1.5" marker-end="url(#arrowR)"/>
+
+  <!-- 页大小取舍 -->
+  <rect x="580" y="335" width="280" height="100" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="720" y="359" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">页大小的取舍</text>
+  <text x="720" y="380" text-anchor="middle" font-size="11" fill="#374151">页大：一次读入更多记录</text>
+  <text x="720" y="398" text-anchor="middle" font-size="11" fill="#374151">页小：点查少读无关数据</text>
+</svg>

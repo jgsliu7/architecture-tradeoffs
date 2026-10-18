@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 90 880 453" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+
+  <!-- ============ 雷达网格（中心 300,330，R=200） ============ -->
+
+  <!-- 3 档同心五边形（score 1 / 3 / 5） -->
+  <polygon points="300.0,290.0 338.0,317.6 323.5,362.4 276.5,362.4 262.0,317.6"
+           fill="none" stroke="#E5E7EB" stroke-width="1"/>
+  <polygon points="300.0,210.0 414.1,292.9 370.5,427.1 229.5,427.1 185.9,292.9"
+           fill="none" stroke="#E5E7EB" stroke-width="1"/>
+  <polygon points="300.0,130.0 490.2,268.2 417.6,491.8 182.4,491.8 109.8,268.2"
+           fill="none" stroke="#D1D5DB" stroke-width="1.3"/>
+
+  <!-- 5 条轴线（中心 → 各顶点） -->
+  <g stroke="#D1D5DB" stroke-width="1">
+    <line x1="300" y1="330" x2="300.0" y2="130.0"/>
+    <line x1="300" y1="330" x2="490.2" y2="268.2"/>
+    <line x1="300" y1="330" x2="417.6" y2="491.8"/>
+    <line x1="300" y1="330" x2="182.4" y2="491.8"/>
+    <line x1="300" y1="330" x2="109.8" y2="268.2"/>
+  </g>
+
+  <!-- 刻度数字（在顶部轴上标 1/3/5） -->
+  <g font-size="9.5" fill="#9CA3AF" text-anchor="start">
+    <text x="305" y="293">1</text>
+    <text x="305" y="213">3</text>
+    <text x="305" y="143">5</text>
+  </g>
+
+  <!-- 中心点 -->
+  <circle cx="300" cy="330" r="2.2" fill="#6B7280"/>
+
+  <!-- 维度标签（轴顶端） -->
+  <g font-size="13" font-weight="700" fill="#111827" text-anchor="middle">
+    <text x="300.0" y="112">低延迟</text>
+    <text x="528" y="265">高吞吐</text>
+    <text x="442" y="514">事务支持</text>
+    <text x="158" y="514">数据容量</text>
+    <text x="72" y="265">查询灵活度</text>
+  </g>
+  <!-- 维度小注 -->
+  <g font-size="10.5" fill="#6B7280" text-anchor="middle">
+    <text x="300.0" y="126">延迟越低，评分越高</text>
+    <text x="528" y="280">每秒处理量</text>
+    <text x="442" y="528">提交、回滚与并发控制</text>
+    <text x="158" y="528">能存多少</text>
+    <text x="72" y="280" font-size="10.5" text-anchor="middle">SQL/过滤/聚合</text>
+  </g>
+
+  <!-- ============ 三个软件多边形 ============ -->
+  <!-- 事务支持轴经重新审定保留 Redis=2、MySQL=5、Kafka=3：按各自事务能力与范围作主观示意，不表示持久性或线性一致性的等级。 -->
+
+  <!-- Redis 多边形: 5,3,2,1,2 -->
+  <polygon points="300.0,130.0 414.1,292.9 347.0,394.7 276.5,362.4 223.9,305.3"
+           fill="#4F46E5" fill-opacity="0.18" stroke="#4F46E5" stroke-width="2"/>
+  <g fill="#4F46E5">
+    <circle cx="300.0" cy="130.0" r="3.5"/>
+    <circle cx="414.1" cy="292.9" r="3.5"/>
+    <circle cx="347.0" cy="394.7" r="3.5"/>
+    <circle cx="276.5" cy="362.4" r="3.5"/>
+    <circle cx="223.9" cy="305.3" r="3.5"/>
+  </g>
+
+  <!-- MySQL 多边形: 2,2,5,5,5 -->
+  <polygon points="300.0,250.0 376.1,305.3 417.6,491.8 182.4,491.8 109.8,268.2"
+           fill="#D97706" fill-opacity="0.18" stroke="#D97706" stroke-width="2"/>
+  <g fill="#D97706">
+    <circle cx="300.0" cy="250.0" r="3.5"/>
+    <circle cx="376.1" cy="305.3" r="3.5"/>
+    <circle cx="417.6" cy="491.8" r="3.5"/>
+    <circle cx="182.4" cy="491.8" r="3.5"/>
+    <circle cx="109.8" cy="268.2" r="3.5"/>
+  </g>
+
+  <!-- Kafka 多边形: 3,5,3,4,1 -->
+  <polygon points="300.0,210.0 490.2,268.2 370.5,427.1 206.0,459.4 262.0,317.6"
+           fill="#059669" fill-opacity="0.18" stroke="#059669" stroke-width="2"/>
+  <g fill="#059669">
+    <circle cx="300.0" cy="210.0" r="3.5"/>
+    <circle cx="490.2" cy="268.2" r="3.5"/>
+    <circle cx="370.5" cy="427.1" r="3.5"/>
+    <circle cx="206.0" cy="459.4" r="3.5"/>
+    <circle cx="262.0" cy="317.6" r="3.5"/>
+  </g>
+
+  <!-- ============ 右侧图例 + 评分表 ============ -->
+  <text x="600" y="120" font-size="14" font-weight="700" fill="#111827">图例与评分（0-5 分）</text>
+
+  <!-- Redis 图例 -->
+  <rect x="600" y="138" width="20" height="14" rx="2" fill="#4F46E5" fill-opacity="0.35" stroke="#4F46E5" stroke-width="1.8"/>
+  <text x="628" y="150" font-size="13" font-weight="700" fill="#4F46E5">Redis</text>
+  <text x="672" y="150" font-size="11.5" fill="#374151">· 低延迟</text>
+
+  <!-- MySQL 图例 -->
+  <rect x="600" y="162" width="20" height="14" rx="2" fill="#D97706" fill-opacity="0.35" stroke="#D97706" stroke-width="1.8"/>
+  <text x="628" y="174" font-size="13" font-weight="700" fill="#D97706">MySQL</text>
+  <text x="678" y="174" font-size="11.5" fill="#374151">· 事务支持</text>
+
+  <!-- Kafka 图例 -->
+  <rect x="600" y="186" width="20" height="14" rx="2" fill="#059669" fill-opacity="0.35" stroke="#059669" stroke-width="1.8"/>
+  <text x="628" y="198" font-size="13" font-weight="700" fill="#059669">Kafka</text>
+  <text x="672" y="198" font-size="11.5" fill="#374151">· 高吞吐</text>
+
+  <!-- 评分表 -->
+  <rect x="596" y="218" width="252" height="180" rx="6" fill="#F9FAFB" stroke="#E5E7EB" stroke-width="1"/>
+  <!-- 表头 -->
+  <text x="608" y="238" font-size="11.5" font-weight="700" fill="#374151">维度</text>
+  <text x="744" y="238" font-size="11.5" font-weight="700" fill="#4F46E5" text-anchor="middle">Redis</text>
+  <text x="788" y="238" font-size="11.5" font-weight="700" fill="#D97706" text-anchor="middle">MySQL</text>
+  <text x="832" y="238" font-size="11.5" font-weight="700" fill="#059669" text-anchor="middle">Kafka</text>
+  <line x1="604" y1="246" x2="840" y2="246" stroke="#E5E7EB" stroke-width="1"/>
+  <!-- 行 -->
+  <g font-size="11.5" fill="#374151">
+    <text x="608" y="264">低延迟</text>
+    <text x="744" y="264" text-anchor="middle" font-weight="700" fill="#4F46E5">5</text>
+    <text x="788" y="264" text-anchor="middle">2</text>
+    <text x="832" y="264" text-anchor="middle">3</text>
+
+    <text x="608" y="288">高吞吐</text>
+    <text x="744" y="288" text-anchor="middle">3</text>
+    <text x="788" y="288" text-anchor="middle">2</text>
+    <text x="832" y="288" text-anchor="middle" font-weight="700" fill="#059669">5</text>
+
+    <text x="608" y="312">事务支持</text>
+    <text x="744" y="312" text-anchor="middle">2</text>
+    <text x="788" y="312" text-anchor="middle" font-weight="700" fill="#D97706">5</text>
+    <text x="832" y="312" text-anchor="middle">3</text>
+
+    <text x="608" y="336">数据容量</text>
+    <text x="744" y="336" text-anchor="middle">1</text>
+    <text x="788" y="336" text-anchor="middle" font-weight="700" fill="#D97706">5</text>
+    <text x="832" y="336" text-anchor="middle">4</text>
+
+    <text x="608" y="360">查询灵活度</text>
+    <text x="744" y="360" text-anchor="middle">2</text>
+    <text x="788" y="360" text-anchor="middle" font-weight="700" fill="#D97706">5</text>
+    <text x="832" y="360" text-anchor="middle">1</text>
+
+    <text x="608" y="388" font-size="10.5" fill="#6B7280" font-style="italic">粗体 = 本图该维度最高分</text>
+  </g>
+</svg>

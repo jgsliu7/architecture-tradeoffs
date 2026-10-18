@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 446" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+<text x="440" y="30" text-anchor="middle" font-size="17" font-weight="700" fill="#111827">图 2-4　ziplist 的连锁更新与 listpack 的长度记录</text>
+
+  <g transform="translate(0,35)">
+  <!-- ============ ziplist（上）============ -->
+  <text x="60" y="30" font-size="14" font-weight="700" fill="#92400E">ziplist：每个元素记录“前一元素的长度”</text>
+
+  <!-- 元素结构说明标签 -->
+  <text x="60" y="56" font-size="11.5" fill="#6B7280">元素 = [prevlen 前一元素长度] + [encoding] + [data]</text>
+
+  <!-- 变更前 -->
+  <text x="60" y="90" font-size="12.5" font-weight="700" fill="#374151">变更前：entry1 较短</text>
+  <!-- entry1 -->
+  <rect x="60"  y="106" width="190" height="44" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1.4"/>
+  <text x="155" y="127" text-anchor="middle" font-size="11.5" fill="#92400E">entry1（较短）</text>
+  <text x="155" y="143" text-anchor="middle" font-size="10.5" fill="#6B7280">记录前项长度</text>
+  <!-- entry2 -->
+  <rect x="280" y="106" width="180" height="44" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1.4"/>
+  <text x="370" y="127" text-anchor="middle" font-size="11.5" fill="#92400E">entry2</text>
+  <text x="370" y="143" text-anchor="middle" font-size="10.5" fill="#065F46">记录 entry1 的长度</text>
+  <!-- entry3 -->
+  <rect x="490" y="106" width="180" height="44" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1.4"/>
+  <text x="580" y="127" text-anchor="middle" font-size="11.5" fill="#92400E">entry3</text>
+  <text x="580" y="143" text-anchor="middle" font-size="10.5" fill="#6B7280">记录 entry2 的长度</text>
+
+  <!-- 触发：entry1 变长 -->
+  <text x="60" y="180" font-size="12.5" font-weight="700" fill="#B91C1C">变更后：entry1 变长，后继的长度记录可能逐个扩大</text>
+  <!-- entry1 变大 -->
+  <rect x="60"  y="196" width="190" height="44" rx="4" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.8"/>
+  <text x="155" y="217" text-anchor="middle" font-size="11.5" font-weight="700" fill="#B91C1C">entry1（变长）</text>
+  <text x="155" y="233" text-anchor="middle" font-size="10.5" fill="#B91C1C">变长了</text>
+  <!-- entry2 的前项长度记录可能扩大 -->
+  <rect x="280" y="196" width="180" height="44" rx="4" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.8"/>
+  <text x="370" y="217" text-anchor="middle" font-size="11.5" font-weight="700" fill="#B91C1C">entry2 可能变长</text>
+  <text x="370" y="233" text-anchor="middle" font-size="10.5" fill="#B91C1C">前项长度记录扩大</text>
+  <!-- 连锁还可能继续 -->
+  <rect x="490" y="196" width="180" height="44" rx="4" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.8"/>
+  <text x="580" y="217" text-anchor="middle" font-size="11.5" font-weight="700" fill="#B91C1C">entry3 也可能变长</text>
+  <text x="580" y="233" text-anchor="middle" font-size="10.5" fill="#B91C1C">前项长度记录或扩大</text>
+  <!-- 虚线框：连锁继续向后 -->
+  <rect x="700" y="196" width="110" height="44" rx="4" fill="none" stroke="#EF4444" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="755" y="222" text-anchor="middle" font-size="11.5" fill="#B91C1C">…继续向后</text>
+
+  <!-- 连锁箭头：30px 缝隙里有真正的箭杆 -->
+  <line x1="254" y1="218" x2="276" y2="218" stroke="#EF4444" stroke-width="2.2" marker-end="url(#arrow-red)"/>
+  <line x1="464" y1="218" x2="486" y2="218" stroke="#EF4444" stroke-width="2.2" marker-end="url(#arrow-red)"/>
+  <line x1="674" y1="218" x2="696" y2="218" stroke="#EF4444" stroke-width="2.2" marker-end="url(#arrow-red)"/>
+
+  <!-- 分隔线 -->
+  <line x1="60" y1="292" x2="820" y2="292" stroke="#E5E7EB" stroke-width="1.2"/>
+
+  <!-- ============ listpack（下）============ -->
+  <text x="60" y="322" font-size="14" font-weight="700" fill="#4F46E5">listpack：每个元素只记录“自己的长度”</text>
+
+  <!-- 连续内存：元素紧挨着排成一条，中间没有依赖可画 -->
+  <rect x="60"  y="346" width="260" height="44" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.4"/>
+  <text x="190" y="367" text-anchor="middle" font-size="11.5" fill="#4F46E5">entry1（变长）</text>
+  <text x="190" y="383" text-anchor="middle" font-size="10.5" fill="#6B7280">len=自己的长度</text>
+  <rect x="320" y="346" width="235" height="44" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.4"/>
+  <text x="437" y="367" text-anchor="middle" font-size="11.5" fill="#4F46E5">entry2 长度记录不变</text>
+  <text x="437" y="383" text-anchor="middle" font-size="10.5" fill="#065F46">仍记录自身长度</text>
+  <rect x="555" y="346" width="235" height="44" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.4"/>
+  <text x="672" y="367" text-anchor="middle" font-size="11.5" fill="#4F46E5">entry3 长度记录不变</text>
+  <text x="672" y="383" text-anchor="middle" font-size="10.5" fill="#065F46">仍记录自身长度</text>
+  <text x="806" y="372" text-anchor="middle" font-size="13" fill="#6B7280">…</text>
+
+</g>
+</svg>

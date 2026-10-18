@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 486" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6B7280"/>
+    </marker>
+  </defs>
+
+  <!-- ============ 图内标题（构建时剥离） ============ -->
+  <text x="460" y="32" text-anchor="middle" font-size="17" font-weight="700" fill="#111827">图 10-1　存储层次的对照：处理器与存储系统</text>
+
+  <!-- ============ 列标题 ============ -->
+  <text x="255" y="64" text-anchor="middle" font-size="15" font-weight="700" fill="#374151">处理器：硬件的存储层次</text>
+  <text x="665" y="64" text-anchor="middle" font-size="15" font-weight="700" fill="#374151">三个软件：内存与磁盘的分工</text>
+  <text x="665" y="84" text-anchor="middle" font-size="11.5" fill="#6B7280"><tspan fill="#4F46E5">Redis</tspan> · <tspan fill="#D97706">MySQL</tspan> · <tspan fill="#059669">Kafka</tspan> 在内存与磁盘之间</text>
+
+  <!-- ============ 左列：处理器（上快下慢，框逐级变宽变深） ============ -->
+  <!-- 行1 寄存器：中心 x=255，宽 200 -->
+  <rect x="155" y="96" width="200" height="52" rx="6" fill="#F9FAFB" stroke="#6B7280" stroke-width="1.4"/>
+  <text x="255" y="127" text-anchor="middle" font-size="13.5" font-weight="700" fill="#111827">寄存器</text>
+
+  <!-- 行2 L1/L2 缓存：宽 250 -->
+  <rect x="130" y="164" width="250" height="68" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4"/>
+  <text x="255" y="192" text-anchor="middle" font-size="13.5" font-weight="700" fill="#111827">L1 / L2 缓存</text>
+  <text x="255" y="212" text-anchor="middle" font-size="11" fill="#4B5563">缓存近期访问的数据</text>
+
+  <!-- 行3 内存：宽 290 -->
+  <rect x="110" y="248" width="290" height="84" rx="6" fill="#E5E7EB" stroke="#6B7280" stroke-width="1.4"/>
+  <text x="255" y="282" text-anchor="middle" font-size="13.5" font-weight="700" fill="#111827">内存（DRAM）</text>
+  <text x="255" y="304" text-anchor="middle" font-size="11" fill="#4B5563">主存，容量与速度居中</text>
+
+  <!-- 行4 磁盘：宽 330 -->
+  <rect x="90" y="348" width="330" height="108" rx="6" fill="#D1D5DB" stroke="#6B7280" stroke-width="1.4"/>
+  <text x="255" y="388" text-anchor="middle" font-size="13.5" font-weight="700" fill="#111827">磁盘</text>
+  <text x="255" y="410" text-anchor="middle" font-size="11" fill="#4B5563">机械盘 / SSD，持久化介质</text>
+  <text x="255" y="430" text-anchor="middle" font-size="11" fill="#4B5563">最慢也最大的一层</text>
+
+  <!-- ============ 右列：存储系统（行高与左列对齐，行1 空缺） ============ -->
+
+  <!-- 行2 进程内缓存 / 缓冲池：MySQL 琥珀，宽 250 -->
+  <rect x="540" y="164" width="250" height="68" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.4"/>
+  <text x="665" y="192" text-anchor="middle" font-size="13.5" font-weight="700" fill="#111827">进程内缓存 · 缓冲池</text>
+  <text x="665" y="212" text-anchor="middle" font-size="11" fill="#4B5563"><tspan fill="#D97706">MySQL</tspan> Buffer Pool、应用内缓存</text>
+
+  <!-- 行3 PageCache / Redis 内存主存储：Kafka+Redis 双归属，用中性灰（灰框=共享，彩框=独占） -->
+  <rect x="520" y="248" width="290" height="84" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4"/>
+  <text x="665" y="282" text-anchor="middle" font-size="13.5" font-weight="700" fill="#111827">PageCache · Redis 内存主存储</text>
+  <text x="665" y="304" text-anchor="middle" font-size="11" fill="#4B5563"><tspan fill="#059669">Kafka</tspan> 读写日志段走 PageCache</text>
+  <text x="665" y="322" text-anchor="middle" font-size="11" fill="#4B5563"><tspan fill="#4F46E5">Redis</tspan> 全量数据驻内存</text>
+
+  <!-- 行4 磁盘：与左列磁盘同色，宽 330 -->
+  <rect x="500" y="348" width="330" height="108" rx="6" fill="#D1D5DB" stroke="#6B7280" stroke-width="1.4"/>
+  <text x="665" y="388" text-anchor="middle" font-size="13.5" font-weight="700" fill="#111827">磁盘：数据页 · 日志段</text>
+  <text x="665" y="410" text-anchor="middle" font-size="11" fill="#4B5563"><tspan fill="#D97706">MySQL</tspan> 数据页 · <tspan fill="#059669">Kafka</tspan> 日志段</text>
+  <text x="665" y="430" text-anchor="middle" font-size="11" fill="#4B5563"><tspan fill="#4F46E5">Redis</tspan> RDB / AOF 也在此落盘</text>
+
+  <!-- ============ 中间：同高度层的对应关系（虚线 + 层名） ============ -->
+  <line x1="380" y1="198" x2="540" y2="198" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <text x="460" y="190" text-anchor="middle" font-size="11" fill="#6B7280">缓存作用</text>
+  <line x1="400" y1="290" x2="520" y2="290" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <text x="460" y="282" text-anchor="middle" font-size="11" fill="#6B7280">内存层</text>
+  <line x1="420" y1="402" x2="500" y2="402" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <text x="460" y="394" text-anchor="middle" font-size="11" fill="#6B7280">磁盘层</text>
+
+  <!-- ============ 两侧：速度 / 容量渐变双箭头 ============ -->
+  <line x1="54" y1="102" x2="54" y2="450" stroke="#6B7280" stroke-width="1.4" marker-start="url(#arrowGray)" marker-end="url(#arrowGray)"/>
+  <text x="54" y="88" text-anchor="middle" font-size="11.5" fill="#374151">更快 · 更小</text>
+  <text x="54" y="470" text-anchor="middle" font-size="11.5" fill="#374151">更慢 · 更大</text>
+
+
+</svg>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 78 960 509" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  <!-- ============ partition ============ -->
+  <rect x="40" y="90" width="180" height="100" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="130" y="118" text-anchor="middle" font-size="14" font-weight="700" fill="#059669">分区（Partition）</text>
+  <text x="130" y="138" text-anchor="middle" font-size="11" fill="#374151">topic-0</text>
+  <text x="130" y="158" text-anchor="middle" font-size="11" fill="#374151">= 一串日志段</text>
+  <text x="130" y="178" text-anchor="middle" font-size="10" fill="#6B7280">按偏移量有序排列</text>
+
+  <!-- arrow to segments -->
+  <line x1="220" y1="140" x2="318" y2="140" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ============ segment chain ============ -->
+  <rect x="320" y="95" width="130" height="90" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="385" y="118" text-anchor="middle" font-size="12" font-weight="700" fill="#059669">日志段 A</text>
+  <text x="385" y="138" text-anchor="middle" font-size="10" fill="#374151">文件名 00000</text>
+  <text x="385" y="158" text-anchor="middle" font-size="10" fill="#6B7280">起始偏移量 = 0</text>
+  <text x="385" y="174" text-anchor="middle" font-size="10.5" fill="#6B7280">（旧，可能被删）</text>
+
+  <rect x="535" y="95" width="130" height="90" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="600" y="118" text-anchor="middle" font-size="12" font-weight="700" fill="#059669">日志段 B</text>
+  <text x="600" y="138" text-anchor="middle" font-size="10" fill="#374151">文件名 00150</text>
+  <text x="600" y="158" text-anchor="middle" font-size="10" fill="#6B7280">起始偏移量 = 150</text>
+  <text x="600" y="174" text-anchor="middle" font-size="10.5" fill="#6B7280">（已关闭）</text>
+
+  <rect x="750" y="95" width="130" height="90" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="815" y="118" text-anchor="middle" font-size="12" font-weight="700" fill="#059669">日志段 C</text>
+  <text x="815" y="138" text-anchor="middle" font-size="10" fill="#374151">文件名 00320</text>
+  <text x="815" y="158" text-anchor="middle" font-size="10" fill="#6B7280">起始偏移量 = 320</text>
+  <text x="815" y="174" text-anchor="middle" font-size="10.5" fill="#6B7280">（当前写入）</text>
+
+  <line x1="450" y1="140" x2="533" y2="140" stroke="#4B5563" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="665" y1="140" x2="748" y2="140" stroke="#4B5563" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+  <!-- arrow down to detail：从 B 底边中点垂落到 .index 面板顶边 -->
+  <line x1="600" y1="185" x2="600" y2="258" stroke="#059669" stroke-width="1.5" marker-end="url(#arrowG)"/>
+  <text x="612" y="225" font-size="11" font-weight="700" fill="#059669">展开</text>
+
+  <!-- ============ three-file detail ============ -->
+  <text x="40" y="240" font-size="14" font-weight="700" fill="#111827">一个日志段的三个主要文件（以日志段 B = 00150 为例）</text>
+
+  <!-- .log file -->
+  <rect x="40" y="260" width="280" height="220" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="180" y="284" text-anchor="middle" font-size="13" font-weight="700" fill="#059669">00150.log（消息数据）</text>
+
+  <!-- batch 1 -->
+  <rect x="55" y="296" width="250" height="44" rx="4" fill="#F0FDF4" stroke="#059669" stroke-width="1"/>
+  <text x="180" y="314" text-anchor="middle" font-size="11" font-weight="600" fill="#059669">Batch：BaseOffset=150</text>
+  <text x="180" y="330" text-anchor="middle" font-size="10.5" fill="#6B7280">头 61B + N 条 Record（增量编码）</text>
+
+  <rect x="55" y="346" width="250" height="44" rx="4" fill="#F0FDF4" stroke="#059669" stroke-width="1"/>
+  <text x="180" y="364" text-anchor="middle" font-size="11" font-weight="600" fill="#059669">Batch：BaseOffset=180</text>
+  <text x="180" y="380" text-anchor="middle" font-size="10.5" fill="#6B7280">Attributes 标记压缩算法</text>
+
+  <rect x="55" y="396" width="250" height="44" rx="4" fill="#F0FDF4" stroke="#059669" stroke-width="1"/>
+  <text x="180" y="414" text-anchor="middle" font-size="11" font-weight="600" fill="#059669">Batch：BaseOffset=210</text>
+  <text x="180" y="430" text-anchor="middle" font-size="10.5" fill="#6B7280">Batch 按偏移量排列</text>
+
+  <text x="180" y="468" text-anchor="middle" font-size="10" fill="#374151">物理位置 = 文件内字节偏移</text>
+
+  <!-- .index file -->
+  <rect x="340" y="260" width="280" height="220" rx="8" fill="#F3F4F6" stroke="#6B7280" stroke-width="2"/>
+  <text x="480" y="284" text-anchor="middle" font-size="13" font-weight="700" fill="#374151">00150.index（偏移量索引）</text>
+
+  <rect x="355" y="296" width="250" height="32" rx="3" fill="#F9FAFB" stroke="#6B7280" stroke-width="1"/>
+  <text x="480" y="316" text-anchor="middle" font-size="11" fill="#374151">相对偏移量 4B · 物理位置 4B = 8B</text>
+
+  <rect x="355" y="334" width="250" height="28" rx="3" fill="#F9FAFB" stroke="#6B7280" stroke-width="1"/>
+  <text x="480" y="352" text-anchor="middle" font-size="10" fill="#374151">条目：(offsetΔ=30, pos=512)</text>
+
+  <rect x="355" y="368" width="250" height="28" rx="3" fill="#F9FAFB" stroke="#6B7280" stroke-width="1"/>
+  <text x="480" y="386" text-anchor="middle" font-size="10" fill="#374151">条目：(offsetΔ=60, pos=1200)</text>
+
+  <text x="480" y="420" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">稀疏：按近似字节间隔建条目</text>
+  <text x="480" y="438" text-anchor="middle" font-size="10" fill="#6B7280">log.index.interval.bytes 默认 4KB</text>
+  <text x="480" y="462" text-anchor="middle" font-size="10" fill="#374151">二分定位 ≤ 目标 → 进 .log 顺序扫</text>
+
+  <!-- .timeindex file -->
+  <rect x="640" y="260" width="280" height="220" rx="8" fill="#F3F4F6" stroke="#6B7280" stroke-width="2"/>
+  <text x="780" y="284" text-anchor="middle" font-size="13" font-weight="700" fill="#374151">00150.timeindex（时间戳索引）</text>
+
+  <rect x="655" y="296" width="250" height="32" rx="3" fill="#F9FAFB" stroke="#6B7280" stroke-width="1"/>
+  <text x="780" y="316" text-anchor="middle" font-size="11" fill="#374151">时间戳 8B · 相对偏移量 4B = 12B</text>
+
+  <rect x="655" y="334" width="250" height="28" rx="3" fill="#F9FAFB" stroke="#6B7280" stroke-width="1"/>
+  <text x="780" y="352" text-anchor="middle" font-size="10" fill="#374151">条目：(ts=10:00, offsetΔ=30)</text>
+
+  <rect x="655" y="368" width="250" height="28" rx="3" fill="#F9FAFB" stroke="#6B7280" stroke-width="1"/>
+  <text x="780" y="386" text-anchor="middle" font-size="10" fill="#374151">条目：(ts=10:05, offsetΔ=60)</text>
+
+  <text x="780" y="420" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">服务按时间消费</text>
+  <text x="780" y="438" text-anchor="middle" font-size="10" fill="#6B7280">“从昨天 10 点开始消费”</text>
+  <text x="780" y="462" text-anchor="middle" font-size="10" fill="#374151">先用 ts 找偏移量，再回 .index</text>
+
+  <!-- ============ lookup flow ============ -->
+  <text x="40" y="510" font-size="14" font-weight="700" fill="#111827">按偏移量查找：先选段，再查稀疏索引</text>
+
+  <rect x="40" y="525" width="190" height="50" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="135" y="546" text-anchor="middle" font-size="11" font-weight="700" fill="#059669">① 有序段映射定位</text>
+  <text x="135" y="564" text-anchor="middle" font-size="10" fill="#374151">定位到日志段 B</text>
+
+  <rect x="260" y="525" width="190" height="50" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="355" y="546" text-anchor="middle" font-size="11" font-weight="700" fill="#374151">② .index 二分</text>
+  <text x="355" y="564" text-anchor="middle" font-size="10" fill="#374151">找到 ≤ 目标的条目</text>
+
+  <rect x="480" y="525" width="190" height="50" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="575" y="546" text-anchor="middle" font-size="11" font-weight="700" fill="#059669">③ .log 顺序扫描</text>
+  <text x="575" y="564" text-anchor="middle" font-size="10" fill="#374151">从对应物理位置开始扫描</text>
+
+  <rect x="700" y="525" width="220" height="50" rx="6" fill="#FEF2F7" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="810" y="546" text-anchor="middle" font-size="11" font-weight="700" fill="#EF4444">④ 找到目标或其后的现存记录</text>
+  <text x="810" y="564" text-anchor="middle" font-size="10" fill="#374151">稀疏索引 + 局部顺序扫描</text>
+
+  <line x1="230" y1="550" x2="260" y2="550" stroke="#4B5563" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="450" y1="550" x2="480" y2="550" stroke="#4B5563" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="670" y1="550" x2="700" y2="550" stroke="#4B5563" stroke-width="1.2" marker-end="url(#arrow)"/>
+</svg>

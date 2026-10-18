@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 9 章 数据同步机制 — 集群一致性的实现</title>
+<style>
+*{box-sizing:border-box}
+:root{--ink:#1f2328;--mute:#57606a;--line:#d8dee4;--accent:#4f46e5;--bg:#fff;--soft:#f6f8fa}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;color:var(--ink);background:#fff;line-height:1.8;font-size:16px}
+.layout{display:grid;grid-template-columns:var(--toc-w,292px) 6px 1fr;max-width:1340px;margin:0 auto;transition:grid-template-columns .2s}
+body.toc-dragging .layout{transition:none}
+nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 24px 8px;font-size:14px;min-width:0}
+main.content{min-width:0}
+.toc-drag{position:sticky;top:0;align-self:start;height:100vh;cursor:col-resize;background:var(--line);transition:background .15s}
+.toc-drag:hover,.toc-drag.active{background:var(--accent)}
+body.toc-dragging{user-select:none;cursor:col-resize}
+.toc-collapse{position:absolute;top:16px;right:8px;border:1px solid var(--line);background:#fff;color:var(--mute);border-radius:6px;width:24px;height:24px;font-size:13px;line-height:1;cursor:pointer;padding:0}
+.toc-collapse:hover{color:var(--accent);border-color:var(--accent)}
+.toc-expand{display:none;position:fixed;left:0;top:120px;z-index:55;border:1px solid var(--line);border-left:none;background:#fff;color:var(--mute);border-radius:0 8px 8px 0;padding:10px 6px;font-size:14px;cursor:pointer;box-shadow:2px 2px 8px rgba(0,0,0,.08)}
+.toc-expand:hover{color:var(--accent)}
+body.toc-collapsed .layout{grid-template-columns:1fr}
+body.toc-collapsed nav.toc,body.toc-collapsed .toc-drag{display:none}
+body.toc-collapsed .toc-expand{display:block}
+.toc-title{font-weight:700;font-size:15px;color:var(--accent);margin:0 0 4px 8px}
+.toc-title a{color:inherit;text-decoration:none}
+.toc-sub{font-size:12px;color:var(--mute);margin:0 0 16px 8px}
+nav.toc ul{list-style:none;padding:0;margin:0}
+nav.toc li>a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.5}
+nav.toc li>a:hover{background:var(--soft)}
+nav.toc li.active>a{background:#eef2ff;color:var(--accent);font-weight:600}
+nav.toc li.nav-sub>a{padding-left:22px;font-size:13px;color:var(--mute)}
+.content{padding:32px 48px 120px;max-width:1000px;overflow-wrap:anywhere}
+.chapter-meta{color:var(--mute);font-size:13px;margin:0 0 18px}
+.page-nav{display:flex;justify-content:space-between;gap:16px;margin:40px 0 0;padding-top:20px;border-top:1px solid var(--line)}
+.page-nav a{display:block;max-width:48%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--ink);background:var(--soft);line-height:1.5}
+.page-nav a:hover{border-color:var(--accent);color:var(--accent)}
+.page-nav .empty{visibility:hidden}
+h1,h2,h3,h4{line-height:1.35;color:var(--ink);font-weight:700}
+h1{font-size:1.9em;margin:0 0 .6em;padding-bottom:.3em}
+h2{font-size:1.42em;margin:1.8em 0 .6em}
+h3{font-size:1.18em;margin:1.5em 0 .5em}
+h4{font-size:1.04em;margin:1.3em 0 .4em;color:#24292f}
+p{margin:0 0 1em}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+strong{font-weight:700;color:#111827}
+em{font-style:normal;color:var(--mute)}
+hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
+code{font-family:"SF Mono",Menlo,Consolas,monospace;background:var(--soft);padding:.12em .4em;border-radius:4px;font-size:.9em;color:#24292f}
+pre{background:#1e1e2e;color:#cdd6f4;padding:16px 18px;border-radius:8px;overflow-x:auto;line-height:1.55}
+pre code{background:none;color:inherit;padding:0;font-size:.86em}
+blockquote{margin:1.2em 0;padding:.6em 1em .6em 1.1em;border-left:4px solid var(--accent);background:#f7f8ff;color:#343a40;border-radius:0 6px 6px 0}
+blockquote strong{color:var(--accent)}
+ul,ol{margin:0 0 1em;padding-left:1.7em}
+li{margin:.25em 0}
+.table-wrap{overflow-x:auto;margin:1.2em 0}
+table{border-collapse:collapse;width:100%;font-size:.94em}
+th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+thead th{background:#eef2ff;color:#3730a3;font-weight:600}
+tbody tr:nth-child(even){background:#fafbfd}
+figure.fig{margin:2em calc((100% - 1000px)/2);text-align:center}
+.svg-wrap,.inline-svg{display:block;width:100%}
+figure.fig svg,.inline-svg svg,.svg-wrap svg,figure.fig img{width:100%;max-width:1000px;height:auto;display:block;margin:0 auto}
+figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
+.toc-toggle{display:none}
+.review-index{display:grid;gap:12px;margin:24px 0 0}
+.review-index a{display:block;padding:14px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;background:#fff}
+.review-index a:hover{border-color:var(--accent);background:#f7f8ff}
+.review-index strong{display:block;color:var(--ink)}
+.review-index span{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+@media(max-width:1200px){figure.fig{margin:2em auto}}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:fixed;left:0;top:0;width:292px;background:#fff;z-index:50;transform:translateX(-100%);transition:transform .2s;box-shadow:2px 0 12px rgba(0,0,0,.08)}
+  nav.toc.open{transform:translateX(0)}
+  body.toc-collapsed nav.toc{display:block}
+  .toc-drag,.toc-collapse,.toc-expand{display:none!important}
+  .content{padding:20px 18px 80px;max-width:100%;min-width:0}
+  .toc-toggle{display:inline-block;position:fixed;right:16px;bottom:16px;z-index:60;background:var(--accent);color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer}
+  .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:40}
+  .backdrop.show{display:block}
+  /* 窄屏宽图改为容器内横向滚动，文字保持可读 */
+  .svg-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  figure.fig svg{min-width:760px}
+}
+@media print{a.xref{color:inherit}}
+</style>
+</head>
+<body>
+<div class="backdrop" id="bd"></div>
+<button class="toc-toggle">目录</button>
+<button class="toc-expand" id="tocExpand" title="展开目录">»</button>
+<div class="layout">
+<nav class="toc" id="toc">
+  <button class="toc-collapse" id="tocCollapse" title="收起目录">«</button>
+  <div class="toc-title"><a href="../index.html">架构取舍之道</a></div>
+  <div class="toc-sub">在线阅读版</div>
+  <ul>
+<li><a href="../index.html">首页目录</a></li>
+<li><a href="00-preface.html">序言</a>
+</li>
+<li><a href="01-introduction.html">第 1 章 引言 — 为什么是这三个软件</a>
+</li>
+<li><a href="02-data-structures-protocols.html">第 2 章 数据结构与协议 — 为各自的目标而设计</a>
+</li>
+<li><a href="03-lifecycle.html">第 3 章 生命周期管理 — 优雅启动与关闭</a>
+</li>
+<li><a href="04-memory-disk.html">第 4 章 内存与磁盘 — 速度与持久化的平衡</a>
+</li>
+<li><a href="05-layered-architecture.html">第 5 章 分层架构设计 — 存储层 / 逻辑层 / 交互层</a>
+</li>
+<li><a href="06-security.html">第 6 章 安全机制 — 权限、加密、审计</a>
+</li>
+<li><a href="07-cluster.html">第 7 章 集群架构 — 从单点到分布式</a>
+</li>
+<li><a href="08-storage-format.html">第 8 章 磁盘存储格式 — 文件结构的设计哲学</a>
+</li>
+<li class="active"><a href="09-data-sync.html">第 9 章 数据同步机制 — 集群一致性的实现</a>
+<ul>
+<li class="nav-sub"><a href="#s185">本章导读</a></li>
+<li class="nav-sub"><a href="#sec-9.1">9.1 问题的本质</a></li>
+<li class="nav-sub"><a href="#sec-9.2">9.2 Redis 的做法</a></li>
+<li class="nav-sub"><a href="#sec-9.3">9.3 MySQL 的做法</a></li>
+<li class="nav-sub"><a href="#sec-9.4">9.4 Kafka 的做法</a></li>
+<li class="nav-sub"><a href="#sec-9.5">9.5 横向对比</a></li>
+<li class="nav-sub"><a href="#sec-9.6">9.6 架构启示</a></li>
+<li class="nav-sub"><a href="#sec-9.7">9.7 小结</a></li>
+</ul>
+</li>
+<li><a href="10-summary.html">第 10 章 总结：架构设计的共性规律与取舍</a>
+</li>
+<li><a href="10-epilogue.html">后记</a>
+</li>
+<li><a href="11-references.html">附录　参考文献与延伸阅读（按章索引）</a>
+</li>
+</ul>
+</nav>
+<div class="toc-drag" id="tocDrag" title="拖拽调整目录宽度"></div>
+<main class="content">
+<article class="chapter"><h1 id="s184">第 9 章 数据同步机制 — 集群一致性的实现</h1>
+<h2 id="s185">本章导读</h2>
+<p>系统扩展到多副本后，主节点的一次写入要传到其他节点。新写入的记录，从节点什么时候能看到？网络断开后，副本怎么补上漏掉的部分？这些问题处理不好，轻则用户看到旧数据，重则故障切换后缺少已确认的写入。</p>
+<p>Redis 用命令流、MySQL 用 binlog event、Kafka 用分区日志消息传播变化。三者都要记录顺序和进度，并在断线后判断能否续传。<a class="xref" href="07-cluster.html">第 7 章</a>讨论了集群拓扑与选主，本章看副本怎样追赶主节点，以及写入确认和读取可见性的边界。</p>
+<p>用户修改资料时，如果数据库已经写入新值，缓存却未失效，刷新页面就可能仍显示旧资料。多份数据的写路径需要明确以哪份数据为准，以及其他数据怎样与它对齐。</p>
+<h2 id="sec-9.1">9.1 问题的本质</h2>
+<p>为了提高可用性或分担读请求压力，系统可以增加副本。主节点上的写入需要传播到副本，这个过程需要时间。采用异步复制时，主节点不等待副本确认就向客户端返回成功；如果主节点随后发生故障，接替它的副本可能还没有收到这次写入。等待副本确认再返回，则会延长客户端的等待时间。</p>
+<p>在上述缓存场景中，数据库是正本，缓存是可重建的派生数据。本章讨论的是同一份数据的副本如何追赶主节点，以及断线后如何续传。</p>
+<h3 id="sec-9.1.1">9.1.1 数据同步的四个子问题</h3>
+<p><strong>第一，传播什么。</strong> 一次状态变化，到底把什么东西传给副本？是命令本身（“执行 <code>SET k v</code>”）、是事件（“行 k 的值变成了 v”）还是消息（“编号 7 的记录内容是 v”）？传播单元的粒度影响副本如何回放，以及进度和补发范围如何表示。</p>
+<p><strong>第二，怎么传播。</strong> 是一次请求后主端持续推流（Redis、MySQL），还是由副本发起一轮轮拉取（Kafka）？持续推流需要管理发送缓冲与慢副本；主动拉取让副本控制请求节奏，便于按当前需求取一批数据。</p>
+<p><strong>第三，传播到什么程度才算数。</strong> 主节点完成本地操作就向客户端返回，还是要等待副本收到、刷盘或应用？这些确认代表不同的保证。</p>
+<p><strong>第四，传播断了或乱了怎么办。</strong> 网络中断、副本重启或主节点更换后，能不能不从头再来，从哪里接着传？系统需要记录同步位点，并能在重启时用它对齐。</p>
+<figure class="fig" id="fig-9-1"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 74 820 236" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_9_1_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="330" y="86" width="160" height="56" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="410" y="110" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">一处状态变化</text>
+  <text x="410" y="129" text-anchor="middle" font-size="12" fill="#374151">主节点上的写入</text>
+
+  
+  <line x1="410" y1="142" x2="410" y2="172" stroke="#4B5563" stroke-width="1.5"/>
+  <line x1="160" y1="172" x2="660" y2="172" stroke="#4B5563" stroke-width="1.5"/>
+  <line x1="160" y1="172" x2="160" y2="204" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_9_1_arrow)"/>
+  <line x1="327" y1="172" x2="327" y2="204" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_9_1_arrow)"/>
+  <line x1="493" y1="172" x2="493" y2="204" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_9_1_arrow)"/>
+  <line x1="660" y1="172" x2="660" y2="204" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_9_1_arrow)"/>
+
+  
+  <rect x="85" y="206" width="150" height="92" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="160" y="230" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">① 传播什么</text>
+  <text x="160" y="252" text-anchor="middle" font-size="12" fill="#374151">传播单元的粒度</text>
+  <text x="160" y="271" text-anchor="middle" font-size="11" fill="#374151">命令 / 事件 / 消息</text>
+  <text x="160" y="289" text-anchor="middle" font-size="11" fill="#6B7280">Redis · MySQL · Kafka</text>
+
+  
+  <rect x="252" y="206" width="150" height="92" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="327" y="230" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">② 怎么传播</text>
+  <text x="327" y="252" text-anchor="middle" font-size="12" fill="#374151">推流 还是 拉取</text>
+  <text x="327" y="271" text-anchor="middle" font-size="11" fill="#374151">主端推流 / 副本轮询拉取</text>
+  <text x="327" y="289" text-anchor="middle" font-size="9.5" fill="#6B7280">Redis·MySQL 推流 · Kafka 拉取</text>
+
+  
+  <rect x="411" y="206" width="164" height="92" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="493" y="230" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">③ 到什么程度</text>
+  <text x="493" y="252" text-anchor="middle" font-size="12" fill="#374151">确认与可见性要求</text>
+  <text x="493" y="271" text-anchor="middle" font-size="11" fill="#374151">接收 / 落盘 / 应用</text>
+  <text x="493" y="289" text-anchor="middle" font-size="11" fill="#6B7280">等待条件影响写入延迟</text>
+
+  
+  <rect x="585" y="206" width="150" height="92" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="660" y="230" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">④ 断了怎么办</text>
+  <text x="660" y="252" text-anchor="middle" font-size="12" fill="#374151">断点续传 + 故障恢复</text>
+  <text x="660" y="271" text-anchor="middle" font-size="11" fill="#374151">位点对齐 · 增量补差</text>
+  <text x="660" y="289" text-anchor="middle" font-size="11" fill="#6B7280">重新全量同步</text>
+
+</svg>
+</div><figcaption>图 9-1　数据同步的四个子问题：传播什么、怎么传播、到什么程度、断了怎么办。</figcaption></figure>
+<p>副本状态怎样对齐，可以借助<strong>状态机复制</strong>来理解：从相同的初始状态出发，按相同顺序执行相同输入，并且执行是确定性的，副本就会得到相同状态。Kleppmann《Designing Data-Intensive Applications》在“一致性与共识”一章对此已有展开。三个软件都用日志或命令序列记录变化：Redis 的副本执行命令流，MySQL 的副本回放 binlog event，Kafka 的副本按偏移量复制分区日志。</p>
+<figure class="fig" id="fig-9-2"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 68 880 448" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_9_2_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_9_2_arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="120" y="80" width="640" height="62" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="440" y="100" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">有序输入序列（各系统内部复制的对象）</text>
+  <text x="180" y="124" font-size="12" fill="#374151">op1</text>
+  <text x="220" y="124" font-size="12" fill="#6B7280">→</text>
+  <text x="260" y="124" font-size="12" fill="#374151">op2</text>
+  <text x="300" y="124" font-size="12" fill="#6B7280">→</text>
+  <text x="340" y="124" font-size="12" fill="#374151">op3</text>
+  <text x="380" y="124" font-size="12" fill="#6B7280">→</text>
+  <text x="420" y="124" font-size="12" fill="#374151">op4</text>
+  <text x="460" y="124" font-size="12" fill="#6B7280">→</text>
+  <text x="500" y="124" font-size="12" fill="#374151">op5</text>
+  <text x="540" y="124" font-size="12" fill="#6B7280">→</text>
+  <text x="600" y="124" font-size="12" fill="#374151">op6 …</text>
+
+  
+  <line x1="200" y1="142" x2="160" y2="178" stroke="#4B5563" stroke-width="1.4" marker-end="url(#fig_9_2_arrow)"/>
+  <line x1="440" y1="142" x2="440" y2="178" stroke="#4B5563" stroke-width="1.4" marker-end="url(#fig_9_2_arrow)"/>
+  <line x1="680" y1="142" x2="720" y2="178" stroke="#4B5563" stroke-width="1.4" marker-end="url(#fig_9_2_arrow)"/>
+
+  
+  <rect x="40" y="182" width="240" height="240" rx="8" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.8"/>
+  <text x="160" y="206" text-anchor="middle" font-size="13" font-weight="700" fill="#4F46E5">Redis 示例</text>
+  <text x="160" y="224" text-anchor="middle" font-size="11" fill="#374151">序列载体：命令流</text>
+
+  <text x="60" y="250" font-size="12" fill="#374151">初始状态 S0</text>
+  <line x1="60" y1="258" x2="260" y2="258" stroke="#4F46E5" stroke-width="0.8" stroke-dasharray="3 2"/>
+
+  <text x="60" y="280" font-size="12" fill="#111827">apply(op1) → S1</text>
+  <text x="60" y="300" font-size="12" fill="#111827">apply(op2) → S2</text>
+  <text x="60" y="320" font-size="12" fill="#111827">apply(op3) → S3</text>
+  <text x="60" y="340" font-size="12" fill="#111827">apply(op4) → S4</text>
+  <text x="60" y="360" font-size="12" fill="#111827">apply(op5) → S5</text>
+  <line x1="60" y1="368" x2="260" y2="368" stroke="#4F46E5" stroke-width="0.8" stroke-dasharray="3 2"/>
+  <text x="60" y="392" font-size="12" font-weight="700" fill="#059669">最终状态 S5</text>
+  <text x="60" y="410" font-size="11" fill="#6B7280">执行方式：命令解释执行</text>
+
+  
+  <rect x="320" y="182" width="240" height="240" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="1.8"/>
+  <text x="440" y="206" text-anchor="middle" font-size="13" font-weight="700" fill="#D97706">MySQL 示例</text>
+  <text x="440" y="224" text-anchor="middle" font-size="11" fill="#374151">序列载体：binlog event</text>
+
+  <text x="340" y="250" font-size="12" fill="#374151">初始状态 S0</text>
+  <line x1="340" y1="258" x2="540" y2="258" stroke="#D97706" stroke-width="0.8" stroke-dasharray="3 2"/>
+
+  <text x="340" y="280" font-size="12" fill="#111827">apply(op1) → S1</text>
+  <text x="340" y="300" font-size="12" fill="#111827">apply(op2) → S2</text>
+  <text x="340" y="320" font-size="12" fill="#111827">apply(op3) → S3</text>
+  <text x="340" y="340" font-size="12" fill="#111827">apply(op4) → S4</text>
+  <text x="340" y="360" font-size="12" fill="#111827">apply(op5) → S5</text>
+  <line x1="340" y1="368" x2="540" y2="368" stroke="#D97706" stroke-width="0.8" stroke-dasharray="3 2"/>
+  <text x="340" y="392" font-size="12" font-weight="700" fill="#059669">最终状态 S5</text>
+  <text x="340" y="410" font-size="11" fill="#6B7280">执行方式：SQL 线程回放</text>
+
+  
+  <rect x="600" y="182" width="240" height="240" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="1.8"/>
+  <text x="720" y="206" text-anchor="middle" font-size="13" font-weight="700" fill="#059669">Kafka 示例</text>
+  <text x="720" y="224" text-anchor="middle" font-size="11" fill="#374151">序列载体：分区日志消息</text>
+
+  <text x="620" y="250" font-size="12" fill="#374151">初始状态 S0</text>
+  <line x1="620" y1="258" x2="820" y2="258" stroke="#059669" stroke-width="0.8" stroke-dasharray="3 2"/>
+
+  <text x="620" y="280" font-size="12" fill="#111827">apply(op1) → S1</text>
+  <text x="620" y="300" font-size="12" fill="#111827">apply(op2) → S2</text>
+  <text x="620" y="320" font-size="12" fill="#111827">apply(op3) → S3</text>
+  <text x="620" y="340" font-size="12" fill="#111827">apply(op4) → S4</text>
+  <text x="620" y="360" font-size="12" fill="#111827">apply(op5) → S5</text>
+  <line x1="620" y1="368" x2="820" y2="368" stroke="#059669" stroke-width="0.8" stroke-dasharray="3 2"/>
+  <text x="620" y="392" font-size="12" font-weight="700" fill="#059669">最终状态 S5</text>
+  <text x="620" y="410" font-size="11" fill="#6B7280">执行方式：日志追加复制</text>
+
+  
+  <line x1="160" y1="422" x2="380" y2="448" stroke="#EF4444" stroke-width="1.5" marker-end="url(#fig_9_2_arrowRed)"/>
+  <line x1="440" y1="422" x2="440" y2="448" stroke="#EF4444" stroke-width="1.5" marker-end="url(#fig_9_2_arrowRed)"/>
+  <line x1="720" y1="422" x2="500" y2="448" stroke="#EF4444" stroke-width="1.5" marker-end="url(#fig_9_2_arrowRed)"/>
+
+  <rect x="270" y="452" width="340" height="44" rx="6" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.8"/>
+  <text x="440" y="472" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">各系统内的副本按相同历史追赶</text>
+  <text x="440" y="489" text-anchor="middle" font-size="11" fill="#374151">相同初态 + 相同输入顺序 + 确定性执行</text>
+</svg>
+</div><figcaption>图 9-2　状态机复制模型：以三个软件为例，对照输入载体与副本处理方式；各系统内的副本按相同历史追赶。</figcaption></figure>
+<p>同一个“随机选一个成员”，两台机器可能选出不同结果。复制时要传播已经选中的成员，而不是让副本再随机一次。Redis 的命令改写，解决的就是这类问题。</p>
+<p>读取副本时，还要考虑复制延迟。主节点写入新订单后，从节点还没同步到，查询若恰好落在从节点上，就可能查不到这笔订单。“数据已写入”和“用户能看到”之间有一个时间窗口。对写后立即读取的请求，可以优先路由到主节点，减少副本延迟的影响。</p>
+<h2 id="sec-9.2">9.2 Redis 的做法</h2>
+<p>Redis 用单向命令流异步复制数据，尽量减少主节点等待副本确认的时间。</p>
+<h3 id="sec-9.2.1">9.2.1 传播单元：命令本身</h3>
+<p>Redis 把传播命令作为复制单元。主节点执行写命令后，把需要传播的命令按 RESP 编码发送给副本；这份命令可能已根据实际执行结果改写。副本在相同的起始数据上按顺序执行传播命令，追赶主节点的状态。</p>
+<p>这个做法呼应了<a class="xref" href="08-storage-format.html">第 8 章</a>“AOF 持久化文件复用协议格式”的设计：经主节点改写的传播命令按 RESP 编码，进入 AOF 的命令部分和复制流。两条路径可以复用命令传播与解析处理逻辑。</p>
+<p>副本重新执行非确定性命令时，可能得到不同结果，例如随机删除集合成员，或按当前时间计算过期时刻。Redis 按主节点的执行结果传播确定的操作：用指定成员的 <code>SREM</code> 命令传播删除结果，把有效过期时间改成绝对时间戳；脚本也传播实际产生的写入效果，不让副本重新计算。</p>
+<h3 id="sec-9.2.2">9.2.2 单向异步：减少写入的确认等待</h3>
+<p>Redis 复制是<strong>单向异步</strong>的。主节点通常在本地执行写命令后向客户端返回结果，<strong>不等待副本确认</strong>；副本通过长连接接收命令流并追赶。每个副本只有一个上游主节点，也可以继续向下游副本传播，形成树状复制拓扑。</p>
+<p>命令传播会消耗主节点的 CPU、网络与缓冲空间，慢副本也可能因输出缓冲超限而被断开。故障转移时，老主已向客户端确认的写入若尚未复制到新主，就可能丢失。</p>
+<h3 id="sec-9.2.3">9.2.3 全量同步：fork 子进程生成 RDB，传完补增量</h3>
+<p>副本首次连接时会请求全量同步；增量同步无法进行时，也要转入全量同步。进入全量同步后的流程是：</p>
+<ol><li>主节点 fork 子进程生成 RDB，并将快照传给副本。</li><li>在 RDB 生成和传输期间，主节点继续处理写入，并在复制缓冲中保留这段时间产生的命令流。</li><li>副本加载 RDB 后，得到主节点 fork 时的数据快照。</li><li>主节点继续发送快照之后保留的复制流，副本执行这些增量，逐步追赶。</li></ol>
+<p>全量同步还会带来几项代价：fork 要复制页表，可能造成短暂停顿；子进程运行期间，父进程修改内存页会触发写时复制（COW），额外内存占用随被修改的页数增加。RDB 的网络传输还会消耗主节点出口带宽。部分重同步可以减少反复全量同步带来的这些开销。断线重连时的部分重同步与全量回退见<a class="xref" href="#fig-9-3">图 9-3</a>。</p>
+<figure class="fig" id="fig-9-3"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 66 880 526" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_9_3_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_9_3_arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="fig_9_3_arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="110" y="78" width="120" height="40" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="170" y="103" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">从节点 Replica</text>
+
+  <rect x="650" y="78" width="120" height="40" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="710" y="103" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">主节点 Master</text>
+
+  
+  <line x1="170" y1="118" x2="170" y2="585" stroke="#4B5563" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="710" y1="118" x2="710" y2="585" stroke="#4B5563" stroke-width="1" stroke-dasharray="4 4"/>
+
+  
+  <line x1="178" y1="150" x2="702" y2="150" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_9_3_arrow)"/>
+  <text x="440" y="142" text-anchor="middle" font-size="12" fill="#111827">① 断线重连：PSYNC &lt;replid&gt; &lt;offset&gt;</text>
+
+  
+  <rect x="440" y="178" width="220" height="92" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="550" y="202" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">② 主节点比对</text>
+  <text x="550" y="222" text-anchor="middle" font-size="12" fill="#374151">复制 ID 及有效范围匹配？</text>
+  <text x="550" y="240" text-anchor="middle" font-size="12" fill="#374151">请求字节仍在 backlog 中？</text>
+  <text x="550" y="260" text-anchor="middle" font-size="11" fill="#6B7280">backlog 默认约 1MB</text>
+  <line x1="550" y1="178" x2="550" y2="150" stroke="#4B5563" stroke-width="1" stroke-dasharray="3 3"/>
+
+  
+  <text x="300" y="296" text-anchor="middle" font-size="12" font-weight="700" fill="#059669">是（两项均满足）</text>
+  <text x="774" y="290" text-anchor="middle" font-size="12" font-weight="700" fill="#EF4444">否（任一不满足）</text>
+
+  
+  <rect x="60" y="320" width="320" height="158" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="220" y="344" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">部分重同步（Partial Resync）</text>
+  <text x="80" y="368" font-size="12" fill="#374151">③ 主节点：+CONTINUE</text>
+  <text x="80" y="388" font-size="12" fill="#374151">④ 从 backlog 中取出请求 offset 起</text>
+  <text x="92" y="406" font-size="12" fill="#374151">的命令，增量补发</text>
+  <text x="80" y="430" font-size="12" fill="#374151">⑤ 从节点回放补发的命令，offset 追平</text>
+  <text x="80" y="458" font-size="11" font-weight="600" fill="#059669">代价低：只补差额，主节点不 fork</text>
+
+  
+  <path d="M 470 270 Q 380 290 290 320" fill="none" stroke="#059669" stroke-width="1.5" marker-end="url(#fig_9_3_arrowGreen)"/>
+
+  
+  <rect x="500" y="320" width="340" height="158" rx="6" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="670" y="344" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">全量同步（Full Resync）</text>
+  <text x="520" y="368" font-size="12" fill="#374151">③ 主节点：+FULLRESYNC &lt;replid&gt; &lt;offset&gt;</text>
+  <text x="520" y="388" font-size="12" fill="#374151">④ fork 子进程生成 RDB，可直接传输</text>
+  <text x="520" y="408" font-size="12" fill="#374151">⑤ RDB 生成和传输期间，新写入保留在复制缓冲中</text>
+  <text x="520" y="428" font-size="12" fill="#374151">⑥ RDB 传完后，补发缓冲的命令</text>
+  <text x="520" y="458" font-size="11" font-weight="600" fill="#EF4444">代价高：fork 阻塞 + 全量网络传输</text>
+
+  
+  <path d="M 640 270 Q 720 290 800 320" fill="none" stroke="#EF4444" stroke-width="1.5" marker-end="url(#fig_9_3_arrowRed)"/>
+
+  
+  <path d="M 220 478 Q 220 510 350 530" fill="none" stroke="#4B5563" stroke-width="1.2" stroke-dasharray="4 4"/>
+  <path d="M 670 478 Q 670 510 540 530" fill="none" stroke="#4B5563" stroke-width="1.2" stroke-dasharray="4 4"/>
+
+  
+  <rect x="330" y="538" width="220" height="40" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="440" y="563" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">从节点 offset 追平，恢复增量同步</text>
+</svg>
+</div><figcaption>图 9-3　PSYNC2 同时核对复制历史与续传位置：复制 ID 有效且所需字节仍在 backlog 中，才能部分重同步，否则退回全量。</figcaption></figure>
+<h3 id="sec-9.2.4">9.2.4 增量同步：PSYNC2 与复制积压缓冲区</h3>
+<p>PSYNC2 解决的是“断线重连能不能不从头同步”。它需要复制 ID、偏移量和保留的复制流一起配合：ID 核对历史，偏移量标明进度，backlog 提供可补发的数据。</p>
+<p><strong>复制偏移量（replication offset）</strong>：主节点用 <code>master_repl_offset</code> 记录复制流推进到的字节位置；副本用自己的已处理偏移量记录执行进度，<code>INFO replication</code> 中对应 <code>slave_repl_offset</code>。位点按复制流的字节计数，需要与复制 ID 一起解释。</p>
+<p><strong>复制积压缓冲区（backlog）</strong>：主节点为断线续传保留最近一段复制流，规模由 <code>repl-backlog-size</code> 控制，默认约 1MB。</p>
+<p>副本断线重连时，通过 <code>PSYNC &lt;replid&gt; &lt;offset&gt;</code> 发送已知的复制 ID 和希望接收的下一个字节位置。主节点先验证复制历史是否匹配，再检查所需字节是否仍在 backlog 中。</p>
+<ul><li>条件满足 → <strong>部分重同步（partial resync）</strong>：从请求的位置继续发送保留的复制流，追赶时间取决于落后量和净处理速率。</li><li>历史不匹配或所需字节已不可得 → 退回全量同步。</li></ul>
+<figure class="fig" id="fig-9-4"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 65 860 461" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_9_4_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_9_4_arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  
+  <text x="430" y="88" text-anchor="middle" font-size="14" font-weight="700" fill="#4F46E5">主节点 Master · 复制积压缓冲区（backlog，默认约 1MB）</text>
+
+  
+  <g transform="translate(80,108)">
+    
+    <rect x="0" y="40" width="80" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="40" y="64" text-anchor="middle" font-size="11" fill="#6B7280">cmd</text>
+    <text x="40" y="82" text-anchor="middle" font-size="10" fill="#6B7280">off=280</text>
+
+    <rect x="84" y="40" width="80" height="56" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+    <text x="124" y="64" text-anchor="middle" font-size="11" fill="#374151">cmd B</text>
+    <text x="124" y="82" text-anchor="middle" font-size="10" fill="#6B7280">off=330</text>
+
+    <rect x="168" y="40" width="80" height="56" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+    <text x="208" y="64" text-anchor="middle" font-size="11" fill="#374151">cmd C</text>
+    <text x="208" y="82" text-anchor="middle" font-size="10" fill="#6B7280">off=380</text>
+
+    <rect x="252" y="40" width="80" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="292" y="64" text-anchor="middle" font-size="11" fill="#6B7280">cmd</text>
+    <text x="292" y="82" text-anchor="middle" font-size="10" fill="#6B7280">off=420</text>
+
+    <rect x="336" y="40" width="80" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="376" y="64" text-anchor="middle" font-size="11" fill="#6B7280">cmd</text>
+    <text x="376" y="82" text-anchor="middle" font-size="10" fill="#6B7280">off=450</text>
+
+    <rect x="420" y="40" width="80" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="460" y="64" text-anchor="middle" font-size="11" fill="#6B7280">cmd</text>
+    <text x="460" y="82" text-anchor="middle" font-size="10" fill="#6B7280">off=480</text>
+
+    <rect x="504" y="40" width="80" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="544" y="64" text-anchor="middle" font-size="11" fill="#6B7280">cmd</text>
+    <text x="544" y="82" text-anchor="middle" font-size="10" fill="#6B7280">off=505</text>
+
+    
+    <rect x="588" y="40" width="80" height="56" rx="4" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.8"/>
+    <text x="628" y="64" text-anchor="middle" font-size="11" fill="#111827">cmd D（新写）</text>
+    <text x="628" y="82" text-anchor="middle" font-size="10" fill="#6B7280">off=520</text>
+
+    
+    <path d="M 670 60 Q 720 60 720 20 Q 720 0 40 0 Q 0 0 0 30" fill="none" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="300" y="20" text-anchor="middle" font-size="10" fill="#6B7280">滑动窗口（回收旧块）</text>
+
+    
+    <line x1="40" y1="100" x2="40" y2="120" stroke="#6B7280" stroke-width="1.5"/>
+    <polygon points="34,118 46,118 40,128" fill="#6B7280"/>
+    <text x="40" y="135" text-anchor="middle" font-size="11" fill="#6B7280">窗口左端=280（最老存活）</text>
+
+    
+    <line x1="628" y1="100" x2="628" y2="120" stroke="#EF4444" stroke-width="2"/>
+    <polygon points="622,118 634,118 628,128" fill="#EF4444"/>
+    <text x="628" y="135" text-anchor="middle" font-size="12" font-weight="700" fill="#EF4444">主 master_repl_offset=520</text>
+  </g>
+
+  
+  <text x="430" y="278" text-anchor="middle" font-size="14" font-weight="700" fill="#4F46E5">从节点 Replica · 记录自己已同步到的字节进度</text>
+
+  <rect x="180" y="296" width="500" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="430" y="318" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">从节点本地的复制位点</text>
+  <text x="430" y="338" text-anchor="middle" font-size="13" fill="#EF4444" font-weight="700">replica offset = 330（断线前同步到 cmd B）</text>
+
+  
+  <line x1="430" y1="352" x2="430" y2="380" stroke="#EF4444" stroke-width="1.8" marker-end="url(#fig_9_4_arrowRed)"/>
+
+  <rect x="100" y="386" width="660" height="126" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="430" y="410" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">历史匹配后比对：520 − 330 = 190 字节，请求从 331 开始</text>
+
+  <text x="120" y="438" font-size="12.5" fill="#374151">① 请求从 331 续传，所需字节仍在窗口（280–520）中</text>
+  <text x="120" y="458" font-size="12.5" font-weight="700" fill="#059669">     ⇒ 走部分重同步：只补发缺失的命令，主节点不 fork</text>
+
+  <text x="120" y="484" font-size="12.5" fill="#374151">② 请求位置早于 280，或复制历史不匹配 → 无法继续这段复制流</text>
+  <text x="120" y="504" font-size="12.5" font-weight="700" fill="#EF4444">     ⇒ 退回全量同步：子进程生成 RDB + 全量传输</text>
+</svg>
+</div><figcaption>图 9-4　backlog 滑动窗口：复制历史匹配且请求范围落在保留窗口内时，可增量补差；否则需要全量同步。</figcaption></figure>
+<p>确定 backlog 大小时，需要在断线容忍时间与内存占用之间取舍：写入速率相同时，窗口越大，能覆盖越长的网络抖动或副本停顿，也要占用更多内存。可以根据写入字节速率和常见断线时长估算所需规模。</p>
+<p>副本重连后，既要补断线期间的积压，也要继续处理主节点的新写入。设落后量为 B 字节，副本的有效处理速率为 C，主节点同期的写入速率为 W。只有 C 大于 W，副本才有净追赶能力；速率恒定时，追赶时间约为 <code>B/(C-W)</code>。</p>
+<p>故障转移后，新主会生成新的 replid，把老 replid 保存为 <code>replid2</code>，并记录旧复制历史的有效偏移上限。副本拿老 ID 续传时，既要满足这个上限，也要满足 backlog 仍保留所需字节，才能走部分重同步。这放宽了更换主节点后续传的限制。</p>
+<h3 id="sec-9.2.5">9.2.5 关键取舍：用副本状态限制是否接受写入</h3>
+<p>Redis 提供了一组可写门槛：<code>min-replicas-to-write N</code> + <code>min-replicas-max-lag T</code>。启用后，主节点接受写入前，要求至少有 N 个在线副本在最近 T 秒内发来复制 ACK。这里的 lag 指距上次 ACK 的时间。</p>
+<p>达不到这道副本状态门槛，主节点就拒绝写入；通过门槛后，写入仍以异步方式传播，故障转移时可能丢失。</p>
+<p>还可以在本连接上单独调用 <code>WAIT N T</code>，对先前写入追加确认等待。它等待至少 N 个副本确认本连接此前写入所对应的复制偏移量；T 毫秒超时后返回实际确认数。<code>min-replicas-to-write</code> 是写入前的副本状态门槛，<code>WAIT</code> 是对已发出写入追加的确认等待。</p>
+<h3 id="sec-9.2.6">9.2.6 级联复制与延迟累积</h3>
+<p>副本也可以作为下一级副本的主，形成树状（tree）复制拓扑。常见动机是分担主节点的出口带宽：主只推给少数几个一级副本，一级副本再推给二级副本。</p>
+<p>复制流经过一级副本，再到二级副本，后续各级也依次从上游接收，传播延迟逐级累积。链路较深时，主节点的一部分新写入可能还没有同步到末端副本，用户从它读取时可能看到旧数据。</p>
+<h3 id="sec-9.2.7">9.2.7 故障转移的数据语义</h3>
+<p>Sentinel 或 Cluster 选出新主时，老主在故障前已向客户端确认的某些写入，可能还没有传到新主。老主恢复后以副本身份重新加入，新主会用自己的数据覆盖老主上的数据。</p>
+<h2 id="sec-9.3">9.3 MySQL 的做法</h2>
+<p>MySQL 提供异步复制、半同步复制和组复制（MGR），让使用者按业务选择副本确认与事务协调方式。MySQL 的同步以 binlog event 为传播单元。</p>
+<h3 id="sec-9.3.1">9.3.1 传播单元：binlog event</h3>
+<p>MySQL 通过 binlog event 传播变更。以 ROW 格式的数据修改为例，它记录的是已经确定的行变更，如“行 k 的值从 v1 变成 v2”。</p>
+<p>采用 ROW 格式，可以减少重新执行语句带来的差异。例如，直接重放包含 <code>UUID()</code> 的语句，可能生成不同的值；ROW 格式把已经确定的行变更传给副本，不再重新计算这个值。这和 Redis 处理非确定性命令是同一类思路：在源头确定要传播的变更。</p>
+<p>ROW 格式传播的是具体的行变更：一条 <code>UPDATE ... WHERE id&lt;100</code> 如果实际改动了一百行，就需要记录这一百行的变更。日志量可能更大；对复制正确性来说，这个代价值得付。</p>
+<h3 id="sec-9.3.2">9.3.2 传统复制：两段式的收流 + 回放</h3>
+<p>MySQL 的传统异步复制分为<strong>接收和回放两段</strong>。先以单线程回放为例：</p>
+<ul><li><strong>I/O 线程（从节点上）</strong>：主动连接主节点，订阅主节点的 binlog 流，把收到的事件写入本地的中继日志。这一段是“收流”：副本发起后，主端 dump 线程把事件流持续推过来。</li><li><strong>SQL 线程（从节点上）</strong>：读 relay log，按顺序回放事件到本地存储引擎。这一段是“本地回放”。</li></ul>
+<p>接收和回放分开后，I/O 线程可以先把事件写入 relay log，SQL 线程按本地引擎的速度执行。relay log 用缓冲空间吸收两者的速度差。</p>
+<figure class="fig" id="fig-9-5"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 68 940 608" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_9_5_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_9_5_arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="fig_9_5_arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="30" y="80" width="880" height="252" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="1.8"/>
+  <text x="470" y="106" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">主节点 Source：客户端提交路径</text>
+
+  
+  <text x="105" y="153" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">异步</text>
+  <rect x="180" y="126" width="150" height="44" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="255" y="153" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">写 binlog</text>
+  <line x1="330" y1="148" x2="363" y2="148" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_9_5_arrow)"/>
+  <rect x="365" y="126" width="148" height="44" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="439" y="153" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">引擎提交（commit）</text>
+  <line x1="513" y1="148" x2="543" y2="148" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_9_5_arrow)"/>
+  <rect x="545" y="126" width="148" height="44" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="619" y="153" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">返回客户端</text>
+
+  
+  <text x="105" y="213" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">半同步</text>
+  <text x="105" y="231" text-anchor="middle" font-size="10.5" fill="#374151">AFTER_SYNC（8.0 默认）</text>
+  <rect x="180" y="196" width="150" height="44" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="255" y="223" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">binlog 刷盘</text>
+  <line x1="330" y1="218" x2="363" y2="218" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_9_5_arrow)"/>
+  <rect x="365" y="196" width="148" height="44" rx="6" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="439" y="214" text-anchor="middle" font-size="12" font-weight="600" fill="#EF4444">等副本 ACK</text>
+  <text x="439" y="232" text-anchor="middle" font-size="11" fill="#374151">超时则降级为异步</text>
+  <line x1="513" y1="218" x2="543" y2="218" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_9_5_arrow)"/>
+  <rect x="545" y="196" width="148" height="44" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="619" y="223" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">引擎提交（commit）</text>
+  <line x1="693" y1="218" x2="723" y2="218" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_9_5_arrow)"/>
+  <rect x="725" y="196" width="148" height="44" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="799" y="223" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">返回客户端</text>
+
+  
+  <text x="105" y="283" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">半同步</text>
+  <text x="105" y="301" text-anchor="middle" font-size="10.5" fill="#374151">AFTER_COMMIT</text>
+  <rect x="180" y="266" width="150" height="44" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="255" y="293" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">写 binlog</text>
+  <line x1="330" y1="288" x2="363" y2="288" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_9_5_arrow)"/>
+  <rect x="365" y="266" width="148" height="44" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="439" y="293" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">引擎提交（commit）</text>
+  <line x1="513" y1="288" x2="543" y2="288" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_9_5_arrow)"/>
+  <rect x="545" y="266" width="148" height="44" rx="6" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="619" y="284" text-anchor="middle" font-size="12" font-weight="600" fill="#EF4444">等副本 ACK</text>
+  <text x="619" y="302" text-anchor="middle" font-size="11" fill="#374151">超时则降级为异步</text>
+  <line x1="693" y1="288" x2="723" y2="288" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_9_5_arrow)"/>
+  <rect x="725" y="266" width="148" height="44" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="799" y="293" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">返回客户端</text>
+
+  
+  <rect x="30" y="440" width="390" height="100" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="1.8"/>
+  <text x="225" y="463" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">主节点：复制数据发送</text>
+  <rect x="435" y="350" width="475" height="310" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="1.8"/>
+  <text x="780" y="373" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">从节点 Replica：接收与回放</text>
+
+  <rect x="50" y="480" width="160" height="44" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="130" y="498" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">binlog（行级事件）</text>
+  <text x="130" y="516" text-anchor="middle" font-size="11" fill="#374151">ROW 格式，按事务追加</text>
+  <line x1="210" y1="502" x2="243" y2="502" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_9_5_arrow)"/>
+  <rect x="245" y="480" width="155" height="44" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="322" y="498" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">Binlog Dump 线程</text>
+  <text x="322" y="516" text-anchor="middle" font-size="11" fill="#374151">持续发送 binlog 事件</text>
+  <line x1="400" y1="502" x2="453" y2="502" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_9_5_arrow)"/>
+  <rect x="455" y="480" width="170" height="44" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="540" y="498" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">I/O 线程（收流）</text>
+  <text x="540" y="516" text-anchor="middle" font-size="11" fill="#374151">主动连接主，订阅 binlog 流</text>
+  <line x1="625" y1="502" x2="668" y2="502" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_9_5_arrow)"/>
+  <rect x="670" y="480" width="220" height="44" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="780" y="498" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">relay log（中继日志）</text>
+  <text x="780" y="516" text-anchor="middle" font-size="11" fill="#374151">写到本地的 binlog 副本</text>
+
+  
+  <line x1="780" y1="480" x2="780" y2="438" stroke="#EF4444" stroke-width="1.2" marker-end="url(#fig_9_5_arrowRed)"/>
+  <rect x="670" y="388" width="220" height="48" rx="6" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="780" y="407" text-anchor="middle" font-size="11.5" font-weight="600" fill="#EF4444">回 ACK 给主（已写 relay log 文件）</text>
+  <text x="780" y="426" text-anchor="middle" font-size="11" fill="#374151">不等本地回放完成</text>
+  
+  <path d="M 670 412 L 531 412 L 531 298 M 531 278 L 531 252 L 439 252 L 439 242" fill="none" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="6 3" marker-end="url(#fig_9_5_arrowRed)"/>
+  <path d="M 619 412 L 619 312" fill="none" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="6 3" marker-end="url(#fig_9_5_arrowRed)"/>
+  <text x="320" y="380" text-anchor="middle" font-size="12" font-weight="600" fill="#EF4444">ACK 回路仅在半同步模式启用</text>
+
+  <line x1="780" y1="524" x2="780" y2="553" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_9_5_arrow)"/>
+  <rect x="670" y="555" width="220" height="44" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="780" y="573" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">SQL 线程（图示单线程）</text>
+  <text x="780" y="591" text-anchor="middle" font-size="11" fill="#374151">读 relay log → 本地重放事务</text>
+  <line x1="780" y1="599" x2="780" y2="618" stroke="#059669" stroke-width="1.2" marker-end="url(#fig_9_5_arrowGreen)"/>
+  <rect x="670" y="620" width="220" height="26" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="780" y="638" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">本地数据追平</text>
+
+  
+  <rect x="50" y="565" width="350" height="80" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2"/>
+  <text x="225" y="588" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">GTID：用事务标识定位复制进度</text>
+  <text x="225" y="610" text-anchor="middle" font-size="11" fill="#374151">提交事务时分配 GTID（source_id:seq）</text>
+  <text x="225" y="631" text-anchor="middle" font-size="11" fill="#374151">主节点按副本的 GTID 集合补发所缺事务</text>
+
+</svg>
+</div><figcaption>图 9-5　异步 / 半同步 / GTID：异步复制完成本地提交后返回；半同步默认采用 AFTER_SYNC，在 binlog 刷盘后、引擎提交前等待副本 ACK，AFTER_COMMIT 则在引擎提交后等待。副本确认不等待事务应用完成，GTID 以事务标识辅助定位复制进度。</figcaption></figure>
+<h3 id="sec-9.3.3">9.3.3 异步复制：本地提交不等待副本</h3>
+<p>默认配置下，MySQL 复制是异步的：主节点完成本地事务提交后就给客户端返回 OK，不等待副本确认。如果主节点此时发生故障，接替它的副本可能还没有收到这些已提交的事务。</p>
+<h3 id="sec-9.3.4">9.3.4 半同步复制：可降级的副本确认</h3>
+<p>半同步在提交路径上增加了副本确认：正常半同步状态下，主节点要等到规定数量的副本确认接收并记录事务日志，才向客户端返回成功；它不等待副本应用完事务。它有两档等待时点。<code>AFTER_SYNC</code>（8.0 默认）是主节点先将 binlog 刷盘，等副本 ACK 后再提交到存储引擎。<code>AFTER_COMMIT</code> 则先在引擎层提交，再等 ACK。这一档有个危险窗口：事务先在引擎层提交，其他会话已经能读到它；若主节点在副本 ACK 返回前崩溃，晋升的新主可能没有这笔事务；之前读到它的会话，等于看见数据消失。</p>
+<p>半同步还可降级：等待 ACK 超过 <code>rpl_semi_sync_source_timeout</code>（默认 10 秒）后，会暂时转为异步，不再等待副本确认。</p>
+<p>故障转移时，必须选择持有已确认事务的副本，并保留、应用其 relay log。</p>
+<p>MySQL 暴露当前半同步状态与降级次数，用于识别写入是否仍等待副本确认。</p>
+<h3 id="sec-9.3.5">9.3.5 GTID：用事务标识辅助切换复制源</h3>
+<p>传统复制用“文件名 + 字节偏移”作为位点（比如 <code>mysql-bin.000123:4567</code>）。这种位点只对相应复制源的日志有效。换主时，新主的文件名和位置可能不同，人工对齐既繁琐又容易出错。</p>
+<p>GTID（Global Transaction Identifier，全局事务标识）用 <code>source_id:transaction_id</code> 标识一笔事务：<code>source_id</code> 是发起事务的源节点的 UUID，<code>transaction_id</code> 是该节点上单调递增的事务序号。</p>
+<p>自动定位以新主保有所需 binlog 为前提。启用后，副本把已经接收或提交的 GTID 集合告诉新主，新主从自己的 binlog 中发送副本缺少的事务，不用人工对文件、查偏移。故障切换、级联复制、多源复制（一个副本同时从多个源同步）都因此更容易管理。</p>
+<h3 id="sec-9.3.6">9.3.6 多线程并行复制：缓解单线程回放瓶颈</h3>
+<p>当主节点持续写入，而从节点的单线程回放速度跟不上时，复制延迟会不断增加。多线程并行复制把没有依赖关系的事务交给多个 worker 回放。</p>
+<p><code>LOGICAL_CLOCK</code> 使用主节点记录在 binlog 中的事务依赖信息，判断哪些事务可以并行回放。源端的提交关系或写集决定了可识别的并行范围；有依赖的事务仍须按顺序应用。</p>
+<p>并行回放的能力受源端并发、事务依赖、worker 数量和回放资源限制。并行复制与 MGR 共识的关系见<a class="xref" href="#fig-9-6">图 9-6</a>。</p>
+<figure class="fig" id="fig-9-6"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 63 940 517" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_9_6_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_9_6_arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="fig_9_6_arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  
+  <text x="235" y="86" text-anchor="middle" font-size="14" font-weight="700" fill="#D97706">① 从库多线程并行复制（LOGICAL_CLOCK）</text>
+
+  
+  <rect x="50" y="100" width="370" height="70" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="235" y="120" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">源端 binlog 中记录事务依赖关系</text>
+  <rect x="65" y="130" width="100" height="32" rx="4" fill="#FFFFFF" stroke="#D97706"/>
+  <text x="115" y="150" text-anchor="middle" font-size="11" fill="#374151">事务 T1</text>
+  <rect x="175" y="130" width="100" height="32" rx="4" fill="#FFFFFF" stroke="#D97706"/>
+  <text x="225" y="150" text-anchor="middle" font-size="11" fill="#374151">事务 T2</text>
+  <rect x="285" y="130" width="120" height="32" rx="4" fill="#FFFFFF" stroke="#D97706"/>
+  <text x="345" y="150" text-anchor="middle" font-size="11" fill="#374151">事务 T3</text>
+
+  
+  <line x1="235" y1="170" x2="235" y2="190" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_9_6_arrow)"/>
+  <text x="320" y="185" font-size="11" fill="#6B7280">写入 relay log</text>
+
+  
+  <rect x="50" y="194" width="370" height="44" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="235" y="214" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">Coordinator：按事务依赖调度 worker</text>
+  <text x="235" y="231" text-anchor="middle" font-size="11" fill="#374151">依赖已满足的事务可并行回放</text>
+
+  
+  <line x1="115" y1="238" x2="115" y2="258" stroke="#059669" stroke-width="1.3" marker-end="url(#fig_9_6_arrowGreen)"/>
+  <line x1="235" y1="238" x2="235" y2="258" stroke="#059669" stroke-width="1.3" marker-end="url(#fig_9_6_arrowGreen)"/>
+  <line x1="355" y1="238" x2="355" y2="258" stroke="#059669" stroke-width="1.3" marker-end="url(#fig_9_6_arrowGreen)"/>
+
+  <rect x="55" y="262" width="120" height="48" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="115" y="282" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">Worker 1</text>
+  <text x="115" y="300" text-anchor="middle" font-size="11" fill="#374151">回放 T1</text>
+
+  <rect x="185" y="262" width="100" height="48" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="235" y="282" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">Worker 2</text>
+  <text x="235" y="300" text-anchor="middle" font-size="11" fill="#374151">回放 T2</text>
+
+  <rect x="295" y="262" width="120" height="48" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="355" y="282" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">Worker 3</text>
+  <text x="355" y="300" text-anchor="middle" font-size="11" fill="#374151">回放 T3</text>
+
+  
+  <rect x="50" y="328" width="370" height="68" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2"/>
+  <text x="235" y="350" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">收益：缓解单 SQL 线程的复制延迟</text>
+  <text x="235" y="370" text-anchor="middle" font-size="11" fill="#374151">并行度受事务依赖与 worker、资源配置限制</text>
+
+
+  
+  <line x1="470" y1="90" x2="470" y2="400" stroke="#6B7280" stroke-width="1" stroke-dasharray="4 4"/>
+
+  
+  <text x="710" y="86" text-anchor="middle" font-size="14" font-weight="700" fill="#D97706">② 组复制（MGR）：组内排序与认证</text>
+
+  
+  <rect x="500" y="100" width="410" height="70" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="705" y="122" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">读写事务提交前广播写集与更新内容</text>
+  <text x="705" y="140" text-anchor="middle" font-size="11" fill="#374151">交由 XCom（Paxos 变种）仲裁：组内多数派确认</text>
+  <text x="705" y="158" text-anchor="middle" font-size="11" fill="#6B7280">先确定广播顺序，再做冲突认证</text>
+
+  
+  <line x1="600" y1="170" x2="600" y2="190" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_9_6_arrow)"/>
+  <line x1="705" y1="170" x2="705" y2="190" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_9_6_arrow)"/>
+  <line x1="810" y1="170" x2="810" y2="190" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_9_6_arrow)"/>
+
+  <rect x="550" y="194" width="100" height="56" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="600" y="214" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">成员 M1（提议）</text>
+  <text x="600" y="232" text-anchor="middle" font-size="11" fill="#374151">提议事务</text>
+  <text x="600" y="246" text-anchor="middle" font-size="10" fill="#6B7280">Primary/Secondary</text>
+
+  <rect x="655" y="194" width="100" height="56" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="705" y="214" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">成员 M2</text>
+  <text x="705" y="232" text-anchor="middle" font-size="11" fill="#374151">参与组通信</text>
+  <text x="705" y="246" text-anchor="middle" font-size="10" fill="#6B7280">参与多数派协议</text>
+
+  <rect x="760" y="194" width="100" height="56" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="810" y="214" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">成员 M3</text>
+  <text x="810" y="232" text-anchor="middle" font-size="11" fill="#374151">参与组通信</text>
+  <text x="810" y="246" text-anchor="middle" font-size="10" fill="#6B7280">参与多数派协议</text>
+
+  
+  <line x1="600" y1="250" x2="690" y2="270" stroke="#EF4444" stroke-width="1.3" marker-end="url(#fig_9_6_arrowRed)"/>
+  <line x1="705" y1="250" x2="720" y2="270" stroke="#EF4444" stroke-width="1.3" marker-end="url(#fig_9_6_arrowRed)"/>
+  <rect x="615" y="274" width="180" height="40" rx="6" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="705" y="291" text-anchor="middle" font-size="12" font-weight="700" fill="#EF4444">多数派确认（2/3）</text>
+  <text x="705" y="307" text-anchor="middle" font-size="11" fill="#374151">确定事务广播的顺序</text>
+
+  <line x1="705" y1="314" x2="705" y2="334" stroke="#059669" stroke-width="1.3" marker-end="url(#fig_9_6_arrowGreen)"/>
+  <rect x="500" y="338" width="410" height="58" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="705" y="358" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">各成员按同一顺序认证，通过后提交或应用事务</text>
+  <text x="705" y="376" text-anchor="middle" font-size="11" fill="#374151">冲突认证失败的事务回滚</text>
+  <text x="705" y="390" text-anchor="middle" font-size="11" fill="#6B7280">group_replication_consistency 可调读写等待强度</text>
+
+  
+  <rect x="30" y="424" width="880" height="144" rx="8" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2"/>
+  <text x="470" y="450" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">两种机制的位置与代价</text>
+
+  <rect x="60" y="466" width="400" height="88" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="260" y="488" text-anchor="middle" font-size="13" font-weight="700" fill="#D97706">多线程并行复制</text>
+  <text x="80" y="516" font-size="12" fill="#374151">作用：提升回放并行度</text>
+  <text x="80" y="544" font-size="12" font-weight="600" fill="#059669">要点：收益受事务依赖和回放资源限制</text>
+
+  <rect x="480" y="466" width="400" height="88" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2"/>
+  <text x="680" y="488" text-anchor="middle" font-size="13" font-weight="700" fill="#D97706">组复制 MGR</text>
+  <text x="500" y="516" font-size="12" fill="#374151">代价：读写事务提交前需要组内通信和认证</text>
+  <text x="500" y="544" font-size="12" font-weight="600" fill="#EF4444">要点：多数派维持进展，应用等待条件可调</text>
+</svg>
+</div><figcaption>图 9-6　并行回放与 MGR：从节点按依赖标记调度回放，MGR 通过组通信建立事务顺序，再进行认证和提交。</figcaption></figure>
+<h3 id="sec-9.3.7">9.3.7 组复制（MGR）：在复制中加入事务协调</h3>
+<p>MGR（MySQL Group Replication）在复制链路中加入组内事务协调。读写事务准备提交时，节点广播行变更及对应写集。基于 Paxos 的 XCom 提供组通信，为消息确定统一的顺序；各成员都按这个顺序进行冲突认证，通过认证的事务才能提交。</p>
+<p>组通信需要多数派才能继续作出决定，因此少数成员故障时，只要剩余成员仍能形成多数派，组就能继续运行。事务通过认证后，发起节点提交本地事务，其他成员应用这笔远端事务。</p>
+<p>组通信与认证增加了提交等待。跨成员读取是否等待追平，由 <code>group_replication_consistency</code> 控制：MySQL 8.0 默认 <code>EVENTUAL</code> 不额外等待；其他设置可以在主切换后、事务执行前或返回提交结果前等待相应成员应用。</p>
+<h3 id="sec-9.3.8">9.3.8 分布式恢复：新成员怎么追上</h3>
+<p>新成员加入 MGR 时，要从现有成员（donor）补齐数据。所需 binlog 仍可用时，可以增量恢复；无法用 binlog 补齐时，可以借助 clone 插件先克隆物理数据建立基线，再用 binlog 追平期间的新事务。这是“先全量再增量”的做法，思路和 Redis 的“RDB 快照 + 期间增量补发”相近。</p>
+<h3 id="sec-9.3.9">9.3.9 取舍总结</h3>
+<p>MySQL 在数据同步上提供了不同选择：异步复制不等待副本，半同步增加可超时降级的接收确认，组复制增加组内事务协调和可配置的一致性等待。业务方需要分别判断确认范围、故障转移条件和读取要求。</p>
+<h2 id="sec-9.4">9.4 Kafka 的做法</h2>
+<h3 id="sec-9.4.1">9.4.1 传播单元：按分区有序的消息</h3>
+<p>Kafka 把消息直接保存在分区日志里，副本复制的也是这条分区日志。<a class="xref" href="05-layered-architecture.html">第 5 章</a>讲的存储层 Log 抽象在这里提供按分区有序的复制输入：Leader 为新消息分配分区内偏移量（offset），副本按此顺序复制。</p>
+<h3 id="sec-9.4.2">9.4.2 拉模式：复用本地日志读取逻辑</h3>
+<p>Kafka 复制用的是<strong>拉模式</strong>：Follower 主动向 Leader 发 <code>FETCH</code> 请求拉取日志。Redis、MySQL 则由副本先发起请求，再由主节点持续推流。</p>
+<p><strong>Follower 与消费者复用底层日志读取</strong>。Follower 要拉取尚未完成复制提交的尾部，普通消费者只能读取已完成复制提交的部分；<code>read_committed</code> 读取还要等待事务结果确定。</p>
+<p>Kafka 的多个副本向 Leader 发起 FETCH，各自控制追赶节奏；批量读取和页缓存降低 Leader 处理这些请求的开销。</p>
+<h3 id="sec-9.4.3">9.4.3 LEO、HW 与 ISR：同步进度的度量</h3>
+<p>Kafka 用 LEO（Log End Offset，日志末端偏移量）和 HW（High Watermark，高水位）描述副本的同步进度，用 ISR（同步副本集合）框定“谁算跟上”。ISR 的定义与动态进出机制已在第 <a class="xref" href="07-cluster.html#sec-7.4.2">7.4.2 节</a>展开。</p>
+<p>LEO 表示日志下一条消息的追加位置，HW 表示已经完成复制提交的边界。例如 Leader 的 LEO 是 105、HW 是 103，那么 offset 103 和 104 已写入日志，还没有完成复制提交。Leader 根据 FETCH 中获知的副本进度和 ISR 状态推进 HW。ISR 稳定且满足最小副本数要求时，较慢副本的已知进度会限制 HW 的推进。副本长时间未追上 Leader，超过 <code>replica.lag.time.max.ms</code> 后会被移出 ISR，Leader 随后按调整后的集合推进 HW。Leader、Follower、ISR 与 HW 的时间关系见<a class="xref" href="#fig-9-7">图 9-7</a>。</p>
+<figure class="fig" id="fig-9-7"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 61 940 639" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_9_7_arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="fig_9_7_arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  
+  <text x="470" y="84" text-anchor="middle" font-size="14" font-weight="700" fill="#059669">① Leader / Follower / ISR 与 HW 的进度关系</text>
+
+  
+  <rect x="60" y="100" width="820" height="64" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="80" y="113" font-size="11" font-weight="700" fill="#111827">Leader 日志（按偏移量追加）</text>
+  
+  <rect x="200" y="118" width="110" height="34" rx="3" fill="#FFFFFF" stroke="#059669"/>
+  <text x="255" y="132" text-anchor="middle" font-size="11" fill="#374151">m0</text>
+  <text x="255" y="146" text-anchor="middle" font-size="10" fill="#6B7280">off=0</text>
+
+  <rect x="314" y="118" width="110" height="34" rx="3" fill="#FFFFFF" stroke="#059669"/>
+  <text x="369" y="132" text-anchor="middle" font-size="11" fill="#374151">m1</text>
+  <text x="369" y="146" text-anchor="middle" font-size="10" fill="#6B7280">off=1</text>
+
+  <rect x="428" y="118" width="110" height="34" rx="3" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.6"/>
+  <text x="483" y="132" text-anchor="middle" font-size="11" fill="#111827">m2（新写）</text>
+  <text x="483" y="146" text-anchor="middle" font-size="10" fill="#6B7280">off=2</text>
+
+  <rect x="542" y="118" width="110" height="34" rx="3" fill="#F3F4F6" stroke="#6B7280" stroke-dasharray="3 2"/>
+  <text x="597" y="132" text-anchor="middle" font-size="11" fill="#6B7280">m3</text>
+  <text x="597" y="146" text-anchor="middle" font-size="10" fill="#6B7280">off=3</text>
+
+  <rect x="656" y="118" width="110" height="34" rx="3" fill="#F3F4F6" stroke="#6B7280" stroke-dasharray="3 2"/>
+  <text x="711" y="132" text-anchor="middle" font-size="11" fill="#6B7280">m4</text>
+  <text x="711" y="146" text-anchor="middle" font-size="10" fill="#6B7280">off=4</text>
+
+  
+  <line x1="766" y1="164" x2="766" y2="180" stroke="#EF4444" stroke-width="2"/>
+  <polygon points="760,178 772,178 766,188" fill="#EF4444"/>
+  <text x="766" y="204" text-anchor="middle" font-size="12" font-weight="700" fill="#EF4444">Leader LEO = 5（下一追加位置）</text>
+
+  
+  <rect x="60" y="220" width="820" height="64" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="80" y="233" font-size="11" font-weight="700" fill="#111827">Follower 日志（仅同步到 m1）</text>
+  <rect x="200" y="238" width="110" height="34" rx="3" fill="#FFFFFF" stroke="#059669"/>
+  <text x="255" y="262" text-anchor="middle" font-size="11" fill="#374151">m0 ✓</text>
+  <rect x="314" y="238" width="110" height="34" rx="3" fill="#FFFFFF" stroke="#059669"/>
+  <text x="369" y="262" text-anchor="middle" font-size="11" fill="#374151">m1 ✓</text>
+  <rect x="428" y="238" width="110" height="34" rx="3" fill="#F3F4F6" stroke="#6B7280" stroke-dasharray="3 2"/>
+  <text x="483" y="262" text-anchor="middle" font-size="11" fill="#6B7280">尚未拉到</text>
+
+  
+  <line x1="428" y1="284" x2="428" y2="300" stroke="#4B5563" stroke-width="2"/>
+  <polygon points="422,298 434,298 428,308" fill="#4B5563"/>
+  <text x="428" y="324" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">Follower LEO = 2</text>
+
+  
+  <path d="M 440 260 Q 500 195 540 160" fill="none" stroke="#059669" stroke-width="1.6" marker-end="url(#fig_9_7_arrowGreen)"/>
+  <rect x="270" y="178" width="160" height="36" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.3"/>
+  <text x="350" y="192" text-anchor="middle" font-size="11" font-weight="600" fill="#059669">FETCH（共享本地读逻辑）</text>
+  <text x="350" y="207" text-anchor="middle" font-size="10" fill="#374151">“给我 off≥2 的消息”</text>
+
+  
+  <rect x="60" y="340" width="820" height="44" rx="6" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.6"/>
+  <text x="80" y="362" font-size="13" font-weight="700" fill="#EF4444">示例：ISR 稳定，Leader 已知两副本的 LEO 分别为 5、2，HW 推进到 2</text>
+
+  
+  <line x1="60" y1="436" x2="880" y2="436" stroke="#6B7280" stroke-width="1" stroke-dasharray="4 4"/>
+
+  
+  <text x="470" y="466" text-anchor="middle" font-size="14" font-weight="700" fill="#059669">② leader epoch 定位并截断不一致尾部</text>
+
+  
+  
+  <rect x="70" y="488" width="260" height="80" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="200" y="510" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">epoch=1（旧 Leader A）</text>
+  <text x="90" y="532" font-size="11" fill="#374151">日志：m0 m1 m2 m3 m4</text>
+  <text x="90" y="552" font-size="11" fill="#374151">A 失联，集群选出新 Leader</text>
+
+  
+  <rect x="340" y="488" width="260" height="80" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="470" y="510" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">epoch=2（新 Leader B）</text>
+  <text x="360" y="532" font-size="11" fill="#374151">B 保留 m0–m2，新写 m3'</text>
+  <text x="360" y="552" font-size="11" fill="#374151">B 的日志：m0 m1 m2 m3'</text>
+
+  
+  <rect x="610" y="488" width="270" height="80" rx="6" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="745" y="510" text-anchor="middle" font-size="12" font-weight="700" fill="#EF4444">A 恢复，尝试以 Follower 加入</text>
+  <text x="630" y="532" font-size="11" fill="#374151">A 仍持旧任期的 m3 m4</text>
+  <text x="630" y="552" font-size="11" fill="#374151">若不截断 → 日志尾部分叉</text>
+
+  
+  <line x1="470" y1="568" x2="470" y2="588" stroke="#EF4444" stroke-width="1.6" marker-end="url(#fig_9_7_arrowRed)"/>
+  <rect x="120" y="592" width="700" height="74" rx="6" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="470" y="614" text-anchor="middle" font-size="13" font-weight="700" fill="#EF4444">leader epoch 协议：副本恢复时按 epoch 比对</text>
+  <text x="140" y="636" font-size="12" fill="#374151">A 报告旧任期与待拉取位置；B 返回共同历史边界 off=3</text>
+  <text x="140" y="656" font-size="12" font-weight="700" fill="#059669">A 截断 off≥3 的旧尾部 m3 m4，再从 off=3 开始拉取 B 的日志</text>
+</svg>
+</div><figcaption>图 9-7　HW 与 leader epoch：Leader 根据副本反馈的进度推进 HW；leader epoch 标识任期边界，帮助恢复中的副本定位并截断不一致尾部。</figcaption></figure>
+<h3 id="sec-9.4.4">9.4.4 leader epoch：定位旧 Leader 日志中的分叉</h3>
+<p>旧 Leader 恢复后，可能带回与新 Leader 不一致的日志尾部。场景是这样的：Leader A 在任期 1 写了几条消息后失联，集群选出 Leader B 进入任期 2，B 又写了几条；此时 A 恢复，仍保存着任期 1 的本地日志，需要先与当前 Leader 对齐。</p>
+<p>Kafka 用 <strong>leader epoch</strong>（单调递增的任期号）标识日志的任期边界，并记录各任期的起始偏移量。旧副本重新追随时，当前 Leader 根据任期和偏移量判断两边的历史是否分叉；如果分叉，副本先定位共同日志的边界，截断不一致尾部，再继续拉取。</p>
+<p>leader epoch 补充了 offset 所没有的历史信息：相同偏移量在不同任期可能对应不同的日志内容。Redis 的 replid 也用于区分复制历史；MySQL 的 GTID 则标识事务来源和事务身份。它们都让位点带上了可核对的来源信息。</p>
+<h3 id="sec-9.4.5">9.4.5 acks 参数：生产者的写入确认要求</h3>
+<p>Kafka 通过生产者侧的 <code>acks</code> 参数（0 / 1 / all 三档）设置写入确认要求。<code>acks=all</code> 要求 ISR 数量达到 <code>min.insync.replicas</code>，且当前 ISR 中的全部副本完成日志复制；逐条 fsync 不是返回确认的前提。<code>min.insync.replicas=1</code> 时，ISR 收缩到只剩 Leader 后可以继续写入，<code>acks=all</code> 实际只等 Leader 本地确认，语义退化接近 <code>acks=1</code>。三档的完整定义已在第 <a class="xref" href="07-cluster.html#sec-7.4.3">7.4.3 节</a>展开。</p>
+<p><code>acks=all</code> + <code>min.insync.replicas</code> 与 MySQL 半同步在<strong>降级语义</strong>上存在关键差别：MySQL 半同步确认超时后可降级为异步；Kafka 不会因为 ISR 不足而自动按更低的确认要求返回成功。涉及钱和库存的写路径，宜在确认条件不足时明确失败，避免自动降低要求后返回成功。能容忍缺失的日志、监控数据，则可以考虑降级。</p>
+<p>一个常见的配置是副本数 3、<code>min.insync.replicas=2</code>、<code>acks=all</code>：它可在一个副本故障后继续写入。</p>
+<h3 id="sec-9.4.6">9.4.6 unclean leader 选举：数据保留与恢复可用性的取舍</h3>
+<p><code>unclean.leader.election.enable</code> 控制是否允许<strong>非 ISR 副本</strong>当选 Leader。没有可用的 ISR 成员时，这个开关决定是否接受从落后日志恢复服务的风险：</p>
+<ul><li><strong>允许（true）</strong>：所有 ISR 副本均不可用时，从落后副本中选一个当 Leader，系统恢复可用；新 Leader 缺少的消息可能丢失，其中也可能包括原先已提交、位于 HW 以下的消息——可用性优先。</li><li><strong>禁止（false，3.x 默认）</strong>：所有 ISR 副本均不可用时不选主，等待 ISR 成员恢复，分区在此期间不可用。</li></ul>
+<h3 id="sec-9.4.7">9.4.7 KRaft：元数据也采用复制日志</h3>
+<p>Kafka 用 KRaft（Kafka Raft）替代 ZooKeeper 管理集群元数据。<strong>元数据变更记录在一条 Raft 复制日志中</strong>，这条日志由 Controller quorum 维护。KRaft 使用多数派共识，数据分区按 ISR 机制推进复制提交。两者都使用日志、Leader、副本与任期信息，复用了日志化状态管理的思路。</p>
+<h3 id="sec-9.4.8">9.4.8 幂等与事务：处理重试与跨分区提交</h3>
+<p>启用生产者幂等（<code>enable.idempotence=true</code>）后，生产者按分区维护消息序列号，并在批次中携带 ProducerId、ProducerEpoch 和起始序列号 BaseSequence。Broker 按分区保存各生产者已追加批次的序列号信息，核对 ProducerId、ProducerEpoch 和批次的序列号范围。识别为重复的批次不再追加到日志。</p>
+<p>事务把多项 Kafka 写入纳入同一提交单元，由 transaction coordinator 协调，可以包含跨分区写入及消费 offset 的更新。每个事务的开始、提交或中止由应用发起。提交或中止结果通过控制记录传播。</p>
+<p><code>read_committed</code> 的读取范围受 LSO（Last Stable Offset，最后稳定偏移量）限制：在已完成复制的范围内，较早的事务尚未结束时，后面的记录也可能暂时不能返回。在可读范围内，它返回已提交事务的记录和非事务消息，跳过中止事务。默认的 <code>read_uncommitted</code> 不作这种事务隔离，可能返回未提交或已中止事务的记录。</p>
+<p>外部系统的处理结果不在 Kafka 事务的提交单元内。消费端需要区分三件事：客户端当前读到的位置、已提交给 Kafka 的消费组进度，以及业务系统里的处理结果。因此，提交消费进度时，不能越过同一分区中尚未处理完成的已交付记录。例如，offset 为 100、101、102 的三条记录中，100 和 102 已完成，101 还没完成，此时消费进度最多可以提交到 101；提交 101 表示下次从 101 继续。三条都完成后才能提交 103。按分区顺序处理完记录再提交，能让已完成记录自然形成连续前缀，代价是降低分区内的消费并行度。处理成功后、提交进度前发生故障，恢复时仍可能重复处理记录。</p>
+<h2 id="sec-9.5">9.5 横向对比</h2>
+<p class="tab-label"><strong>表 9-1　三个软件数据同步机制横向对比</strong></p>
+<div class="table-wrap"><table id="table-9-1"><thead><tr><th>维度</th><th>Redis</th><th>MySQL</th><th>Kafka</th></tr></thead><tbody><tr><td>传播单元</td><td>命令流（必要时改写为确定操作）</td><td>binlog event（默认 ROW 行级）</td><td>消息（按分区偏移量有序）</td></tr><tr><td>传播方式</td><td>副本发起后持续推流（复制缓冲）</td><td>副本发起后持续推流（relay log 缓冲，接收与回放分离）</td><td>FETCH 请求-响应（副本发起拉取）</td></tr><tr><td>确认与协调</td><td>默认异步；WAIT 可等待此前写入的副本确认</td><td>异步、半同步确认或 MGR 组内协调</td><td>ISR + acks + min ISR</td></tr><tr><td>位点语义</td><td>replid + replication offset（历史与字节进度）</td><td>GTID 集合（标记事务来源及已接收或已提交的事务）</td><td>分区 offset + leader epoch</td></tr><tr><td>故障恢复条件</td><td>历史匹配且所需日志仍在 backlog，才能部分重同步</td><td>GTID 自动定位需有可补发日志；组复制可克隆</td><td>以任期检查分叉，再从有效保留范围追赶</td></tr><tr><td>建立副本基线的代价</td><td>fork 与 RDB 传输；子进程运行期间，父进程修改内存页可能带来 COW 开销</td><td>备份恢复或克隆数据，再补所需 binlog</td><td>获取分区保留日志及必要辅助状态</td></tr></tbody></table></div>
+<h2 id="sec-9.6">9.6 架构启示</h2>
+<h3 id="s217">启示一：续传取决于位点、历史和保留窗口</h3>
+<p>位点标明进度。用它续传时，还需明确它属于哪段复制历史、记录的是接收进度还是处理进度，以及重启后从哪里取得这个位点。副本续传需要核对历史，并确认源端保留着缺失的变化。历史分叉须先确定共同部分；所需变化无法从可用来源补齐时，则重新建立基线，再接上后续增量。</p>
+<p>保留窗口要覆盖常见断线时间；恢复连接后，只有副本的处理速率高于新增写入速率，才能追平。这些条件也决定故障恢复能否复用日常的补差路径。</p>
+<h3 id="s218">启示二：业务要求决定复制确认与等待策略</h3>
+<p>复制系统的保证与等待需要一起确定：业务需要保留什么数据、允许看到多旧的结果，以及为这些保证能承受多少等待。客户端收到成功、从副本读到新值，以及故障切换后这笔写入仍被保留，三者所需的条件各不相同。确认条件无法满足时，还要明确是失败、继续等待，还是允许降级；MySQL 半同步超时后可降级，Kafka 的 <code>acks=all</code> 在 ISR 数量低于 <code>min.insync.replicas</code> 时，不会自动降低确认要求后返回成功。</p>
+<h3 id="s219">启示三：级联复制会累积传播延迟</h3>
+<p>在 Redis 链式副本和 MySQL 级联复制中，中间副本可以继续向下游发送新写入，主节点只向一级副本发送。新写入逐层到达末端，链路越深，末端副本越晚看到它。如果业务需要尽快从末端副本读到新写入，较浅的复制拓扑更合适，主节点相应需要更多出口带宽。</p>
+<h2 id="sec-9.7">9.7 小结</h2>
+<p>Redis、MySQL、Kafka 的副本续传，都要靠可核对的进度与历史确定续传位置；所需变化无法从可用来源补齐时，就要重新建立基线。写入确认约定成功前等待哪一步，读取可见性受副本应用进度与读取规则影响，故障转移还要判断接管副本保留了哪些写入。</p><nav class="page-nav"><a href="08-storage-format.html">← 第 8 章 磁盘存储格式 — 文件结构的设计哲学</a><a href="10-summary.html">第 10 章 总结：架构设计的共性规律与取舍 →</a></nav></article>
+</main>
+</div>
+<script>
+(function(){
+  var btn=document.querySelector('.toc-toggle'),nav=document.getElementById('toc'),bd=document.getElementById('bd');
+  if(btn){btn.addEventListener('click',function(){nav.classList.toggle('open');if(bd)bd.classList.toggle('show',nav.classList.contains('open'))});}
+  if(bd){bd.addEventListener('click',function(){nav.classList.remove('open');bd.classList.remove('show');});}
+  // 当前章节高亮
+  var secs=Array.prototype.slice.call(document.querySelectorAll('section.chapter'));
+  var links=Array.prototype.slice.call(document.querySelectorAll('nav.toc a[data-target]'));
+  if('IntersectionObserver' in window && links.length){
+    var map={};links.forEach(function(a){map[a.getAttribute('data-target')]=a;});
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){a.parentElement.classList.remove('active');});
+          var a=map[e.target.id]; if(a)a.parentElement.classList.add('active');
+        }
+      });
+    },{rootMargin:'-10% 0px -75% 0px',threshold:0});
+    secs.forEach(function(s){io.observe(s);});
+  }
+})();
+</script>
+<script>
+(function(){
+  var layout=document.querySelector('.layout'),drag=document.getElementById('tocDrag');
+  var colBtn=document.getElementById('tocCollapse'),expBtn=document.getElementById('tocExpand');
+  var KEY_W='paged.tocW',KEY_C='paged.tocCollapsed';
+  try{
+    var w=localStorage.getItem(KEY_W);
+    if(w&&layout)layout.style.setProperty('--toc-w',w);
+    if(localStorage.getItem(KEY_C)==='1')document.body.classList.add('toc-collapsed');
+  }catch(e){}
+  if(colBtn){colBtn.addEventListener('click',function(){
+    document.body.classList.add('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'1');}catch(e){}
+  });}
+  if(expBtn){expBtn.addEventListener('click',function(){
+    document.body.classList.remove('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'0');}catch(e){}
+  });}
+  if(drag&&layout){
+    drag.addEventListener('pointerdown',function(e){
+      e.preventDefault();
+      document.body.classList.add('toc-dragging');
+      drag.classList.add('active');
+      function mv(ev){
+        var left=layout.getBoundingClientRect().left;
+        var w=Math.min(Math.max(ev.clientX-left,200),520);
+        layout.style.setProperty('--toc-w',Math.round(w)+'px');
+      }
+      function up(){
+        document.body.classList.remove('toc-dragging');
+        drag.classList.remove('active');
+        try{localStorage.setItem(KEY_W,layout.style.getPropertyValue('--toc-w'));}catch(e2){}
+        window.removeEventListener('pointermove',mv);
+        window.removeEventListener('pointerup',up);
+      }
+      window.addEventListener('pointermove',mv);
+      window.addEventListener('pointerup',up);
+    });
+  }
+})();
+</script>
+</body>
+</html>

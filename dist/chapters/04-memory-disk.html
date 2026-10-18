@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 4 章 内存与磁盘 — 速度与持久化的平衡</title>
+<style>
+*{box-sizing:border-box}
+:root{--ink:#1f2328;--mute:#57606a;--line:#d8dee4;--accent:#4f46e5;--bg:#fff;--soft:#f6f8fa}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;color:var(--ink);background:#fff;line-height:1.8;font-size:16px}
+.layout{display:grid;grid-template-columns:var(--toc-w,292px) 6px 1fr;max-width:1340px;margin:0 auto;transition:grid-template-columns .2s}
+body.toc-dragging .layout{transition:none}
+nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 24px 8px;font-size:14px;min-width:0}
+main.content{min-width:0}
+.toc-drag{position:sticky;top:0;align-self:start;height:100vh;cursor:col-resize;background:var(--line);transition:background .15s}
+.toc-drag:hover,.toc-drag.active{background:var(--accent)}
+body.toc-dragging{user-select:none;cursor:col-resize}
+.toc-collapse{position:absolute;top:16px;right:8px;border:1px solid var(--line);background:#fff;color:var(--mute);border-radius:6px;width:24px;height:24px;font-size:13px;line-height:1;cursor:pointer;padding:0}
+.toc-collapse:hover{color:var(--accent);border-color:var(--accent)}
+.toc-expand{display:none;position:fixed;left:0;top:120px;z-index:55;border:1px solid var(--line);border-left:none;background:#fff;color:var(--mute);border-radius:0 8px 8px 0;padding:10px 6px;font-size:14px;cursor:pointer;box-shadow:2px 2px 8px rgba(0,0,0,.08)}
+.toc-expand:hover{color:var(--accent)}
+body.toc-collapsed .layout{grid-template-columns:1fr}
+body.toc-collapsed nav.toc,body.toc-collapsed .toc-drag{display:none}
+body.toc-collapsed .toc-expand{display:block}
+.toc-title{font-weight:700;font-size:15px;color:var(--accent);margin:0 0 4px 8px}
+.toc-title a{color:inherit;text-decoration:none}
+.toc-sub{font-size:12px;color:var(--mute);margin:0 0 16px 8px}
+nav.toc ul{list-style:none;padding:0;margin:0}
+nav.toc li>a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.5}
+nav.toc li>a:hover{background:var(--soft)}
+nav.toc li.active>a{background:#eef2ff;color:var(--accent);font-weight:600}
+nav.toc li.nav-sub>a{padding-left:22px;font-size:13px;color:var(--mute)}
+.content{padding:32px 48px 120px;max-width:1000px;overflow-wrap:anywhere}
+.chapter-meta{color:var(--mute);font-size:13px;margin:0 0 18px}
+.page-nav{display:flex;justify-content:space-between;gap:16px;margin:40px 0 0;padding-top:20px;border-top:1px solid var(--line)}
+.page-nav a{display:block;max-width:48%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--ink);background:var(--soft);line-height:1.5}
+.page-nav a:hover{border-color:var(--accent);color:var(--accent)}
+.page-nav .empty{visibility:hidden}
+h1,h2,h3,h4{line-height:1.35;color:var(--ink);font-weight:700}
+h1{font-size:1.9em;margin:0 0 .6em;padding-bottom:.3em}
+h2{font-size:1.42em;margin:1.8em 0 .6em}
+h3{font-size:1.18em;margin:1.5em 0 .5em}
+h4{font-size:1.04em;margin:1.3em 0 .4em;color:#24292f}
+p{margin:0 0 1em}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+strong{font-weight:700;color:#111827}
+em{font-style:normal;color:var(--mute)}
+hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
+code{font-family:"SF Mono",Menlo,Consolas,monospace;background:var(--soft);padding:.12em .4em;border-radius:4px;font-size:.9em;color:#24292f}
+pre{background:#1e1e2e;color:#cdd6f4;padding:16px 18px;border-radius:8px;overflow-x:auto;line-height:1.55}
+pre code{background:none;color:inherit;padding:0;font-size:.86em}
+blockquote{margin:1.2em 0;padding:.6em 1em .6em 1.1em;border-left:4px solid var(--accent);background:#f7f8ff;color:#343a40;border-radius:0 6px 6px 0}
+blockquote strong{color:var(--accent)}
+ul,ol{margin:0 0 1em;padding-left:1.7em}
+li{margin:.25em 0}
+.table-wrap{overflow-x:auto;margin:1.2em 0}
+table{border-collapse:collapse;width:100%;font-size:.94em}
+th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+thead th{background:#eef2ff;color:#3730a3;font-weight:600}
+tbody tr:nth-child(even){background:#fafbfd}
+figure.fig{margin:2em calc((100% - 1000px)/2);text-align:center}
+.svg-wrap,.inline-svg{display:block;width:100%}
+figure.fig svg,.inline-svg svg,.svg-wrap svg,figure.fig img{width:100%;max-width:1000px;height:auto;display:block;margin:0 auto}
+figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
+.toc-toggle{display:none}
+.review-index{display:grid;gap:12px;margin:24px 0 0}
+.review-index a{display:block;padding:14px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;background:#fff}
+.review-index a:hover{border-color:var(--accent);background:#f7f8ff}
+.review-index strong{display:block;color:var(--ink)}
+.review-index span{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+@media(max-width:1200px){figure.fig{margin:2em auto}}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:fixed;left:0;top:0;width:292px;background:#fff;z-index:50;transform:translateX(-100%);transition:transform .2s;box-shadow:2px 0 12px rgba(0,0,0,.08)}
+  nav.toc.open{transform:translateX(0)}
+  body.toc-collapsed nav.toc{display:block}
+  .toc-drag,.toc-collapse,.toc-expand{display:none!important}
+  .content{padding:20px 18px 80px;max-width:100%;min-width:0}
+  .toc-toggle{display:inline-block;position:fixed;right:16px;bottom:16px;z-index:60;background:var(--accent);color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer}
+  .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:40}
+  .backdrop.show{display:block}
+  /* 窄屏宽图改为容器内横向滚动，文字保持可读 */
+  .svg-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  figure.fig svg{min-width:760px}
+}
+@media print{a.xref{color:inherit}}
+</style>
+</head>
+<body>
+<div class="backdrop" id="bd"></div>
+<button class="toc-toggle">目录</button>
+<button class="toc-expand" id="tocExpand" title="展开目录">»</button>
+<div class="layout">
+<nav class="toc" id="toc">
+  <button class="toc-collapse" id="tocCollapse" title="收起目录">«</button>
+  <div class="toc-title"><a href="../index.html">架构取舍之道</a></div>
+  <div class="toc-sub">在线阅读版</div>
+  <ul>
+<li><a href="../index.html">首页目录</a></li>
+<li><a href="00-preface.html">序言</a>
+</li>
+<li><a href="01-introduction.html">第 1 章 引言 — 为什么是这三个软件</a>
+</li>
+<li><a href="02-data-structures-protocols.html">第 2 章 数据结构与协议 — 为各自的目标而设计</a>
+</li>
+<li><a href="03-lifecycle.html">第 3 章 生命周期管理 — 优雅启动与关闭</a>
+</li>
+<li class="active"><a href="04-memory-disk.html">第 4 章 内存与磁盘 — 速度与持久化的平衡</a>
+<ul>
+<li class="nav-sub"><a href="#s61">本章导读</a></li>
+<li class="nav-sub"><a href="#sec-4.1">4.1 问题的本质</a></li>
+<li class="nav-sub"><a href="#sec-4.2">4.2 Redis 的做法</a></li>
+<li class="nav-sub"><a href="#sec-4.3">4.3 MySQL 的做法</a></li>
+<li class="nav-sub"><a href="#sec-4.4">4.4 Kafka 的做法</a></li>
+<li class="nav-sub"><a href="#sec-4.5">4.5 横向对比</a></li>
+<li class="nav-sub"><a href="#sec-4.6">4.6 架构启示</a></li>
+<li class="nav-sub"><a href="#sec-4.7">4.7 小结</a></li>
+</ul>
+</li>
+<li><a href="05-layered-architecture.html">第 5 章 分层架构设计 — 存储层 / 逻辑层 / 交互层</a>
+</li>
+<li><a href="06-security.html">第 6 章 安全机制 — 权限、加密、审计</a>
+</li>
+<li><a href="07-cluster.html">第 7 章 集群架构 — 从单点到分布式</a>
+</li>
+<li><a href="08-storage-format.html">第 8 章 磁盘存储格式 — 文件结构的设计哲学</a>
+</li>
+<li><a href="09-data-sync.html">第 9 章 数据同步机制 — 集群一致性的实现</a>
+</li>
+<li><a href="10-summary.html">第 10 章 总结：架构设计的共性规律与取舍</a>
+</li>
+<li><a href="10-epilogue.html">后记</a>
+</li>
+<li><a href="11-references.html">附录　参考文献与延伸阅读（按章索引）</a>
+</li>
+</ul>
+</nav>
+<div class="toc-drag" id="tocDrag" title="拖拽调整目录宽度"></div>
+<main class="content">
+<article class="chapter"><h1 id="s60">第 4 章 内存与磁盘 — 速度与持久化的平衡</h1>
+<h2 id="s61">本章导读</h2>
+<p>数据放在哪里，影响访问路径：读取内存中的数据可以省去磁盘访问，磁盘上的随机读取会增加请求延迟。内存容量受成本和硬件约束，磁盘能容纳比全内存方案更多的数据。还要决定哪些写入要等待落盘；未持久化的数据在断电后会丢失。</p>
+<p>Redis 以内存保存运行数据，磁盘用于持久化和恢复；MySQL 用缓冲池加速磁盘数据的访问；Kafka 把顺序日志的缓存交给操作系统的 PageCache。本章看三种分工怎样匹配各自的访问方式，以及它们带来的容量、延迟和恢复代价。</p>
+<p>缓存选型不能只看数据是否驻留内存。MySQL 的 MEMORY 表把数据放在内存中，常用的 InnoDB 则用缓冲池缓存磁盘页；所需页不在缓冲池时，需要从数据文件读入，SQL 处理还包括解析和优化的开销。Redis 直接在内存中操作键值对象，适合高频访问的小数据；需要事务和复杂查询时，MySQL 的能力更匹配。</p>
+<h2 id="sec-4.1">4.1 问题的本质</h2>
+<p>存储介质的延迟和带宽差距，决定了这些分工是否划算。<a class="xref" href="#table-4-1">表 4-1</a> 只比较数量级，不作硬件基准；实际值随设备与负载变化。</p>
+<p class="tab-label"><strong>表 4-1　存储介质的访问延迟与吞吐量级</strong></p>
+<div class="table-wrap"><table id="table-4-1"><thead><tr><th>存储介质</th><th>典型延迟或带宽</th><th>相对内存：延迟倍数／带宽差距</th><th>是否持久</th></tr></thead><tbody><tr><td><strong>延迟组：单次随机访问延迟</strong></td><td>基准：内存随机读 ~100ns = 1×</td><td></td><td></td></tr><tr><td>CPU L1 缓存</td><td>~1ns</td><td>延迟约为内存的 1/100</td><td>否</td></tr><tr><td>内存（DRAM）</td><td>~100ns</td><td>基准（1×）</td><td>否</td></tr><tr><td>SSD（随机读）</td><td>~100μs（数量级示意）</td><td>延迟约为内存的 1000 倍</td><td>是</td></tr><tr><td>机械盘（随机访问）</td><td>~10ms</td><td>延迟约为内存的 100000 倍</td><td>是</td></tr><tr><td><strong>带宽组：顺序读写带宽</strong></td><td>基准：内存顺序带宽 ~数十 GB/s = 1×</td><td></td><td></td></tr><tr><td>内存（DRAM）</td><td>~数十 GB/s（典型 20–100GB/s，服务器多通道更高，随内存通道数与代际变化）</td><td>基准（1×）</td><td>否</td></tr><tr><td>SSD（SATA，顺序写）</td><td>~300–500MB/s</td><td>带宽比内存约低 1–2 个数量级</td><td>是</td></tr><tr><td>SSD（NVMe，顺序写）</td><td>~2–14GB/s（随接口代际与设备变化）</td><td>可接近内存带宽，也可能低一个数量级以上</td><td>是</td></tr><tr><td>机械盘（顺序写）</td><td>~100–280MB/s</td><td>带宽比内存约低 2 个数量级</td><td>是</td></tr></tbody></table></div>
+<p>随机访问延迟决定一次读取要等多久，顺序带宽决定一段时间能搬多少数据。两组数字不能相互替代。<a class="xref" href="#fig-4-1">图 4-1</a> 把单次访问延迟放到对数轴上。</p>
+<figure class="fig" id="fig-4-1"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 88 880 352" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+
+  
+
+  
+  <g stroke="#E5E7EB" stroke-width="1">
+    <line x1="240"   y1="100" x2="240"   y2="380"/>
+    <line x1="322.9" y1="100" x2="322.9" y2="380"/>
+    <line x1="405.7" y1="100" x2="405.7" y2="380"/>
+    <line x1="488.6" y1="100" x2="488.6" y2="380"/>
+    <line x1="571.4" y1="100" x2="571.4" y2="380"/>
+    <line x1="654.3" y1="100" x2="654.3" y2="380"/>
+    <line x1="737.1" y1="100" x2="737.1" y2="380"/>
+    <line x1="820"   y1="100" x2="820"   y2="380"/>
+  </g>
+
+  
+  <line x1="240" y1="380" x2="820" y2="380" stroke="#374151" stroke-width="1.5"/>
+
+  
+  <g font-size="11" fill="#6B7280" text-anchor="middle">
+    <text x="240"   y="398">1 ns</text>
+    <text x="322.9" y="398">10 ns</text>
+    <text x="405.7" y="398">100 ns</text>
+    <text x="488.6" y="398">1 μs</text>
+    <text x="571.4" y="398">10 μs</text>
+    <text x="654.3" y="398">100 μs</text>
+    <text x="737.1" y="398">1 ms</text>
+    <text x="820"   y="398">10 ms</text>
+  </g>
+  <text x="530" y="422" text-anchor="middle" font-size="12" fill="#374151">单次随机访问延迟（对数轴，每格 ×10）</text>
+
+  
+
+  
+  <text x="230" y="135" text-anchor="end" font-size="12.5" font-weight="600" fill="#111827">L1 缓存</text>
+  <text x="230" y="150" text-anchor="end" font-size="11" fill="#6B7280">CPU 片内 · ~1 ns</text>
+  <rect x="240" y="124" width="0.1" height="32" fill="#4F46E5" opacity="0.85"/>
+  <circle cx="240" cy="140" r="4" fill="#4F46E5"/>
+  <text x="252" y="144" font-size="11.5" font-weight="600" fill="#4F46E5">1 ns</text>
+
+  
+  <text x="230" y="185" text-anchor="end" font-size="12.5" font-weight="600" fill="#111827">内存随机读</text>
+  <text x="230" y="200" text-anchor="end" font-size="11" fill="#6B7280">DRAM · ~100 ns</text>
+  <rect x="240" y="174" width="165.7" height="32" fill="#4F46E5" opacity="0.85"/>
+  <text x="415" y="194" font-size="11.5" font-weight="600" fill="#4F46E5">100 ns</text>
+
+  
+  <text x="230" y="235" text-anchor="end" font-size="12.5" font-weight="600" fill="#111827">SSD 随机读</text>
+  <text x="230" y="250" text-anchor="end" font-size="11" fill="#6B7280">随机 · ~100 μs</text>
+  <rect x="240" y="224" width="414.3" height="32" fill="#EF4444" opacity="0.85"/>
+  <text x="664" y="244" font-size="11.5" font-weight="600" fill="#EF4444">≈100 μs</text>
+
+  
+  <text x="230" y="285" text-anchor="end" font-size="12.5" font-weight="600" fill="#111827">机械盘随机访问</text>
+  <text x="230" y="300" text-anchor="end" font-size="11" fill="#6B7280">寻道、旋转等待 · ~10 ms</text>
+  <rect x="240" y="274" width="580" height="32" fill="#D97706" opacity="0.85"/>
+  <text x="812" y="289" font-size="11.5" font-weight="600" fill="#111827" text-anchor="end">10 ms</text>
+  <text x="812" y="302" font-size="9.5" fill="#111827" text-anchor="end">(10,000,000 ns)</text>
+
+  
+  <rect x="40" y="322" width="178" height="42" rx="5" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2"/>
+  <text x="129" y="339" text-anchor="middle" font-size="11.5" font-weight="700" fill="#111827">随机访问延迟</text>
+  <text x="129" y="356" text-anchor="middle" font-size="11.5" font-weight="700" fill="#EF4444">机械盘延迟约为内存的 10⁵ 倍</text>
+</svg>
+</div><figcaption>图 4-1　存储层次访问延迟的数量级（对数轴）：内存到机械盘横跨五个数量级。</figcaption></figure>
+<p>机械盘的顺序读写能避开反复寻道；SSD 没有机械寻道，小块随机 I/O 仍可能受 IOPS 约束。数据放在哪里与写入何时落盘，是两项需要分别决定的事。</p>
+<h2 id="sec-4.2">4.2 Redis 的做法</h2>
+<p>Redis 把运行数据保存在内存中，访问时不必读取磁盘页。会话缓存、排行榜、限流计数器等高频小数据适合这种做法。内存满了需要决定是否淘汰已有键；断电后能恢复多少，则取决于磁盘上的持久化数据。</p>
+<h3 id="sec-4.2.1">4.2.1 内存淘汰：用近似换取更低的管理开销</h3>
+<p>精确的 LRU（最近最少使用，Least Recently Used）要在每次访问时调整全局链表。Redis 不维护这条链表，而是在需要淘汰时随机采样，减少正常读写中的管理开销。</p>
+<p>近似 LRU 先从符合淘汰范围的键中随机采样，把较久未访问的键放进淘汰候选池，再选出要删除的键。采样越多，结果通常越接近精确 LRU，淘汰时的 CPU 开销也越高。</p>
+<p>LRU 只看最近访问时间。一批只读一次的冷数据也会变成“最近用过”，可能挤出长期热点。<strong>LFU（Least Frequently Used，最不经常使用）</strong>改看访问频率：Redis 用小型概率计数器记录近似频次，并在键久未访问后衰减计数。它牺牲精确计数，以较少内存区分长期热点和一次性访问。</p>
+<p>淘汰范围也影响结果：可以从全部键中选，也可以只从设置了过期时间的键中选；不允许自动淘汰时则拒绝超出内存限制的写入。</p>
+<p><a class="xref" href="#fig-4-2">图 4-2</a> 展示采样淘汰与 LFU 计数器衰减。</p>
+<figure class="fig" id="fig-4-2"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 72 940 574" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_4_2_arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="fig_4_2_arrowInd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4F46E5"/>
+    </marker>
+  </defs>
+
+  
+  <text x="220" y="96" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">近似 LRU（随机采样淘汰）</text>
+
+  
+  <rect x="40" y="115" width="380" height="180" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4" stroke-dasharray="5,3"/>
+  <text x="60" y="135" font-size="12" fill="#374151">本例：全部键（哈希表）</text>
+
+  
+  <g font-size="11" fill="#111827">
+    <rect x="60" y="150" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="83" y="168" text-anchor="middle">k1</text>
+    <rect x="112" y="150" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="135" y="168" text-anchor="middle">k2</text>
+    <rect x="164" y="150" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="187" y="168" text-anchor="middle">k3</text>
+    <rect x="216" y="150" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="239" y="168" text-anchor="middle">k4</text>
+    <rect x="268" y="150" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="291" y="168" text-anchor="middle">k5</text>
+    <rect x="320" y="150" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="343" y="168" text-anchor="middle">k6</text>
+    <rect x="60" y="186" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="83" y="204" text-anchor="middle">k7</text>
+    <rect x="112" y="186" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="135" y="204" text-anchor="middle">k8</text>
+    <rect x="164" y="186" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="187" y="204" text-anchor="middle">k9</text>
+    <rect x="216" y="186" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="239" y="204" text-anchor="middle">k10</text>
+    <rect x="268" y="186" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="291" y="204" text-anchor="middle">k11</text>
+    <rect x="320" y="186" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="343" y="204" text-anchor="middle">k12</text>
+    <rect x="60" y="222" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="83" y="240" text-anchor="middle">k13</text>
+    <rect x="112" y="222" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="135" y="240" text-anchor="middle">k14</text>
+    <rect x="164" y="222" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="187" y="240" text-anchor="middle">k15</text>
+    <rect x="216" y="222" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="239" y="240" text-anchor="middle">k16</text>
+    <rect x="268" y="222" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="291" y="240" text-anchor="middle">...</text>
+    <rect x="320" y="222" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="343" y="240" text-anchor="middle">kN</text>
+  </g>
+
+  
+  <rect x="40" y="315" width="380" height="70" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="60" y="338" font-size="13" font-weight="700" fill="#111827">本轮随机样本</text>
+  <g font-size="11" fill="#111827">
+    <rect x="60" y="350" width="46" height="28" rx="4" fill="#FFFFFF" stroke="#D97706"/><text x="83" y="368" text-anchor="middle">k3</text>
+    <rect x="112" y="350" width="46" height="28" rx="4" fill="#FFFFFF" stroke="#D97706"/><text x="135" y="368" text-anchor="middle">k7</text>
+    <rect x="164" y="350" width="46" height="28" rx="4" fill="#FFFFFF" stroke="#D97706"/><text x="187" y="368" text-anchor="middle">k11</text>
+    <rect x="216" y="350" width="46" height="28" rx="4" fill="#FFFFFF" stroke="#D97706"/><text x="239" y="368" text-anchor="middle">k2</text>
+    <rect x="268" y="350" width="46" height="28" rx="4" fill="#FFFFFF" stroke="#D97706"/><text x="291" y="368" text-anchor="middle">k9</text>
+  </g>
+  <path d="M83 295 L83 313" fill="none" stroke="#4F46E5" stroke-width="1.4" stroke-dasharray="3,3" marker-end="url(#fig_4_2_arrowInd)"/>
+  <path d="M239 295 L239 313" fill="none" stroke="#4F46E5" stroke-width="1.4" stroke-dasharray="3,3" marker-end="url(#fig_4_2_arrowInd)"/>
+  <text x="250" y="309" font-size="11" fill="#374151">随机抽取少量键</text>
+
+  
+  <path d="M400 387 L400 422" fill="none" stroke="#4F46E5" stroke-width="1.6" marker-end="url(#fig_4_2_arrowInd)"/>
+  <text x="60" y="407" font-size="11.5" fill="#374151">将样本加入持续维护的淘汰候选池</text>
+  <rect x="40" y="424" width="380" height="82" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.6"/>
+  <text x="60" y="449" font-size="13" font-weight="700" fill="#111827">淘汰候选池</text>
+  <text x="60" y="477" font-size="11.5" fill="#374151">保留本轮样本与此前候选中空闲时间较长的键</text>
+
+  
+  <path d="M400 508 L400 570" fill="none" stroke="#EF4444" stroke-width="1.6" marker-end="url(#fig_4_2_arrowRed)"/>
+  <text x="60" y="533" font-size="11.5" fill="#374151">从候选池中选择仍存在、</text>
+  <text x="60" y="551" font-size="11.5" fill="#374151">空闲时间估计值最大的键</text>
+  <rect x="40" y="572" width="380" height="58" rx="6" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.8"/>
+  <text x="60" y="606" font-size="13" fill="#B91C1C" font-weight="700">本例选中 k11 → 删除键并释放内存</text>
+
+  
+  <text x="720" y="96" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">LFU（概率计数 + 衰减）</text>
+
+  
+  <rect x="540" y="115" width="380" height="106" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.6"/>
+  <text x="560" y="135" font-size="13" font-weight="700" fill="#111827">键的近似访问频率</text>
+  <line x1="540" y1="144" x2="920" y2="144" stroke="#C7D2FE" stroke-width="1"/>
+
+  
+  <rect x="560" y="158" width="150" height="48" rx="4" fill="#FFFFFF" stroke="#4F46E5"/>
+  <text x="635" y="178" text-anchor="middle" font-size="12" fill="#111827">概率计数</text>
+  <text x="635" y="196" text-anchor="middle" font-size="11" fill="#374151">估计访问频次</text>
+
+  <rect x="710" y="158" width="150" height="48" rx="4" fill="#FFFFFF" stroke="#4F46E5"/>
+  <text x="785" y="178" text-anchor="middle" font-size="12" fill="#111827">时间信息</text>
+  <text x="785" y="196" text-anchor="middle" font-size="11" fill="#374151">用于衰减旧频次</text>
+
+  
+  <rect x="540" y="247" width="180" height="64" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.6"/>
+  <text x="630" y="270" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">每次访问</text>
+  <text x="630" y="288" text-anchor="middle" font-size="11" fill="#374151">按概率增加估计值</text>
+  <text x="630" y="304" text-anchor="middle" font-size="11" fill="#374151">值越高，递增机会越小</text>
+
+  
+  <rect x="740" y="247" width="180" height="64" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="830" y="270" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">久未访问</text>
+  <text x="830" y="288" text-anchor="middle" font-size="11" fill="#374151">旧频次会衰减</text>
+  <text x="830" y="304" text-anchor="middle" font-size="11" fill="#374151">避免长期保留旧热点</text>
+
+  
+  <rect x="540" y="337" width="180" height="64" rx="6" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.6"/>
+  <text x="630" y="360" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">热数据</text>
+  <text x="630" y="378" text-anchor="middle" font-size="11" fill="#374151">高频访问 → 估计值较大</text>
+  <text x="630" y="394" text-anchor="middle" font-size="11" fill="#374151">相对不易被淘汰</text>
+
+  <rect x="740" y="337" width="180" height="64" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="830" y="360" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">扫描来的冷数据</text>
+  <text x="830" y="378" text-anchor="middle" font-size="11" fill="#374151">访问一次 → 估计值较小</text>
+  <text x="830" y="394" text-anchor="middle" font-size="11" fill="#374151">更可能成为淘汰候选</text>
+</svg>
+</div><figcaption>图 4-2　Redis 近似 LRU 采样淘汰与 LFU 计数器衰减机制：两种策略共用采样与比较机制，但比较依据不同。近似 LRU 比较最近访问时间，LFU 比较带衰减的对数频次。</figcaption></figure>
+<h3 id="sec-4.2.2">4.2.2 持久化的两种方式</h3>
+<p>Redis 用 RDB 和 AOF 在磁盘上保留可恢复的状态。</p>
+<p><strong>RDB（快照文件）</strong> 保存某一时刻的全量数据。后台保存时，Redis <code>fork</code> 子进程写快照，父进程继续处理请求；写时复制（COW）保留快照时的内存视图。fork 要复制页表，会短暂停住主线程；之后若大量页面被修改，COW 还会增加内存与复制开销。实例越大，这两项成本越值得关注。</p>
+<p><strong>AOF（仅追加文件）</strong> 通常把写命令追加到日志末尾，恢复时顺序重放命令，重建内存状态。参数 <code>appendfsync</code> 决定日志什么时候刷到磁盘：</p>
+<ul><li><code>always</code>：每条命令的回复要等待 AOF 刷盘完成，多个命令可以共用一次刷盘。</li><li><code>everysec</code>：每秒 <code>fsync</code> 一次，默认值。崩溃时约丢最近 1 秒量级的数据（取决于后台 fsync 周期与崩溃时点）；后台刷盘受阻时，实际丢失窗口可能更长。</li><li><code>no</code>：把刷盘时机交给操作系统。Redis 不主动 <code>fsync</code>，由 OS 决定什么时候把 PageCache 写回磁盘；崩溃时可能丢失较多数据。</li></ul>
+<p>Redis 7.x 默认不开启 AOF；开启后，默认使用 <code>everysec</code>。</p>
+<p>AOF 持续追加会让文件增长。<strong>AOF 重写</strong>按当前内存状态生成更短的日志，并把重写期间的新写入接到新日志之后。</p>
+<p><strong>混合持久化</strong>是 AOF 的一种形式：重写时用 RDB 格式保存全量基底，新增写命令以 AOF 增量记录；恢复时先加载基底，再重放增量。</p>
+<p><a class="xref" href="#fig-4-3">图 4-3</a> 对照 RDB 与 AOF 的数据流。</p>
+<figure class="fig" id="fig-4-3"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 80 920 560" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_4_3_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_4_3_arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="60" y="100" width="120" height="56" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="120" y="134" text-anchor="middle" font-size="14" fill="#111827">客户端</text>
+  <text x="120" y="150" text-anchor="middle" font-size="11" fill="#374151">SET key val</text>
+
+  
+  <rect x="320" y="92" width="200" height="72" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.8"/>
+  <text x="420" y="118" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">Redis 父进程</text>
+  <text x="420" y="138" text-anchor="middle" font-size="12" fill="#374151">内存数据结构</text>
+  <text x="420" y="154" text-anchor="middle" font-size="11" fill="#374151">（哈希表 / 跳表 / listpack）</text>
+
+  
+  <line x1="180" y1="128" x2="318" y2="128" stroke="#4B5563" stroke-width="1.8" marker-end="url(#fig_4_3_arrow)"/>
+
+  
+  
+  <rect x="60" y="250" width="240" height="160" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.6"/>
+  <text x="180" y="276" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">RDB（快照文件）</text>
+  <line x1="80" y1="288" x2="280" y2="288" stroke="#C7D2FE" stroke-width="1"/>
+  <text x="80" y="308" font-size="12" fill="#374151">• fork 子进程 + COW 写时复制</text>
+  <text x="80" y="328" font-size="12" fill="#374151">• 某一时刻全量快照</text>
+  <text x="80" y="348" font-size="12" fill="#374151">• 恢复较快，快照间写入可能丢失</text>
+  <text x="80" y="368" font-size="12" fill="#374151">• 大实例 fork 与 COW 有开销</text>
+  <text x="80" y="392" font-size="11" fill="#6B7280">产物：独立 RDB 快照</text>
+
+  
+  <rect x="340" y="250" width="240" height="160" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.6"/>
+  <text x="460" y="276" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">AOF（仅追加文件）</text>
+  <line x1="360" y1="288" x2="560" y2="288" stroke="#C7D2FE" stroke-width="1"/>
+  <text x="360" y="308" font-size="12" fill="#374151">• 持续追加写命令</text>
+  <text x="360" y="328" font-size="12" fill="#374151">• 刷盘频率影响等待与丢失窗口</text>
+  <text x="360" y="348" font-size="12" fill="#374151">• 重写：按当前内存状态缩短日志</text>
+  <text x="360" y="368" font-size="12" fill="#374151">• 恢复时重放命令</text>
+  <text x="360" y="392" font-size="11" fill="#6B7280">产物：AOF 日志</text>
+
+  
+  <rect x="620" y="250" width="240" height="160" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.2" stroke-dasharray="5 3"/>
+  <text x="740" y="276" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">AOF 的混合格式</text>
+  <line x1="640" y1="288" x2="840" y2="288" stroke="#C7D2FE" stroke-width="1"/>
+  <text x="640" y="308" font-size="12" fill="#374151">• 重写时用 RDB 格式表示全量</text>
+  <text x="640" y="328" font-size="12" fill="#374151">• 新增写命令以 AOF 增量记录</text>
+  <text x="640" y="348" font-size="12" fill="#374151">• 恢复：先加载全量，再重放增量</text>
+  <text x="640" y="368" font-size="12" fill="#374151">• 刷盘策略影响增量丢失窗口</text>
+
+  
+  <path d="M 380 164 L 380 198 Q 380 206 372 206 L 188 206 Q 180 206 180 214 L 180 248" fill="none" stroke="#4B5563" stroke-width="1.6" marker-end="url(#fig_4_3_arrow)"/>
+  <path d="M 420 164 L 420 248" fill="none" stroke="#4B5563" stroke-width="1.6" marker-end="url(#fig_4_3_arrow)"/>
+  <line x1="580" y1="330" x2="618" y2="330" stroke="#4B5563" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#fig_4_3_arrow)"/>
+
+  
+  <text x="282" y="198" font-size="11" fill="#374151" text-anchor="middle">触发 BGSAVE / 定时</text>
+  <text x="436" y="220" font-size="11" fill="#374151">写命令</text>
+  <text x="740" y="235" font-size="11" fill="#374151" text-anchor="middle">AOF 重写可采用混合格式</text>
+
+  
+  <rect x="260" y="470" width="400" height="60" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="460" y="498" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">磁盘（落盘）</text>
+  <text x="460" y="518" text-anchor="middle" font-size="12" fill="#374151">崩溃后用于恢复内存</text>
+
+  
+  <path d="M 180 410 L 180 446 Q 180 452 186 452 L 314 452 Q 320 452 320 458 L 320 468" fill="none" stroke="#EF4444" stroke-width="1.6" marker-end="url(#fig_4_3_arrowRed)"/>
+  <path d="M 460 412 L 460 466" fill="none" stroke="#EF4444" stroke-width="1.6" marker-end="url(#fig_4_3_arrowRed)"/>
+
+  
+  <g transform="translate(60,560)">
+    <line x1="0" y1="10" x2="28" y2="10" stroke="#4B5563" stroke-width="1.8" marker-end="url(#fig_4_3_arrow)"/>
+    <text x="36" y="14" font-size="11" fill="#374151">控制流 / 触发</text>
+    <line x1="160" y1="10" x2="188" y2="10" stroke="#EF4444" stroke-width="1.8" marker-end="url(#fig_4_3_arrowRed)"/>
+    <text x="196" y="14" font-size="11" fill="#374151">数据落盘</text>
+    <rect x="300" y="2" width="14" height="14" rx="2" fill="#EEF2FF" stroke="#4F46E5"/>
+    <text x="320" y="14" font-size="11" fill="#374151">Redis 相关</text>
+  </g>
+</svg>
+</div><figcaption>图 4-3　Redis 持久化数据流（RDB 快照 / AOF 含混合持久化）：两条路径独立，混合 AOF 以 RDB 格式保存全量基底、以命令记录增量</figcaption></figure>
+<h3 id="sec-4.2.3">4.2.3 取舍总结</h3>
+<p>Redis 让运行数据常驻内存以降低访问延迟，数据容量也因此受到内存限制；故障后能恢复到哪里，由持久化方式和刷盘时机决定。单实例继续增大，还会增加 fork 与恢复加载的成本。容量超过可承担的内存范围时，就需要分片（见<a class="xref" href="07-cluster.html">第 7 章</a>）或调整存储方案。</p>
+<h2 id="sec-4.3">4.3 MySQL 的做法</h2>
+<p>MySQL 默认的存储引擎是 InnoDB。数据页以磁盘为正本，缓冲池保留常用页；数据集可以大于内存，事务提交与崩溃恢复另由日志和刷盘机制保证。</p>
+<h3 id="sec-4.3.1">4.3.1 缓冲池命中与扫描污染</h3>
+<p>查询所需的页若在缓冲池中，可以直接从内存读取；未命中时，要从数据文件读入。若最终需要从存储设备随机读取，等待就会增加。缓冲池尽量留下常用页，减少这类读取。</p>
+<p>一次大扫描也可能把热页替换出去，降低缓冲池命中率、增加查询延迟。后续访问重新加载热点页后，命中率才会逐渐恢复。这就是缓冲池被污染。</p>
+<h3 id="sec-4.3.2">4.3.2 缓冲池的页管理链表</h3>
+<p>缓冲池（Buffer Pool）用 Free List 保存空闲页，用 LRU List 管理已缓存页的淘汰顺序，用 Flush List 跟踪待刷回的脏页。页被修改后，仍在 LRU List 中，同时也进入 Flush List；两条链表管理的是不同状态。</p>
+<p>InnoDB 把 LRU List 分成热区和冷区。新读入的页先进入冷区；经过一段时间后仍被访问，才有机会进入热区。这样，一次扫描读入的大量页不容易立即挤掉原有热点。</p>
+<p><a class="xref" href="#fig-4-4">图 4-4</a> 标出三条链表和冷、热区的分界。</p>
+<figure class="fig" id="fig-4-4"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 44 960 548" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_4_4_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_4_4_arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="fig_4_4_arrowInd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D97706"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="40" y="90" width="240" height="200" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="160" y="114" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">Free List（空闲页池）</text>
+  <line x1="60" y1="124" x2="260" y2="124" stroke="#FDE68A" stroke-width="1"/>
+  <g font-size="11" fill="#111827">
+    <rect x="60" y="138" width="50" height="28" rx="4" fill="#FFFFFF" stroke="#D97706"/><text x="85" y="156" text-anchor="middle">空闲页</text>
+    <rect x="116" y="138" width="50" height="28" rx="4" fill="#FFFFFF" stroke="#D97706"/><text x="141" y="156" text-anchor="middle">空闲页</text>
+    <rect x="172" y="138" width="50" height="28" rx="4" fill="#FFFFFF" stroke="#D97706"/><text x="197" y="156" text-anchor="middle">空闲页</text>
+    <rect x="60" y="172" width="50" height="28" rx="4" fill="#FFFFFF" stroke="#D97706"/><text x="85" y="190" text-anchor="middle">空闲页</text>
+    <rect x="116" y="172" width="50" height="28" rx="4" fill="#FFFFFF" stroke="#D97706"/><text x="141" y="190" text-anchor="middle">空闲页</text>
+    <rect x="172" y="172" width="50" height="28" rx="4" fill="#FFFFFF" stroke="#D97706"/><text x="197" y="190" text-anchor="middle">...</text>
+  </g>
+  <text x="160" y="226" text-anchor="middle" font-size="11" fill="#374151">读新页时从池中取一页</text>
+  <text x="160" y="244" text-anchor="middle" font-size="11" fill="#374151">淘汰后可重新利用</text>
+  <text x="160" y="270" text-anchor="middle" font-size="11" fill="#6B7280">读路径的页来源</text>
+
+  
+  <rect x="320" y="90" width="600" height="200" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="620" y="114" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">LRU List</text>
+
+  
+  <rect x="340" y="128" width="360" height="44" rx="4" fill="#FFFFFF" stroke="#D97706"/>
+  <text x="520" y="146" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">New Sublist（热区）</text>
+  <g font-size="10" fill="#111827">
+    <rect x="350" y="152" width="42" height="16" rx="2" fill="#FEF3C7" stroke="#D97706"/><text x="371" y="164" text-anchor="middle">热页</text>
+    <rect x="396" y="152" width="42" height="16" rx="2" fill="#FEF3C7" stroke="#D97706"/><text x="417" y="164" text-anchor="middle">热页</text>
+    <rect x="442" y="152" width="42" height="16" rx="2" fill="#FEF3C7" stroke="#D97706"/><text x="463" y="164" text-anchor="middle">热页</text>
+    <rect x="488" y="152" width="42" height="16" rx="2" fill="#FEF3C7" stroke="#D97706"/><text x="509" y="164" text-anchor="middle">热页</text>
+    <rect x="534" y="152" width="42" height="16" rx="2" fill="#FEF3C7" stroke="#D97706"/><text x="555" y="164" text-anchor="middle">热页</text>
+    <rect x="580" y="152" width="42" height="16" rx="2" fill="#FEF3C7" stroke="#D97706"/><text x="601" y="164" text-anchor="middle">...</text>
+    <rect x="626" y="152" width="42" height="16" rx="2" fill="#FEF3C7" stroke="#D97706"/><text x="647" y="164" text-anchor="middle">热页</text>
+  </g>
+
+  
+  <line x1="700" y1="120" x2="700" y2="200" stroke="#EF4444" stroke-width="2" stroke-dasharray="4,3"/>
+  <rect x="660" y="104" width="80" height="18" rx="3" fill="#FEE2E2" stroke="#EF4444"/>
+  <text x="700" y="117" text-anchor="middle" font-size="11" font-weight="700" fill="#EF4444">冷热分界</text>
+
+  
+  <rect x="700" y="128" width="216" height="44" rx="4" fill="#FFFFFF" stroke="#D97706" stroke-dasharray="4,3"/>
+  <text x="808" y="146" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">Old Sublist（冷区）</text>
+  <g font-size="10" fill="#111827">
+    <rect x="710" y="152" width="42" height="16" rx="2" fill="#FFFBEB" stroke="#D97706"/><text x="731" y="164" text-anchor="middle">冷页</text>
+    <rect x="756" y="152" width="42" height="16" rx="2" fill="#FFFBEB" stroke="#D97706"/><text x="777" y="164" text-anchor="middle">冷页</text>
+    <rect x="802" y="152" width="42" height="16" rx="2" fill="#FFFBEB" stroke="#D97706"/><text x="823" y="164" text-anchor="middle">冷页</text>
+    <rect x="848" y="152" width="42" height="16" rx="2" fill="#FFFBEB" stroke="#D97706"/><text x="869" y="164" text-anchor="middle">...</text>
+  </g>
+
+  
+  <rect x="340" y="196" width="576" height="36" rx="4" fill="#F9FAFB" stroke="#6B7280" stroke-width="1.2"/>
+  <text x="360" y="218" font-size="11" fill="#374151">新读入页先进入冷区头部，不直接占据热区</text>
+
+  
+  <text x="360" y="252" font-size="11" fill="#374151">冷区页隔一段时间再次被访问，才有机会进入热区</text>
+  <text x="360" y="270" font-size="11" fill="#374151">一次性扫描读入的页不立即进入热区，</text>
+  <text x="590" y="270" font-size="11" fill="#EF4444" font-weight="700">减轻热点被替换的风险</text>
+
+  
+
+  
+  <rect x="320" y="320" width="600" height="160" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="620" y="344" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">Flush List（待刷脏页）</text>
+  <g font-size="11" fill="#111827">
+    <rect x="340" y="362" width="64" height="34" rx="4" fill="#FEE2E2" stroke="#EF4444"/><text x="372" y="383" text-anchor="middle">脏页①</text>
+    <rect x="410" y="362" width="64" height="34" rx="4" fill="#FEE2E2" stroke="#EF4444"/><text x="442" y="383" text-anchor="middle">脏页②</text>
+    <rect x="480" y="362" width="64" height="34" rx="4" fill="#FEE2E2" stroke="#EF4444"/><text x="512" y="383" text-anchor="middle">脏页③</text>
+    <rect x="550" y="362" width="64" height="34" rx="4" fill="#FEE2E2" stroke="#EF4444"/><text x="582" y="383" text-anchor="middle">脏页④</text>
+    <rect x="620" y="362" width="64" height="34" rx="4" fill="#FEE2E2" stroke="#EF4444"/><text x="652" y="383" text-anchor="middle">...</text>
+  </g>
+  <text x="340" y="416" font-size="11" fill="#374151">页被修改 → 进入 Flush List（同时仍在 LRU List 中，两链表交叉）</text>
+  <text x="340" y="436" font-size="11" fill="#374151">后台线程刷回脏页，使 Checkpoint 可以向前推进</text>
+  <text x="340" y="458" font-size="11" fill="#6B7280">刷盘后从 Flush List 移除（仍留 LRU 直到被淘汰或换出）</text>
+
+  
+  <path d="M 280 180 L 318 180" fill="none" stroke="#D97706" stroke-width="1.6" marker-end="url(#fig_4_4_arrowInd)"/>
+  <text x="298" y="172" text-anchor="middle" font-size="10" fill="#D97706">取页</text>
+
+  
+  <path d="M 620 290 L 620 318" fill="none" stroke="#EF4444" stroke-width="1.6" marker-end="url(#fig_4_4_arrowRed)"/>
+  <text x="630" y="310" font-size="10" fill="#EF4444">页被改</text>
+
+  
+  <rect x="320" y="520" width="600" height="60" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="620" y="548" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">磁盘上的数据文件（表空间）</text>
+  <text x="620" y="568" text-anchor="middle" font-size="12" fill="#374151">脏页写回各自的表空间位置</text>
+
+  
+  <path d="M 620 480 L 620 518" fill="none" stroke="#EF4444" stroke-width="1.6" marker-end="url(#fig_4_4_arrowRed)"/>
+  <text x="630" y="504" font-size="10" fill="#EF4444">后台刷脏页</text>
+
+  
+  <path d="M 920 170 L 936 170 L 936 72 L 160 72 L 160 88" fill="none" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#fig_4_4_arrow)"/>
+  <text x="548" y="64" text-anchor="middle" font-size="10" fill="#6B7280">Old 区尾部的淘汰页归还 Free List</text>
+</svg>
+</div><figcaption>图 4-4　InnoDB 缓冲池页管理链表（Free / LRU 新老分区 / Flush）</figcaption></figure>
+<h3 id="sec-4.3.3">4.3.3 WAL 与崩溃恢复</h3>
+<p><strong>WAL</strong> 要求在修改后的数据页刷到磁盘之前，先保证记录“这页要怎么改”的 <strong>redo log（重做日志）</strong> 已经落盘。redo log 是顺序追加写的。崩溃之后，InnoDB 用 redo log 重放，把缓冲池里没来得及刷盘的修改补回磁盘的数据页。</p>
+<p>一个事务可能修改多个分散的数据页。采用 WAL 后，提交时不必等这些页全部写回：先持久保存恢复所需的日志，脏页再由后台逐步刷回。随机写并没有消失，只是不必每次都挡在提交路径上；同一页的多次修改也有机会合并后再写。</p>
+<p>默认的 <code>innodb_flush_log_at_trx_commit=1</code> 在提交确认前等待相应 redo log 刷盘，组提交可让多个事务共享一次 fsync。若改成不在每次提交时等待刷盘，同步等待减少，故障时可能丢失的已确认事务也会增多；掉电后能否保留已刷日志，还以存储设备兑现刷盘请求为前提。</p>
+<p><a class="xref" href="#fig-4-5">图 4-5</a> 区分事务提交和后台刷脏页两条时间线。</p>
+<figure class="fig" id="fig-4-5"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 78 960 630" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_4_5_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_4_5_arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="fig_4_5_arrowInd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D97706"/>
+    </marker>
+  </defs>
+
+  
+  
+  <rect x="40" y="90" width="120" height="40" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="100" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">客户端</text>
+  <line x1="100" y1="130" x2="100" y2="340" stroke="#6B7280" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="100" y1="359" x2="100" y2="381" stroke="#6B7280" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="100" y1="420" x2="100" y2="650" stroke="#6B7280" stroke-width="1" stroke-dasharray="3,3"/>
+
+  
+  <rect x="220" y="90" width="140" height="40" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="290" y="108" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">InnoDB 引擎</text>
+  <text x="290" y="124" text-anchor="middle" font-size="10" fill="#374151">事务执行</text>
+  <line x1="290" y1="130" x2="290" y2="340" stroke="#D97706" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="290" y1="359" x2="290" y2="650" stroke="#D97706" stroke-width="1" stroke-dasharray="3,3"/>
+
+  
+  <rect x="420" y="90" width="140" height="40" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="490" y="108" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">缓冲池</text>
+  <text x="490" y="124" text-anchor="middle" font-size="10" fill="#374151">Buffer Pool</text>
+  <line x1="490" y1="130" x2="490" y2="220" stroke="#D97706" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="490" y1="257" x2="490" y2="650" stroke="#D97706" stroke-width="1" stroke-dasharray="3,3"/>
+
+  
+  <rect x="620" y="90" width="140" height="40" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="690" y="108" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">redo log</text>
+  <text x="690" y="124" text-anchor="middle" font-size="10" fill="#374151">日志缓冲 / 日志文件</text>
+  <line x1="690" y1="130" x2="690" y2="650" stroke="#D97706" stroke-width="1" stroke-dasharray="3,3"/>
+
+  
+  <rect x="820" y="90" width="120" height="52" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="880" y="108" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">磁盘</text>
+  <text x="880" y="122" text-anchor="middle" font-size="10.5" fill="#374151">日志、双写与</text>
+  <text x="880" y="136" text-anchor="middle" font-size="10.5" fill="#374151">表空间文件</text>
+  <line x1="880" y1="142" x2="880" y2="650" stroke="#6B7280" stroke-width="1" stroke-dasharray="3,3"/>
+
+  
+  
+  <line x1="100" y1="160" x2="288" y2="160" stroke="#4B5563" stroke-width="1.6" marker-end="url(#fig_4_5_arrow)"/>
+  <text x="192" y="153" text-anchor="middle" font-size="11" fill="#374151">① UPDATE 请求</text>
+
+  
+  <path d="M 226 176 L 218 176 L 218 280 L 226 280" fill="none" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="208" y="213" text-anchor="end" font-size="10.5" fill="#6B7280">内部微事务</text>
+  <text x="208" y="228" text-anchor="end" font-size="10.5" fill="#6B7280">(mini-transaction)</text>
+  <line x1="290" y1="202" x2="488" y2="202" stroke="#D97706" stroke-width="1.6" marker-end="url(#fig_4_5_arrowInd)"/>
+  <text x="387" y="190" text-anchor="middle" font-size="11.5" fill="#374151">② 改缓冲池页，生成 redo 记录</text>
+
+  <line x1="290" y1="264" x2="688" y2="264" stroke="#EF4444" stroke-width="1.8" marker-end="url(#fig_4_5_arrowRed)"/>
+  <text x="490" y="235" text-anchor="middle" font-size="11.5" fill="#EF4444" font-weight="700">③ redo 写入日志缓冲，</text>
+  <text x="490" y="251" text-anchor="middle" font-size="11.5" fill="#374151">脏页登记到 Flush List</text>
+  
+  <line x1="490" y1="264" x2="490" y2="274" stroke="#D97706" stroke-width="1.8"/>
+  <circle cx="490" cy="274" r="3.2" fill="#D97706"/>
+  <text x="502" y="287" font-size="10.5" fill="#D97706">Flush List</text>
+
+  
+  <rect x="575" y="296" width="230" height="40" rx="6" fill="#FFFBEB" stroke="#D97706" stroke-width="1.2"/>
+  <text x="690" y="311" text-anchor="middle" font-size="10.5" fill="#374151">innodb_flush_log_at_trx_commit</text>
+  <text x="690" y="326" text-anchor="middle" font-size="10.5" fill="#374151">=1：提交成功前 redo 落盘（默认）</text>
+  <line x1="690" y1="346" x2="878" y2="346" stroke="#EF4444" stroke-width="1.6" marker-end="url(#fig_4_5_arrowRed)"/>
+  <text x="833" y="337" text-anchor="middle" font-size="10.5" fill="#EF4444">落盘</text>
+  <line x1="290" y1="365" x2="102" y2="365" stroke="#4B5563" stroke-width="1.6" marker-end="url(#fig_4_5_arrow)" stroke-dasharray="5,3"/>
+  <text x="192" y="354" text-anchor="middle" font-size="11" fill="#374151">④ 返回提交成功（默认值 1：redo 已落盘）</text>
+
+  
+  <text x="40" y="396" font-size="12" font-weight="700" fill="#6B7280">后台刷脏页</text>
+  <line x1="490" y1="277" x2="490" y2="378" stroke="#D97706" stroke-width="1.7" marker-end="url(#fig_4_5_arrowInd)"/>
+  <rect x="420" y="382" width="180" height="52" rx="6" fill="#FFFBEB" stroke="#D97706" stroke-width="1.3"/>
+  <text x="510" y="403" text-anchor="middle" font-size="11.5" fill="#374151">相应 redo 已落盘？</text>
+  <text x="510" y="422" text-anchor="middle" font-size="11.5" fill="#374151">未落盘则先刷 redo</text>
+  <line x1="510" y1="434" x2="510" y2="456" stroke="#D97706" stroke-width="1.7" marker-end="url(#fig_4_5_arrowInd)"/>
+  <text x="524" y="451" font-size="10.5" fill="#D97706">已落盘</text>
+
+  
+  <rect x="420" y="460" width="460" height="94" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="650" y="480" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">⑤ 刷脏页：先满足 WAL，再经双写写入表空间</text>
+  <text x="650" y="501" text-anchor="middle" font-size="11.5" fill="#374151">确认对应 redo 已落盘</text>
+  <text x="650" y="520" text-anchor="middle" font-size="11.5" fill="#374151">完整页先写双写区并刷盘，再写表空间数据页</text>
+  <text x="650" y="539" text-anchor="middle" font-size="11.5" fill="#374151">正式页若写入不完整，恢复时先取副本，再应用 redo</text>
+  <line x1="650" y1="554" x2="650" y2="586" stroke="#4B5563" stroke-width="1.6" marker-end="url(#fig_4_5_arrow)"/>
+  <path d="M 800 554 L 800 576 L 878 576" fill="none" stroke="#EF4444" stroke-width="1.6" marker-end="url(#fig_4_5_arrowRed)"/>
+  <text x="792" y="570" text-anchor="end" font-size="10.5" fill="#EF4444">写入表空间</text>
+
+  
+  <rect x="420" y="588" width="460" height="50" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="650" y="609" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">⑥ 推进 checkpoint</text>
+  <text x="650" y="629" text-anchor="middle" font-size="11.5" fill="#374151">根据脏页刷盘进度，回收可复用的日志空间</text>
+
+  
+  <g transform="translate(40,668)">
+    <line x1="0" y1="8" x2="28" y2="8" stroke="#4B5563" stroke-width="1.8" marker-end="url(#fig_4_5_arrow)"/>
+    <text x="36" y="12" font-size="10" fill="#374151">控制流</text>
+    <line x1="110" y1="8" x2="138" y2="8" stroke="#EF4444" stroke-width="1.8" marker-end="url(#fig_4_5_arrowRed)"/>
+    <text x="146" y="12" font-size="10" fill="#374151">数据/落盘</text>
+    <line x1="240" y1="8" x2="268" y2="8" stroke="#D97706" stroke-width="1.8" marker-end="url(#fig_4_5_arrowInd)"/>
+    <text x="276" y="12" font-size="10" fill="#374151">内存操作</text>
+    <rect x="370" y="1" width="12" height="14" rx="2" fill="#FEF3C7" stroke="#D97706"/>
+    <text x="388" y="12" font-size="10" fill="#374151">MySQL 相关</text>
+  </g>
+</svg>
+</div><figcaption>图 4-5　MySQL 一次写操作的全链路时序（缓冲池→redo log→双写→刷盘）</figcaption></figure>
+<p>脏页可以先留在缓冲池中；随着后台刷盘和 checkpoint 推进，较早的 redo log 空间才能复用。</p>
+<h3 id="sec-4.3.4">4.3.4 双写与修改缓冲</h3>
+<p>这两种机制分别处理页写到一半的损坏风险，以及修改二级索引页时的随机读取。</p>
+<p><strong>双写缓冲（doublewrite buffer）</strong>：数据页写到正式位置时可能只写了一部分，留下损坏的页；redo log 需要可用的基础页，无法单独修复这种损坏。InnoDB 先把完整页副本写入双写区并刷盘，再写正式位置。若正式页发生不完整写入，恢复时可从双写区取回副本，再应用日志。多写一份数据带来写放大，也换来对半写页的恢复能力。</p>
+<p><strong>修改缓冲（change buffer）</strong>：更新非唯一二级索引时，目标页可能不在缓冲池里。InnoDB 先记录这次修改，等页读入时再合并，减少立即读页的随机 I/O。唯一索引需要当场检查约束，不能这样延后。</p>
+<h3 id="sec-4.3.5">4.3.5 取舍总结</h3>
+<p>当数据规模超过可承担的内存、又需要事务和通用查询时，磁盘保存数据页、缓冲池保存热点的方式更合适。代价是要管理页淘汰、脏页刷回与崩溃恢复，它们都会影响请求延迟和运行复杂度。</p>
+<h2 id="sec-4.4">4.4 Kafka 的做法</h2>
+<p>Kafka 把消息写入磁盘上的分区日志，日志文件的页由操作系统的 PageCache 缓存。</p>
+<h3 id="sec-4.4.1">4.4.1 核心假设</h3>
+<p>Kafka 主要处理追加写和按偏移量读取。内核预读（readahead）可以提前加载后续文件页，回写（writeback）可以积累写入后批量刷盘。Kafka 不在进程里另建缓冲池；它可以按偏移量定位，再顺序读取所需区间，但不提供按业务 key 的随机点查。</p>
+<h3 id="sec-4.4.2">4.4.2 日志的追加写与按偏移量读取</h3>
+<p><a class="xref" href="#table-4-1">表 4-1</a> 中的顺序带宽，是这种写法能够成立的物理条件。</p>
+<p>一个分区（partition）的日志分成多个日志段（segment）。新消息追加到活跃段末尾，旧段按保留策略清理。对单个分区，追加写避免原地改动已有消息；同一磁盘上的多个分区写入与后台清理会竞争磁盘带宽。</p>
+<p>Kafka 的稀疏索引只保存部分位置。读取时，先用索引按偏移量找到接近目标的位置，再从那里顺序扫描一小段日志，找到目标消息。索引文件保持紧凑，便于留在 PageCache。</p>
+<h3 id="sec-4.4.3">4.4.3 为什么不做自己的缓冲池</h3>
+<p>顺序读写已有操作系统的预读和回写支持。若 Kafka 在用户态再缓存一份日志，可能与 PageCache 重复占用内存。进程重启也不会直接清空 PageCache；只要相关页未被回收，重启后的读取仍可命中缓存。</p>
+<p>Kafka 还可以在发送路径上利用内核中的文件页。<a class="xref" href="#fig-4-6">图 4-6</a> 比较传统文件发送与 <code>sendfile</code> 路径。</p>
+<figure class="fig" id="fig-4-6"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 68 960 594" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_4_6_arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="fig_4_6_arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="40" y="80" width="880" height="290" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="1.2" stroke-dasharray="6,4"/>
+  <text x="60" y="104" font-size="14" font-weight="700" fill="#D97706">传统 read() + write()：文件内容经过用户缓冲区</text>
+  <text x="60" y="122" font-size="11" fill="#374151">应用先从文件读取数据，再将数据写入 socket</text>
+
+  
+  <g font-size="11" fill="#111827">
+    <rect x="70" y="150" width="170" height="44" rx="5" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4"/>
+    <text x="155" y="170" text-anchor="middle" font-weight="700">磁盘 / 日志段</text>
+    <text x="155" y="186" text-anchor="middle" font-size="10" fill="#374151">segment .log</text>
+
+    <rect x="290" y="150" width="170" height="44" rx="5" fill="#ECFDF5" stroke="#059669" stroke-width="1.4"/>
+    <text x="375" y="170" text-anchor="middle" font-weight="700">内核缓冲</text>
+    <text x="375" y="186" text-anchor="middle" font-size="10" fill="#374151">PageCache</text>
+
+    <rect x="510" y="150" width="170" height="44" rx="5" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.4"/>
+    <text x="595" y="170" text-anchor="middle" font-weight="700">用户缓冲</text>
+    <text x="595" y="186" text-anchor="middle" font-size="10" fill="#374151">应用进程内存</text>
+
+    <rect x="730" y="150" width="170" height="44" rx="5" fill="#ECFDF5" stroke="#059669" stroke-width="1.4"/>
+    <text x="815" y="170" text-anchor="middle" font-weight="700">Socket 缓冲</text>
+    <text x="815" y="186" text-anchor="middle" font-size="10" fill="#374151">内核网络缓冲区</text>
+  </g>
+
+  
+  <line x1="240" y1="172" x2="288" y2="172" stroke="#EF4444" stroke-width="1.6" marker-end="url(#fig_4_6_arrowRed)"/>
+  <text x="264" y="165" text-anchor="middle" font-size="10" fill="#EF4444">①读入</text>
+  <line x1="460" y1="172" x2="508" y2="172" stroke="#EF4444" stroke-width="1.6" marker-end="url(#fig_4_6_arrowRed)"/>
+  <text x="484" y="165" text-anchor="middle" font-size="10" fill="#EF4444">②复制</text>
+  <line x1="680" y1="172" x2="728" y2="172" stroke="#EF4444" stroke-width="1.6" marker-end="url(#fig_4_6_arrowRed)"/>
+  <text x="704" y="165" text-anchor="middle" font-size="10" fill="#EF4444">③复制</text>
+
+  
+  <rect x="730" y="220" width="170" height="40" rx="5" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4"/>
+  <text x="815" y="237" text-anchor="middle" font-weight="700" font-size="11" fill="#111827">网卡</text>
+  <text x="815" y="252" text-anchor="middle" font-size="10" fill="#374151">④发送到网络</text>
+  <line x1="815" y1="194" x2="815" y2="218" stroke="#EF4444" stroke-width="1.6" marker-end="url(#fig_4_6_arrowRed)"/>
+
+  
+  <text x="60" y="240" font-size="11" fill="#374151">read()：应用请求读取文件</text>
+  <text x="60" y="258" font-size="11" fill="#374151">　　　PageCache 未命中时，从磁盘读入（①）</text>
+  <text x="60" y="276" font-size="11" fill="#374151">　　　将文件内容复制到用户缓冲区（②）</text>
+  <text x="60" y="294" font-size="11" fill="#374151">write()：将用户缓冲区的内容复制到 Socket 缓冲区（③）</text>
+  <text x="60" y="312" font-size="11" fill="#374151">　　　内核安排网络发送（④）</text>
+
+  
+  <rect x="40" y="390" width="880" height="260" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="1.4"/>
+  <text x="60" y="414" font-size="14" font-weight="700" fill="#059669">零拷贝 sendfile()：文件内容不经过用户缓冲区</text>
+  <text x="60" y="432" font-size="11" fill="#374151">Kafka 指定文件范围和目标 socket，由内核组织发送</text>
+
+  
+  <g font-size="11" fill="#111827">
+    <rect x="80" y="460" width="180" height="48" rx="5" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4"/>
+    <text x="170" y="481" text-anchor="middle" font-weight="700">磁盘 / 日志段</text>
+    <text x="170" y="498" text-anchor="middle" font-size="10" fill="#374151">segment .log</text>
+
+    <rect x="380" y="460" width="200" height="48" rx="5" fill="#ECFDF5" stroke="#059669" stroke-width="1.6"/>
+    <text x="480" y="481" text-anchor="middle" font-weight="700">内核 PageCache</text>
+    <text x="480" y="498" text-anchor="middle" font-size="10" fill="#374151">已缓存的文件页</text>
+
+    <rect x="700" y="460" width="180" height="48" rx="5" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4"/>
+    <text x="790" y="481" text-anchor="middle" font-weight="700">Socket / 网卡</text>
+    <text x="790" y="498" text-anchor="middle" font-size="10" fill="#374151">网络 → 消费者</text>
+  </g>
+
+  
+  <line x1="260" y1="484" x2="378" y2="484" stroke="#059669" stroke-width="1.8" marker-end="url(#fig_4_6_arrowG)"/>
+  <text x="319" y="476" text-anchor="middle" font-size="10" fill="#059669">①未命中时读入</text>
+  <line x1="580" y1="484" x2="698" y2="484" stroke="#059669" stroke-width="1.8" marker-end="url(#fig_4_6_arrowG)"/>
+  <text x="639" y="476" text-anchor="middle" font-size="10" fill="#059669">②内核组织发送</text>
+
+  
+  <rect x="380" y="530" width="200" height="44" rx="5" fill="#ECFDF5" stroke="#059669" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <text x="480" y="550" text-anchor="middle" font-size="11" font-weight="700" fill="#059669">Kafka 进程</text>
+  <text x="480" y="566" text-anchor="middle" font-size="10" fill="#374151">指定文件范围，不接收文件内容</text>
+
+  
+  <text x="60" y="556" font-size="11" fill="#374151">sendfile()：Kafka 指定文件范围和目标 socket</text>
+  <text x="60" y="574" font-size="11" fill="#374151">　　　PageCache 未命中时，先从磁盘读入（①）</text>
+  <text x="60" y="592" font-size="11" fill="#374151">　　　内核组织网络发送（②），文件内容不复制到用户缓冲区</text>
+</svg>
+</div><figcaption>图 4-6　Kafka 消费路径的零拷贝（sendfile）</figcaption></figure>
+<p>传统文件发送先把数据读到用户缓冲，再写入 socket。<code>sendfile</code> 把中间这次用户态往返省掉，让内核直接组织文件数据的发送。这里的“零拷贝”不是数据完全不搬运，而是不必先复制到应用自己的缓冲区；Kafka 本地日志直接发送、无需 TLS 等字节处理时，可以利用这条路径。</p>
+<h3 id="sec-4.4.4">4.4.4 可靠性参数</h3>
+<p>Kafka 默认不强制每条消息 <code>fsync</code>，刷盘时机交给操作系统。写入确认不必逐条等待本地刷盘，但尚未落盘的数据在节点故障时可能丢失。</p>
+<p>生产者端的 <code>acks</code>（0/1/all 三档）控制写入确认，与 <code>appendfsync</code>、<code>innodb_flush_log_at_trx_commit</code> 的本地刷盘不同。</p>
+<h2 id="sec-4.5">4.5 横向对比</h2>
+<p><a class="xref" href="#table-4-2">表 4-2</a> 比较三种内存与磁盘分工在访问、持久化和恢复上的差异。</p>
+<p class="tab-label"><strong>表 4-2　三个软件的内存与磁盘分工对比</strong></p>
+<div class="table-wrap"><table id="table-4-2"><thead><tr><th>维度</th><th>Redis</th><th>MySQL</th><th>Kafka</th></tr></thead><tbody><tr><td>数据存放在哪里</td><td>内存保存运行数据，磁盘用于持久化</td><td>磁盘为主，内存做加速</td><td>磁盘顺序日志为主，PageCache 加速</td></tr><tr><td>本地持久化机制</td><td>RDB 快照；AOF 日志（可采用混合格式）</td><td>redo log + 脏页刷盘 + 双写缓冲</td><td>OS 异步刷盘</td></tr><tr><td>内存管理主体</td><td>进程内（键对象与淘汰策略）</td><td>进程内（缓冲池页管理链表）</td><td>操作系统内核（PageCache）</td></tr><tr><td>随机访问能力</td><td>原生支持，复杂度依命令与编码</td><td>原生支持（B+ 树）</td><td>支持按偏移量定位，再局部顺序扫描</td></tr><tr><td>崩溃恢复工作</td><td>加载 RDB / 重放 AOF</td><td>重放 redo log</td><td>检查日志并恢复索引等状态</td></tr><tr><td>典型运行风险</td><td>fork 阻塞、OOM、淘汰风暴</td><td>缓冲池抖动、磁盘 I/O 打满</td><td>PageCache 未命中时磁盘读增加</td></tr></tbody></table></div>
+<p>表中三种日志承担的职责不同：Redis 的 AOF 记录命令，MySQL 的 redo log 定位到页并记录页内修改，Kafka 的日志保存消息本身。日志形态影响恢复时要读取和重建的状态；写入确认还要分别看本地刷盘与副本条件。Kafka 的跨节点数据保护还涉及生产者 <code>acks</code> 和副本机制。采用副本确认机制后，已确认数据能否保留下来，取决于同步副本存活与选主策略。</p>
+<p>恢复服务后，原有读取速度也未必立即恢复：MySQL 的缓冲池还要重新积累热点页；Kafka 所需的日志页若已从 PageCache 中淘汰，就要从磁盘读取。</p>
+<h2 id="sec-4.6">4.6 架构启示</h2>
+<p>数据的访问路径和故障后的恢复要求，是评估这三种存储方案的依据。</p>
+<h3 id="s80">启示一：访问方式与容量决定存储选择</h3>
+<p>持续追加、按位点读取的数据适合保存在顺序日志中；容量超过可承担的内存且需要随机查询，就要让磁盘保存数据、内存缓存热点；高频访问的小数据可以常驻内存。主要读取方式与数据增长规模，是决定是否需要缓存层以及由谁管理的依据。</p>
+<h3 id="s81">启示二：数据组织影响缓存管理方式</h3>
+<p>Redis 直接在内存中操作键值对象；InnoDB 要区分页的冷热与脏状态，因而自己管理缓冲池；Kafka 的消息已组织为文件日志，可以利用 PageCache。进程内缓存便于控制淘汰和写回，也增加维护工作。把缓存交给 PageCache 后，调节与诊断也转向操作系统的预读、脏页回写和磁盘 I/O。</p>
+<h3 id="s82">启示三：故障范围决定写入确认条件</h3>
+<p>刷盘等待数据进入持久介质，副本确认等待数据传播到其他节点。二者防的故障不同：进程退出、整机故障和多个副本同时不可用，要求的保证也不同。写入确认要等待什么，取决于需要防范的故障范围。</p>
+<h3 id="s83">启示四：顺序写的成本包括后台维护与恢复</h3>
+<p>Redis 的 AOF 重写需要根据内存状态生成新日志，重启时按配置加载或重放持久化数据；MySQL 要把脏页写回各自的位置；Kafka 要管理日志段，并在异常退出后检查日志、恢复索引等状态。评估高吞吐写入方案，需要把这些后台与恢复工作一并算在内。</p>
+<h2 id="sec-4.7">4.7 小结</h2>
+<p>选择存储方式时，先按访问方式与容量确定数据放在哪里，再按可接受的故障损失确定刷盘和副本确认条件。缓存命中能减少读取等待，不能代替持久化；顺序日志能摊薄写入开销，但按偏移量定位不能替代按业务 key 的随机点查。</p><nav class="page-nav"><a href="03-lifecycle.html">← 第 3 章 生命周期管理 — 优雅启动与关闭</a><a href="05-layered-architecture.html">第 5 章 分层架构设计 — 存储层 / 逻辑层 / 交互层 →</a></nav></article>
+</main>
+</div>
+<script>
+(function(){
+  var btn=document.querySelector('.toc-toggle'),nav=document.getElementById('toc'),bd=document.getElementById('bd');
+  if(btn){btn.addEventListener('click',function(){nav.classList.toggle('open');if(bd)bd.classList.toggle('show',nav.classList.contains('open'))});}
+  if(bd){bd.addEventListener('click',function(){nav.classList.remove('open');bd.classList.remove('show');});}
+  // 当前章节高亮
+  var secs=Array.prototype.slice.call(document.querySelectorAll('section.chapter'));
+  var links=Array.prototype.slice.call(document.querySelectorAll('nav.toc a[data-target]'));
+  if('IntersectionObserver' in window && links.length){
+    var map={};links.forEach(function(a){map[a.getAttribute('data-target')]=a;});
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){a.parentElement.classList.remove('active');});
+          var a=map[e.target.id]; if(a)a.parentElement.classList.add('active');
+        }
+      });
+    },{rootMargin:'-10% 0px -75% 0px',threshold:0});
+    secs.forEach(function(s){io.observe(s);});
+  }
+})();
+</script>
+<script>
+(function(){
+  var layout=document.querySelector('.layout'),drag=document.getElementById('tocDrag');
+  var colBtn=document.getElementById('tocCollapse'),expBtn=document.getElementById('tocExpand');
+  var KEY_W='paged.tocW',KEY_C='paged.tocCollapsed';
+  try{
+    var w=localStorage.getItem(KEY_W);
+    if(w&&layout)layout.style.setProperty('--toc-w',w);
+    if(localStorage.getItem(KEY_C)==='1')document.body.classList.add('toc-collapsed');
+  }catch(e){}
+  if(colBtn){colBtn.addEventListener('click',function(){
+    document.body.classList.add('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'1');}catch(e){}
+  });}
+  if(expBtn){expBtn.addEventListener('click',function(){
+    document.body.classList.remove('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'0');}catch(e){}
+  });}
+  if(drag&&layout){
+    drag.addEventListener('pointerdown',function(e){
+      e.preventDefault();
+      document.body.classList.add('toc-dragging');
+      drag.classList.add('active');
+      function mv(ev){
+        var left=layout.getBoundingClientRect().left;
+        var w=Math.min(Math.max(ev.clientX-left,200),520);
+        layout.style.setProperty('--toc-w',Math.round(w)+'px');
+      }
+      function up(){
+        document.body.classList.remove('toc-dragging');
+        drag.classList.remove('active');
+        try{localStorage.setItem(KEY_W,layout.style.getPropertyValue('--toc-w'));}catch(e2){}
+        window.removeEventListener('pointermove',mv);
+        window.removeEventListener('pointerup',up);
+      }
+      window.addEventListener('pointermove',mv);
+      window.addEventListener('pointerup',up);
+    });
+  }
+})();
+</script>
+</body>
+</html>

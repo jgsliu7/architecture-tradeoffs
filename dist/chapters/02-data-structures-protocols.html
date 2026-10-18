@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 2 章 数据结构与协议 — 为各自的目标而设计</title>
+<style>
+*{box-sizing:border-box}
+:root{--ink:#1f2328;--mute:#57606a;--line:#d8dee4;--accent:#4f46e5;--bg:#fff;--soft:#f6f8fa}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;color:var(--ink);background:#fff;line-height:1.8;font-size:16px}
+.layout{display:grid;grid-template-columns:var(--toc-w,292px) 6px 1fr;max-width:1340px;margin:0 auto;transition:grid-template-columns .2s}
+body.toc-dragging .layout{transition:none}
+nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 24px 8px;font-size:14px;min-width:0}
+main.content{min-width:0}
+.toc-drag{position:sticky;top:0;align-self:start;height:100vh;cursor:col-resize;background:var(--line);transition:background .15s}
+.toc-drag:hover,.toc-drag.active{background:var(--accent)}
+body.toc-dragging{user-select:none;cursor:col-resize}
+.toc-collapse{position:absolute;top:16px;right:8px;border:1px solid var(--line);background:#fff;color:var(--mute);border-radius:6px;width:24px;height:24px;font-size:13px;line-height:1;cursor:pointer;padding:0}
+.toc-collapse:hover{color:var(--accent);border-color:var(--accent)}
+.toc-expand{display:none;position:fixed;left:0;top:120px;z-index:55;border:1px solid var(--line);border-left:none;background:#fff;color:var(--mute);border-radius:0 8px 8px 0;padding:10px 6px;font-size:14px;cursor:pointer;box-shadow:2px 2px 8px rgba(0,0,0,.08)}
+.toc-expand:hover{color:var(--accent)}
+body.toc-collapsed .layout{grid-template-columns:1fr}
+body.toc-collapsed nav.toc,body.toc-collapsed .toc-drag{display:none}
+body.toc-collapsed .toc-expand{display:block}
+.toc-title{font-weight:700;font-size:15px;color:var(--accent);margin:0 0 4px 8px}
+.toc-title a{color:inherit;text-decoration:none}
+.toc-sub{font-size:12px;color:var(--mute);margin:0 0 16px 8px}
+nav.toc ul{list-style:none;padding:0;margin:0}
+nav.toc li>a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.5}
+nav.toc li>a:hover{background:var(--soft)}
+nav.toc li.active>a{background:#eef2ff;color:var(--accent);font-weight:600}
+nav.toc li.nav-sub>a{padding-left:22px;font-size:13px;color:var(--mute)}
+.content{padding:32px 48px 120px;max-width:1000px;overflow-wrap:anywhere}
+.chapter-meta{color:var(--mute);font-size:13px;margin:0 0 18px}
+.page-nav{display:flex;justify-content:space-between;gap:16px;margin:40px 0 0;padding-top:20px;border-top:1px solid var(--line)}
+.page-nav a{display:block;max-width:48%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--ink);background:var(--soft);line-height:1.5}
+.page-nav a:hover{border-color:var(--accent);color:var(--accent)}
+.page-nav .empty{visibility:hidden}
+h1,h2,h3,h4{line-height:1.35;color:var(--ink);font-weight:700}
+h1{font-size:1.9em;margin:0 0 .6em;padding-bottom:.3em}
+h2{font-size:1.42em;margin:1.8em 0 .6em}
+h3{font-size:1.18em;margin:1.5em 0 .5em}
+h4{font-size:1.04em;margin:1.3em 0 .4em;color:#24292f}
+p{margin:0 0 1em}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+strong{font-weight:700;color:#111827}
+em{font-style:normal;color:var(--mute)}
+hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
+code{font-family:"SF Mono",Menlo,Consolas,monospace;background:var(--soft);padding:.12em .4em;border-radius:4px;font-size:.9em;color:#24292f}
+pre{background:#1e1e2e;color:#cdd6f4;padding:16px 18px;border-radius:8px;overflow-x:auto;line-height:1.55}
+pre code{background:none;color:inherit;padding:0;font-size:.86em}
+blockquote{margin:1.2em 0;padding:.6em 1em .6em 1.1em;border-left:4px solid var(--accent);background:#f7f8ff;color:#343a40;border-radius:0 6px 6px 0}
+blockquote strong{color:var(--accent)}
+ul,ol{margin:0 0 1em;padding-left:1.7em}
+li{margin:.25em 0}
+.table-wrap{overflow-x:auto;margin:1.2em 0}
+table{border-collapse:collapse;width:100%;font-size:.94em}
+th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+thead th{background:#eef2ff;color:#3730a3;font-weight:600}
+tbody tr:nth-child(even){background:#fafbfd}
+figure.fig{margin:2em calc((100% - 1000px)/2);text-align:center}
+.svg-wrap,.inline-svg{display:block;width:100%}
+figure.fig svg,.inline-svg svg,.svg-wrap svg,figure.fig img{width:100%;max-width:1000px;height:auto;display:block;margin:0 auto}
+figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
+.toc-toggle{display:none}
+.review-index{display:grid;gap:12px;margin:24px 0 0}
+.review-index a{display:block;padding:14px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;background:#fff}
+.review-index a:hover{border-color:var(--accent);background:#f7f8ff}
+.review-index strong{display:block;color:var(--ink)}
+.review-index span{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+@media(max-width:1200px){figure.fig{margin:2em auto}}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:fixed;left:0;top:0;width:292px;background:#fff;z-index:50;transform:translateX(-100%);transition:transform .2s;box-shadow:2px 0 12px rgba(0,0,0,.08)}
+  nav.toc.open{transform:translateX(0)}
+  body.toc-collapsed nav.toc{display:block}
+  .toc-drag,.toc-collapse,.toc-expand{display:none!important}
+  .content{padding:20px 18px 80px;max-width:100%;min-width:0}
+  .toc-toggle{display:inline-block;position:fixed;right:16px;bottom:16px;z-index:60;background:var(--accent);color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer}
+  .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:40}
+  .backdrop.show{display:block}
+  /* 窄屏宽图改为容器内横向滚动，文字保持可读 */
+  .svg-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  figure.fig svg{min-width:760px}
+}
+@media print{a.xref{color:inherit}}
+</style>
+</head>
+<body>
+<div class="backdrop" id="bd"></div>
+<button class="toc-toggle">目录</button>
+<button class="toc-expand" id="tocExpand" title="展开目录">»</button>
+<div class="layout">
+<nav class="toc" id="toc">
+  <button class="toc-collapse" id="tocCollapse" title="收起目录">«</button>
+  <div class="toc-title"><a href="../index.html">架构取舍之道</a></div>
+  <div class="toc-sub">在线阅读版</div>
+  <ul>
+<li><a href="../index.html">首页目录</a></li>
+<li><a href="00-preface.html">序言</a>
+</li>
+<li><a href="01-introduction.html">第 1 章 引言 — 为什么是这三个软件</a>
+</li>
+<li class="active"><a href="02-data-structures-protocols.html">第 2 章 数据结构与协议 — 为各自的目标而设计</a>
+<ul>
+<li class="nav-sub"><a href="#s24">本章导读</a></li>
+<li class="nav-sub"><a href="#sec-2.1">2.1 问题的本质</a></li>
+<li class="nav-sub"><a href="#sec-2.2">2.2 内部数据结构：为核心目标而设计</a></li>
+<li class="nav-sub"><a href="#sec-2.3">2.3 通信协议：客户端和服务端怎么对话</a></li>
+<li class="nav-sub"><a href="#sec-2.4">2.4 横向对比</a></li>
+<li class="nav-sub"><a href="#sec-2.5">2.5 架构启示</a></li>
+<li class="nav-sub"><a href="#sec-2.6">2.6 小结</a></li>
+</ul>
+</li>
+<li><a href="03-lifecycle.html">第 3 章 生命周期管理 — 优雅启动与关闭</a>
+</li>
+<li><a href="04-memory-disk.html">第 4 章 内存与磁盘 — 速度与持久化的平衡</a>
+</li>
+<li><a href="05-layered-architecture.html">第 5 章 分层架构设计 — 存储层 / 逻辑层 / 交互层</a>
+</li>
+<li><a href="06-security.html">第 6 章 安全机制 — 权限、加密、审计</a>
+</li>
+<li><a href="07-cluster.html">第 7 章 集群架构 — 从单点到分布式</a>
+</li>
+<li><a href="08-storage-format.html">第 8 章 磁盘存储格式 — 文件结构的设计哲学</a>
+</li>
+<li><a href="09-data-sync.html">第 9 章 数据同步机制 — 集群一致性的实现</a>
+</li>
+<li><a href="10-summary.html">第 10 章 总结：架构设计的共性规律与取舍</a>
+</li>
+<li><a href="10-epilogue.html">后记</a>
+</li>
+<li><a href="11-references.html">附录　参考文献与延伸阅读（按章索引）</a>
+</li>
+</ul>
+</nav>
+<div class="toc-drag" id="tocDrag" title="拖拽调整目录宽度"></div>
+<main class="content">
+<article class="chapter"><h1 id="s23">第 2 章 数据结构与协议 — 为各自的目标而设计</h1>
+<h2 id="s24">本章导读</h2>
+<p>数据怎样组织，会影响查询时怎样查找和遍历，以及哪些结果需要临时计算。</p>
+<p>例如，排行榜既要查询前 100 名，也可能要查询某个用户的名次。这两种操作需要的信息不同。MySQL 中给 score 建索引，可以按索引顺序读取榜单前列；普通 B+ 树索引记录键的顺序，却不直接记录排名，要算名次，通常还得统计排在前面的记录。</p>
+<p>Redis 的有序集合（ZSET）可以用 ZREVRANK 查名次。它的跳表额外维护了跨度信息，能在定位元素时一并算出位置。只查榜单前列时，有序索引就够了；还要频繁查询任意用户的名次时，结构是否直接提供名次查询，就影响选择。</p>
+<p>这一章就从访问方式出发，看 Redis、MySQL 和 Kafka 怎样组织数据、怎样与客户端通信。重点在于理解：一种结构或协议方便了哪些操作，又增加了哪些成本。</p>
+<h2 id="sec-2.1">2.1 问题的本质</h2>
+<p>任何一个有客户端和服务端的软件，都绕不过这两个问题：</p>
+<p>第一，数据用什么格式来组织。这个问题直接关系到操作复杂度、内存开销以及“哪些查询快、哪些查询慢”。跳表适合范围扫描和有序操作，哈希表适合 O(1) 点查，B+ 树为磁盘页对齐和范围扫描而设计，紧凑列表胜在内存密度。</p>
+<p>第二，客户端和服务端怎么对话。有三个关键点：采用文本、二进制还是混合编码，在人工可读性与传输开销之间怎样取舍；多条消息怎样组织，哪些工作可以通过批量处理或复用来减少；格式变化后，客户端和服务端怎样协商并保持兼容。</p>
+<h2 id="sec-2.2">2.2 内部数据结构：为核心目标而设计</h2>
+<h3 id="sec-2.2.1">2.2.1 Redis：驻留内存的简洁数据结构</h3>
+<p>Redis 的数据结构都受同一个约束限制：<strong>全部驻留内存</strong>。内存意味着随机访问的成本远低于磁盘、数据访问对 CPU 开销比对 I/O 更敏感、容量有物理上限，所以数据结构要尽量省内存、尽量减少 CPU 操作。下面五个结构都是对这条约束的回应：SDS、跳表、字典（dict）偏重查询效率，ziplist/listpack 和 intset 偏重内存密度。</p>
+<p><strong>SDS（简单动态字符串）</strong> 是 Redis 最基础的字符串实现。普通 C 字符串要遍历到结尾才能知道长度；SDS 在数据前保存 <code>len</code>（当前长度）、<code>alloc</code>（已分配空间）和类型标记。读取长度只需访问头部，是 O(1) 操作；数据本身也不依赖结尾零字节判定长度，因此能存储任意二进制内容。</p>
+<p>追加时，SDS 可以预留空间，减少后续分配；缩短时也可以保留空间供再次追加。它多占用头部和暂时未使用的空间，换来较少的遍历与内存分配。<a class="xref" href="#fig-2-1">图 2-1</a> 展示了它与 C 字符串的内存布局。</p>
+<figure class="fig" id="fig-2-1"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 47 880 338" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_2_1_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+
+
+  
+  <text x="60" y="70" font-size="14" font-weight="700" fill="#374151">C 语言字符串（char*）</text>
+
+  
+  <rect x="60"  y="84" width="46" height="44" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.3"/>
+  <rect x="106" y="84" width="46" height="44" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.3"/>
+  <rect x="152" y="84" width="46" height="44" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.3"/>
+  <rect x="198" y="84" width="46" height="44" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.3"/>
+  <rect x="244" y="84" width="46" height="44" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.3"/>
+  <rect x="290" y="84" width="46" height="44" fill="#FEF3C7" stroke="#D97706" stroke-width="1.3"/>
+  <text x="83"  y="112" text-anchor="middle" font-size="15" font-family="ui-monospace, monospace" fill="#111827">h</text>
+  <text x="129" y="112" text-anchor="middle" font-size="15" font-family="ui-monospace, monospace" fill="#111827">e</text>
+  <text x="175" y="112" text-anchor="middle" font-size="15" font-family="ui-monospace, monospace" fill="#111827">l</text>
+  <text x="221" y="112" text-anchor="middle" font-size="15" font-family="ui-monospace, monospace" fill="#111827">l</text>
+  <text x="267" y="112" text-anchor="middle" font-size="15" font-family="ui-monospace, monospace" fill="#111827">o</text>
+  <text x="313" y="112" text-anchor="middle" font-size="14" font-family="ui-monospace, monospace" fill="#92400E">\0</text>
+
+  
+  <line x1="60" y1="144" x2="336" y2="144" stroke="#4B5563" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#fig_2_1_arrow)"/>
+  <text x="198" y="162" text-anchor="middle" font-size="11.5" fill="#6B7280">逐字节遍历到 \0 才知长度</text>
+
+  <text x="380" y="102" font-size="12.5" fill="#374151">· 取长度：从头扫到 \0 → O(n)</text>
+  <text x="380" y="126" font-size="12.5" fill="#374151">· \0 作终止符 → 内容中不能包含 \0</text>
+
+  
+  <text x="60" y="222" font-size="14" font-weight="700" fill="#4F46E5">SDS（简单动态字符串）</text>
+
+  
+  <text x="186" y="250" text-anchor="middle" font-size="11.5" fill="#6B7280">header（头部，记录元信息）</text>
+  <text x="450" y="250" text-anchor="middle" font-size="11.5" fill="#6B7280">buf（实际数据，紧跟头部之后）</text>
+
+  
+  <rect x="60"  y="258" width="84" height="46" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.4"/>
+  <rect x="144" y="258" width="84" height="46" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.4"/>
+  <rect x="228" y="258" width="84" height="46" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.4"/>
+  <text x="102" y="287" text-anchor="middle" font-size="13" font-family="ui-monospace, monospace" fill="#4F46E5">len=5</text>
+  <text x="186" y="287" text-anchor="middle" font-size="13" font-family="ui-monospace, monospace" fill="#4F46E5">alloc=5</text>
+  <text x="270" y="287" text-anchor="middle" font-size="13" font-family="ui-monospace, monospace" fill="#4F46E5">flags</text>
+
+  
+  <rect x="312" y="258" width="46" height="46" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.3"/>
+  <rect x="358" y="258" width="46" height="46" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.3"/>
+  <rect x="404" y="258" width="46" height="46" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.3"/>
+  <rect x="450" y="258" width="46" height="46" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.3"/>
+  <rect x="496" y="258" width="46" height="46" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.3"/>
+  <rect x="542" y="258" width="46" height="46" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.3"/>
+  <text x="335" y="287" text-anchor="middle" font-size="15" font-family="ui-monospace, monospace" fill="#111827">h</text>
+  <text x="381" y="287" text-anchor="middle" font-size="15" font-family="ui-monospace, monospace" fill="#111827">e</text>
+  <text x="427" y="287" text-anchor="middle" font-size="15" font-family="ui-monospace, monospace" fill="#111827">l</text>
+  <text x="473" y="287" text-anchor="middle" font-size="15" font-family="ui-monospace, monospace" fill="#111827">l</text>
+  <text x="519" y="287" text-anchor="middle" font-size="15" font-family="ui-monospace, monospace" fill="#111827">o</text>
+  <text x="565" y="287" text-anchor="middle" font-size="15" font-family="ui-monospace, monospace" fill="#6B7280">\0</text>
+
+  
+  <line x1="102" y1="304" x2="102" y2="340" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_2_1_arrow)"/>
+  <text x="60" y="360" font-size="12.5" fill="#374151">读 len 字段直接得长度 → O(1)</text>
+
+  <text x="380" y="332" font-size="12.5" fill="#374151">· buf 可存任意字节（含 \0）→ 二进制安全</text>
+  <text x="380" y="356" font-size="12.5" fill="#374151">· alloc 记已分配空间 → 预分配 / 惰性释放</text>
+
+</svg>
+</div><figcaption>图 2-1　SDS 与 C 字符串的内存布局对比：同一个 hello 的两种存法，差别集中在 SDS 的头部。</figcaption></figure>
+<p><strong>跳表（skiplist）</strong> 用于 Redis 有序集合的 skiplist 编码。这种编码同时维护 dict 和跳表：member→score 的查找走 dict，ZSCORE 是 O(1)；按顺序读取一段元素走跳表，ZRANGE 是 O(log N + M)，M 为返回元素数。</p>
+<p>跳表是多层有序链表，最底层是一条完整的有序双向链表，上面几层是抽稀的索引层，每隔几个节点保留一个指针。节点层数按随机结果决定，跳表高度大概率落在 O(log N)。每条向前指针还记录一个跨度（span），表示沿它前进跨过了多少个元素。</p>
+<p>查找时从最顶层快速定位到目标附近，再逐层下沉到精确位置。查找、插入和删除的平均时间复杂度都是 O(log N)。范围扫描先定位起点，再沿底层链表前进（O(log N + M)），比红黑树的中序遍历更直接。</p>
+<p>插入时按新节点的层数，逐层更新前驱节点的前向指针和跨度，不需要旋转或再平衡。</p>
+<p>选跳表而非红黑树，是因为实现更简单、范围操作更直接。多层索引长什么样、查找怎么走，见<a class="xref" href="#fig-2-2">图 2-2</a>。</p>
+<figure class="fig" id="fig-2-2"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 88 880 263" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_2_2_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_2_2_arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="fig_2_2_arrow-light" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9CA3AF"/>
+    </marker>
+  </defs>
+
+
+  
+  <text x="30" y="124" font-size="12" fill="#6B7280">第 3 层</text>
+  <text x="30" y="199" font-size="12" fill="#6B7280">第 2 层</text>
+  <text x="30" y="274" font-size="12" fill="#6B7280">第 1 层</text>
+  <text x="30" y="290" font-size="10" fill="#9CA3AF">完整链表</text>
+
+  
+  <g stroke="#9CA3AF" stroke-width="1" stroke-dasharray="2 2">
+    <line x1="100" y1="138" x2="100" y2="175"/><line x1="100" y1="213" x2="100" y2="250"/>
+    <line x1="400" y1="138" x2="400" y2="175"/><line x1="400" y1="213" x2="400" y2="250"/>
+    <line x1="600" y1="213" x2="600" y2="250"/>
+    <line x1="700" y1="138" x2="700" y2="175"/><line x1="700" y1="213" x2="700" y2="250"/>
+  </g>
+
+  
+  <line x1="127" y1="119" x2="371" y2="119" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_2_2_arrow)"/>
+  <line x1="427" y1="119" x2="671" y2="119" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_2_2_arrow)"/>
+  
+  <line x1="127" y1="194" x2="371" y2="194" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_2_2_arrow)"/>
+  <line x1="427" y1="194" x2="571" y2="194" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_2_2_arrow)"/>
+  <line x1="627" y1="194" x2="671" y2="194" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_2_2_arrow)"/>
+  
+  <line x1="127" y1="269" x2="171" y2="269" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_2_2_arrow)"/>
+  <line x1="227" y1="269" x2="271" y2="269" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_2_2_arrow)"/>
+  <line x1="327" y1="269" x2="371" y2="269" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_2_2_arrow)"/>
+  <line x1="427" y1="269" x2="471" y2="269" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_2_2_arrow)"/>
+  <line x1="527" y1="269" x2="571" y2="269" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_2_2_arrow)"/>
+  <line x1="627" y1="269" x2="671" y2="269" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_2_2_arrow)"/>
+  
+  <line x1="173" y1="282" x2="129" y2="282" stroke="#9CA3AF" stroke-width="1.1" marker-end="url(#fig_2_2_arrow-light)"/>
+  <line x1="273" y1="282" x2="229" y2="282" stroke="#9CA3AF" stroke-width="1.1" marker-end="url(#fig_2_2_arrow-light)"/>
+  <line x1="373" y1="282" x2="329" y2="282" stroke="#9CA3AF" stroke-width="1.1" marker-end="url(#fig_2_2_arrow-light)"/>
+  <line x1="473" y1="282" x2="429" y2="282" stroke="#9CA3AF" stroke-width="1.1" marker-end="url(#fig_2_2_arrow-light)"/>
+  <line x1="573" y1="282" x2="529" y2="282" stroke="#9CA3AF" stroke-width="1.1" marker-end="url(#fig_2_2_arrow-light)"/>
+  <line x1="673" y1="282" x2="629" y2="282" stroke="#9CA3AF" stroke-width="1.1" marker-end="url(#fig_2_2_arrow-light)"/>
+
+  
+  
+  <rect x="73" y="100" width="54" height="38" rx="5" fill="#E5E7EB" stroke="#6B7280" stroke-width="1.3"/><text x="100" y="124" text-anchor="middle" font-size="13" font-weight="700" fill="#374151">head</text>
+  <rect x="73" y="175" width="54" height="38" rx="5" fill="#E5E7EB" stroke="#6B7280" stroke-width="1.3"/><text x="100" y="199" text-anchor="middle" font-size="13" font-weight="700" fill="#374151">head</text>
+  <rect x="73" y="250" width="54" height="38" rx="5" fill="#E5E7EB" stroke="#6B7280" stroke-width="1.3"/><text x="100" y="274" text-anchor="middle" font-size="13" font-weight="700" fill="#374151">head</text>
+  
+  <rect x="173" y="250" width="54" height="38" rx="5" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.3"/><text x="200" y="274" text-anchor="middle" font-size="14" fill="#4F46E5">3</text>
+  
+  <rect x="273" y="250" width="54" height="38" rx="5" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.3"/><text x="300" y="274" text-anchor="middle" font-size="14" fill="#4F46E5">6</text>
+  
+  <rect x="373" y="100" width="54" height="38" rx="5" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.3"/><text x="400" y="124" text-anchor="middle" font-size="14" fill="#4F46E5">9</text>
+  <rect x="373" y="175" width="54" height="38" rx="5" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.3"/><text x="400" y="199" text-anchor="middle" font-size="14" fill="#4F46E5">9</text>
+  <rect x="373" y="250" width="54" height="38" rx="5" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.3"/><text x="400" y="274" text-anchor="middle" font-size="14" fill="#4F46E5">9</text>
+  
+  <rect x="473" y="250" width="54" height="38" rx="5" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.3"/><text x="500" y="274" text-anchor="middle" font-size="14" fill="#4F46E5">12</text>
+  
+  <rect x="573" y="175" width="54" height="38" rx="5" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.8"/><text x="600" y="199" text-anchor="middle" font-size="14" font-weight="700" fill="#B91C1C">17</text>
+  <rect x="573" y="250" width="54" height="38" rx="5" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.8"/><text x="600" y="274" text-anchor="middle" font-size="14" font-weight="700" fill="#B91C1C">17</text>
+  
+  <rect x="673" y="100" width="54" height="38" rx="5" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.3"/><text x="700" y="124" text-anchor="middle" font-size="14" fill="#4F46E5">25</text>
+  <rect x="673" y="175" width="54" height="38" rx="5" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.3"/><text x="700" y="199" text-anchor="middle" font-size="14" fill="#4F46E5">25</text>
+  <rect x="673" y="250" width="54" height="38" rx="5" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.3"/><text x="700" y="274" text-anchor="middle" font-size="14" fill="#4F46E5">25</text>
+
+  
+  
+  <line x1="127" y1="112" x2="373" y2="112" stroke="#EF4444" stroke-width="2.4" marker-end="url(#fig_2_2_arrow-red)"/>
+  
+  <line x1="392" y1="138" x2="392" y2="175" stroke="#EF4444" stroke-width="2.4" marker-end="url(#fig_2_2_arrow-red)"/>
+  
+  <line x1="392" y1="213" x2="392" y2="250" stroke="#EF4444" stroke-width="2.4" marker-end="url(#fig_2_2_arrow-red)"/>
+  
+  <line x1="427" y1="262" x2="473" y2="262" stroke="#EF4444" stroke-width="2.4" marker-end="url(#fig_2_2_arrow-red)"/>
+  
+  <line x1="527" y1="262" x2="573" y2="262" stroke="#EF4444" stroke-width="2.4" marker-end="url(#fig_2_2_arrow-red)"/>
+
+  
+  <line x1="500" y1="330" x2="530" y2="330" stroke="#EF4444" stroke-width="2.4" marker-end="url(#fig_2_2_arrow-red)"/>
+  <text x="538" y="334" font-size="12" fill="#374151">查找 17：顶层快速逼近，下沉到底层后沿链表命中</text>
+
+</svg>
+</div><figcaption>图 2-2　跳表的多层索引与查找路径：以查找 17 为例。</figcaption></figure>
+<p>定位元素时，把查找路径上各层经过的跨度累加，就能得到位置；排行榜的名次由此计算，不必从表头逐个计数。</p>
+<p><strong>字典（dict）</strong> 是 Redis 哈希类型和键空间使用的链式哈希表。它使用带随机种子的 SipHash 计算哈希值，以链表处理冲突。</p>
+<p>渐进式 rehash 使用旧表 <code>ht[0]</code> 和新表 <code>ht[1]</code>。扩容或缩容时，Redis 不一次搬完所有键，而是在后续操作和定时任务中逐步迁移。迁移期间，新写入的键进入新表，查找和删除要兼顾两张表；迁移结束后，新表接替旧表。</p>
+<p>搬迁工作分散到多次操作中，可以减少集中搬迁造成的长停顿。一个桶里的元素一起迁移，因此桶内元素较多时，单次迁移也可能耗时较长。<a class="xref" href="#fig-2-3">图 2-3</a> 以一个旧桶的迁移展示双表如何切换。</p>
+<figure class="fig" id="fig-2-3"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 547" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_2_3_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9CA3AF"/>
+    </marker>
+  </defs>
+
+  
+  
+
+  
+  <rect x="313" y="46" width="12" height="12" rx="3" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="330" y="57" font-size="10.5" fill="#374151">已搬空/空桶</text>
+  <rect x="423" y="46" width="12" height="12" rx="3" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.1"/>
+  <text x="440" y="57" font-size="10.5" fill="#374151">本次搬迁</text>
+  <rect x="506" y="46" width="12" height="12" rx="3" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.1"/>
+  <text x="523" y="57" font-size="10.5" fill="#374151">待搬</text>
+  <rect x="568" y="46" width="12" height="12" rx="3" fill="#ECFDF5" stroke="#10B981" stroke-width="1.1"/>
+  <text x="585" y="57" font-size="10.5" fill="#374151">已迁入新表</text>
+
+  
+  <rect x="12" y="78" width="448" height="360" rx="8" fill="#F9FAFB" stroke="#D1D5DB" stroke-width="1.2"/>
+  <text x="236" y="104" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">搬迁前：旧表桶 2 仍有键</text>
+
+  
+  <text x="122" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#4F46E5">ht[0] 旧表</text>
+  <rect x="52" y="140" width="140" height="40" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.2"/>
+  <text x="44" y="165" text-anchor="end" font-size="12" fill="#6B7280">桶0</text>
+  <text x="122" y="165" text-anchor="middle" font-size="12" fill="#9CA3AF">已搬空</text>
+  <rect x="52" y="188" width="140" height="40" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.2"/>
+  <text x="44" y="213" text-anchor="end" font-size="12" fill="#6B7280">桶1</text>
+  <text x="122" y="213" text-anchor="middle" font-size="12" fill="#9CA3AF">已搬空</text>
+  <rect x="52" y="236" width="140" height="40" rx="5" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.8"/>
+  <text x="44" y="261" text-anchor="end" font-size="12" font-weight="700" fill="#B91C1C">桶2</text>
+  <text x="122" y="261" text-anchor="middle" font-size="12.5" font-family="ui-monospace, monospace" fill="#B91C1C">k7 → k3 → k9</text>
+  <rect x="52" y="284" width="140" height="40" rx="5" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.3"/>
+  <text x="44" y="309" text-anchor="end" font-size="12" fill="#6B7280">桶3</text>
+  <text x="122" y="309" text-anchor="middle" font-size="12.5" font-family="ui-monospace, monospace" fill="#4F46E5">k2 → k5</text>
+  
+  <text x="230" y="261" text-anchor="middle" font-size="10.5" font-weight="700" fill="#B91C1C">← 本次搬迁</text>
+
+  
+  <text x="370" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#059669">ht[1] 新表</text>
+  <rect x="300" y="140" width="140" height="28" rx="5" fill="#ECFDF5" stroke="#10B981" stroke-width="1.3"/>
+  <text x="292" y="159" text-anchor="end" font-size="11" fill="#6B7280">桶0</text>
+  <text x="370" y="159" text-anchor="middle" font-size="11.5" font-family="ui-monospace, monospace" fill="#065F46">k1</text>
+  <rect x="300" y="174" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="292" y="193" text-anchor="end" font-size="11" fill="#6B7280">桶1</text>
+  <rect x="300" y="208" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="292" y="227" text-anchor="end" font-size="11" fill="#6B7280">桶2</text>
+  <rect x="300" y="242" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="292" y="261" text-anchor="end" font-size="11" fill="#6B7280">桶3</text>
+  <rect x="300" y="276" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="292" y="295" text-anchor="end" font-size="11" fill="#6B7280">桶4</text>
+  <rect x="300" y="310" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="292" y="329" text-anchor="end" font-size="11" fill="#6B7280">桶5</text>
+  <rect x="300" y="344" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="292" y="363" text-anchor="end" font-size="11" fill="#6B7280">桶6</text>
+  <rect x="300" y="378" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="292" y="397" text-anchor="end" font-size="11" fill="#6B7280">桶7</text>
+
+  
+  <line x1="464" y1="258" x2="496" y2="258" stroke="#9CA3AF" stroke-width="2" marker-end="url(#fig_2_3_arrow)"/>
+
+  
+  <rect x="500" y="78" width="448" height="360" rx="8" fill="#F9FAFB" stroke="#D1D5DB" stroke-width="1.2"/>
+  <text x="724" y="104" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">搬迁后：旧表桶 2 清空</text>
+
+  
+  <text x="610" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#4F46E5">ht[0] 旧表</text>
+  <rect x="540" y="140" width="140" height="40" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.2"/>
+  <text x="532" y="165" text-anchor="end" font-size="12" fill="#6B7280">桶0</text>
+  <text x="610" y="165" text-anchor="middle" font-size="12" fill="#9CA3AF">已搬空</text>
+  <rect x="540" y="188" width="140" height="40" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.2"/>
+  <text x="532" y="213" text-anchor="end" font-size="12" fill="#6B7280">桶1</text>
+  <text x="610" y="213" text-anchor="middle" font-size="12" fill="#9CA3AF">已搬空</text>
+  <rect x="540" y="236" width="140" height="40" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.2"/>
+  <text x="532" y="261" text-anchor="end" font-size="12" fill="#6B7280">桶2</text>
+  <text x="610" y="261" text-anchor="middle" font-size="12" fill="#9CA3AF">已搬空</text>
+  <rect x="540" y="284" width="140" height="40" rx="5" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.3"/>
+  <text x="532" y="309" text-anchor="end" font-size="12" fill="#6B7280">桶3</text>
+  <text x="610" y="309" text-anchor="middle" font-size="12.5" font-family="ui-monospace, monospace" fill="#4F46E5">k2 → k5</text>
+  
+  <text x="858" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#059669">ht[1] 新表</text>
+  <rect x="788" y="140" width="140" height="28" rx="5" fill="#ECFDF5" stroke="#10B981" stroke-width="1.3"/>
+  <text x="780" y="159" text-anchor="end" font-size="11" fill="#6B7280">桶0</text>
+  <text x="858" y="159" text-anchor="middle" font-size="11.5" font-family="ui-monospace, monospace" fill="#065F46">k1</text>
+  <rect x="788" y="174" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="780" y="193" text-anchor="end" font-size="11" fill="#6B7280">桶1</text>
+  <rect x="788" y="208" width="140" height="28" rx="5" fill="#ECFDF5" stroke="#10B981" stroke-width="1.8"/>
+  <text x="780" y="227" text-anchor="end" font-size="11" font-weight="700" fill="#6B7280">桶2</text>
+  <text x="858" y="227" text-anchor="middle" font-size="11.5" font-family="ui-monospace, monospace" fill="#065F46">k9 → k7</text>
+  <rect x="788" y="242" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="780" y="261" text-anchor="end" font-size="11" fill="#6B7280">桶3</text>
+  <rect x="788" y="276" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="780" y="295" text-anchor="end" font-size="11" fill="#6B7280">桶4</text>
+  <rect x="788" y="310" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="780" y="329" text-anchor="end" font-size="11" fill="#6B7280">桶5</text>
+  <rect x="788" y="344" width="140" height="28" rx="5" fill="#ECFDF5" stroke="#10B981" stroke-width="1.8"/>
+  <text x="780" y="363" text-anchor="end" font-size="11" font-weight="700" fill="#6B7280">桶6</text>
+  <text x="858" y="363" text-anchor="middle" font-size="11.5" font-family="ui-monospace, monospace" fill="#065F46">k3</text>
+  <rect x="788" y="378" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="780" y="397" text-anchor="end" font-size="11" fill="#6B7280">桶7</text>
+  
+  <rect x="60" y="468" width="400" height="64" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.3"/>
+  <text x="260" y="490" text-anchor="middle" font-size="12.5" font-weight="700" fill="#4F46E5">搬迁期间的读写</text>
+  <text x="260" y="508" text-anchor="middle" font-size="11.5" fill="#374151">查找/删除：先查 ht[0] 再查 ht[1]</text>
+  <text x="260" y="524" text-anchor="middle" font-size="11.5" fill="#374151">新写入的键只进 ht[1]</text>
+
+  <rect x="500" y="468" width="400" height="64" rx="6" fill="#ECFDF5" stroke="#10B981" stroke-width="1.3"/>
+  <text x="700" y="490" text-anchor="middle" font-size="12.5" font-weight="700" fill="#065F46">搬完之后</text>
+  <text x="700" y="512" text-anchor="middle" font-size="11.5" fill="#374151">旧表迁完 → 新表接替旧表，旧表释放</text>
+</svg>
+</div><figcaption>图 2-3　渐进式 rehash 的双表搬迁过程：以旧表桶 2 的一次搬迁作前后对照。</figcaption></figure>
+<p><strong>压缩列表（ziplist）与紧凑列表（listpack）</strong> 都把元素紧挨着放在连续内存中，减少指针开销，插入时也都可能搬移后续字节。ziplist 的元素记录前一个元素的长度；前一个元素变长后，后一个元素的长度记录可能随之扩大，并继续影响后面的元素。listpack 改为记录元素自身的长度，切断了这种连锁依赖。两种格式的差别见<a class="xref" href="#fig-2-4">图 2-4</a>。</p>
+<figure class="fig" id="fig-2-4"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 446" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_2_4_arrow-red" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+
+
+  <g transform="translate(0,35)">
+  
+  <text x="60" y="30" font-size="14" font-weight="700" fill="#92400E">ziplist：每个元素记录“前一元素的长度”</text>
+
+  
+  <text x="60" y="56" font-size="11.5" fill="#6B7280">元素 = [prevlen 前一元素长度] + [encoding] + [data]</text>
+
+  
+  <text x="60" y="90" font-size="12.5" font-weight="700" fill="#374151">变更前：entry1 较短</text>
+  
+  <rect x="60"  y="106" width="190" height="44" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1.4"/>
+  <text x="155" y="127" text-anchor="middle" font-size="11.5" fill="#92400E">entry1（较短）</text>
+  <text x="155" y="143" text-anchor="middle" font-size="10.5" fill="#6B7280">记录前项长度</text>
+  
+  <rect x="280" y="106" width="180" height="44" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1.4"/>
+  <text x="370" y="127" text-anchor="middle" font-size="11.5" fill="#92400E">entry2</text>
+  <text x="370" y="143" text-anchor="middle" font-size="10.5" fill="#065F46">记录 entry1 的长度</text>
+  
+  <rect x="490" y="106" width="180" height="44" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1.4"/>
+  <text x="580" y="127" text-anchor="middle" font-size="11.5" fill="#92400E">entry3</text>
+  <text x="580" y="143" text-anchor="middle" font-size="10.5" fill="#6B7280">记录 entry2 的长度</text>
+
+  
+  <text x="60" y="180" font-size="12.5" font-weight="700" fill="#B91C1C">变更后：entry1 变长，后继的长度记录可能逐个扩大</text>
+  
+  <rect x="60"  y="196" width="190" height="44" rx="4" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.8"/>
+  <text x="155" y="217" text-anchor="middle" font-size="11.5" font-weight="700" fill="#B91C1C">entry1（变长）</text>
+  <text x="155" y="233" text-anchor="middle" font-size="10.5" fill="#B91C1C">变长了</text>
+  
+  <rect x="280" y="196" width="180" height="44" rx="4" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.8"/>
+  <text x="370" y="217" text-anchor="middle" font-size="11.5" font-weight="700" fill="#B91C1C">entry2 可能变长</text>
+  <text x="370" y="233" text-anchor="middle" font-size="10.5" fill="#B91C1C">前项长度记录扩大</text>
+  
+  <rect x="490" y="196" width="180" height="44" rx="4" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.8"/>
+  <text x="580" y="217" text-anchor="middle" font-size="11.5" font-weight="700" fill="#B91C1C">entry3 也可能变长</text>
+  <text x="580" y="233" text-anchor="middle" font-size="10.5" fill="#B91C1C">前项长度记录或扩大</text>
+  
+  <rect x="700" y="196" width="110" height="44" rx="4" fill="none" stroke="#EF4444" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="755" y="222" text-anchor="middle" font-size="11.5" fill="#B91C1C">…继续向后</text>
+
+  
+  <line x1="254" y1="218" x2="276" y2="218" stroke="#EF4444" stroke-width="2.2" marker-end="url(#fig_2_4_arrow-red)"/>
+  <line x1="464" y1="218" x2="486" y2="218" stroke="#EF4444" stroke-width="2.2" marker-end="url(#fig_2_4_arrow-red)"/>
+  <line x1="674" y1="218" x2="696" y2="218" stroke="#EF4444" stroke-width="2.2" marker-end="url(#fig_2_4_arrow-red)"/>
+
+  
+  <line x1="60" y1="292" x2="820" y2="292" stroke="#E5E7EB" stroke-width="1.2"/>
+
+  
+  <text x="60" y="322" font-size="14" font-weight="700" fill="#4F46E5">listpack：每个元素只记录“自己的长度”</text>
+
+  
+  <rect x="60"  y="346" width="260" height="44" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.4"/>
+  <text x="190" y="367" text-anchor="middle" font-size="11.5" fill="#4F46E5">entry1（变长）</text>
+  <text x="190" y="383" text-anchor="middle" font-size="10.5" fill="#6B7280">len=自己的长度</text>
+  <rect x="320" y="346" width="235" height="44" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.4"/>
+  <text x="437" y="367" text-anchor="middle" font-size="11.5" fill="#4F46E5">entry2 长度记录不变</text>
+  <text x="437" y="383" text-anchor="middle" font-size="10.5" fill="#065F46">仍记录自身长度</text>
+  <rect x="555" y="346" width="235" height="44" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.4"/>
+  <text x="672" y="367" text-anchor="middle" font-size="11.5" fill="#4F46E5">entry3 长度记录不变</text>
+  <text x="672" y="383" text-anchor="middle" font-size="10.5" fill="#065F46">仍记录自身长度</text>
+  <text x="806" y="372" text-anchor="middle" font-size="13" fill="#6B7280">…</text>
+
+</g>
+</svg>
+</div><figcaption>图 2-4　ziplist 的连锁更新与 listpack 的长度记录：同一个元素变长，在两种格式里的不同后果。</figcaption></figure>
+<p><strong>整数集合（intset）</strong> 是 Redis 集合类型在成员较少且全为整数时使用的紧凑编码。它将整数有序地放在连续数组中，用二分查找；编码选能容纳全部成员的最窄宽度。插入超出当前宽度的整数时，整个数组升级到更宽的编码；删除大值后不会自动降级，可能因此多占一些空间。</p>
+<p>集合不再适合这种编码时，底层结构也会转换。插入非整数成员后，Redis 7.2 起可在规模较小时先转为 listpack，否则转为哈希表；纯整数成员超过 intset 的元素数量阈值时则直接转为哈希表。这些转换对上层命令透明，路径见<a class="xref" href="#fig-2-5">图 2-5</a>。</p>
+<figure class="fig" id="fig-2-5"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 510" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_2_5_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+
+
+
+
+
+  <rect x="40" y="60" width="240" height="100" rx="8" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="160" y="88" text-anchor="middle" font-size="14" font-weight="700" fill="#4F46E5">SDS 简单动态字符串</text>
+  <text x="160" y="110" text-anchor="middle" font-size="11" fill="#374151">String 类型底层 · 二进制安全</text>
+  <text x="160" y="128" text-anchor="middle" font-size="11" fill="#6B7280">O(1) 取长 · 预分配 · 惰性释放</text>
+  <text x="160" y="148" text-anchor="middle" font-size="11" fill="#6B7280">所有 key 都是 SDS</text>
+
+  
+  <rect x="320" y="60" width="240" height="100" rx="8" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="440" y="88" text-anchor="middle" font-size="14" font-weight="700" fill="#4F46E5">字典（dict）</text>
+  <text x="440" y="110" text-anchor="middle" font-size="11" fill="#374151">Hash 类型底层 · 整个键空间</text>
+  <text x="440" y="128" text-anchor="middle" font-size="11" fill="#6B7280">链式哈希 · SipHash（防哈希洪泛）</text>
+  <text x="440" y="148" text-anchor="middle" font-size="11" fill="#6B7280">渐进式 rehash（摊还）</text>
+
+  
+  <rect x="600" y="60" width="240" height="100" rx="8" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="720" y="88" text-anchor="middle" font-size="14" font-weight="700" fill="#4F46E5">跳表（skiplist）</text>
+  <text x="720" y="110" text-anchor="middle" font-size="11" fill="#374151">ZSET 底层（数据量大时）</text>
+  <text x="720" y="128" text-anchor="middle" font-size="11" fill="#6B7280">多层有序链表 · O(log N)</text>
+  <text x="720" y="148" text-anchor="middle" font-size="11" fill="#6B7280">比红黑树实现简单</text>
+
+  
+  <rect x="40" y="200" width="380" height="100" rx="8" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5"/>
+  <text x="230" y="228" text-anchor="middle" font-size="14" font-weight="700" fill="#92400E">listpack（紧凑列表）</text>
+  <text x="230" y="250" text-anchor="middle" font-size="11" fill="#374151">List/Hash/ZSET 小数据；7.2 起小型非整数 Set</text>
+  <text x="230" y="268" text-anchor="middle" font-size="11" fill="#6B7280">连续内存 · 无指针开销 · 内存占用小</text>
+  <text x="230" y="286" text-anchor="middle" font-size="11" fill="#6B7280">元素自记长度，避免 ziplist 的连锁更新</text>
+
+  <rect x="460" y="200" width="380" height="100" rx="8" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5"/>
+  <text x="650" y="228" text-anchor="middle" font-size="14" font-weight="700" fill="#92400E">intset（整数集合）</text>
+  <text x="650" y="250" text-anchor="middle" font-size="11" fill="#374151">Set 小数据 + 全整数底层编码</text>
+  <text x="650" y="268" text-anchor="middle" font-size="11" fill="#6B7280">有序整数数组 · 二分查找</text>
+  <text x="650" y="286" text-anchor="middle" font-size="11" fill="#6B7280">超出适用范围后按类型与规模转换</text>
+
+  
+  <line x1="270" y1="300" x2="270" y2="340" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_2_5_arrow)"/>
+  <line x1="610" y1="300" x2="610" y2="340" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_2_5_arrow)"/>
+
+  
+  <rect x="120" y="345" width="640" height="155" rx="8" fill="#ECFDF5" stroke="#10B981" stroke-width="1.5"/>
+  <text x="440" y="370" text-anchor="middle" font-size="13" font-weight="700" fill="#065F46">紧凑编码不再适用时自动升级，上层命令不变</text>
+  <text x="440" y="392" text-anchor="middle" font-size="11.5" fill="#374151">Hash：listpack → 哈希表　 ZSET：listpack → 跳表 + 字典　 Set：两条路径 ↓</text>
+
+  
+  <rect x="193" y="420" width="74" height="24" rx="6" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.2"/>
+  <rect x="396" y="420" width="88" height="24" rx="6" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.2"/>
+  <rect x="603" y="420" width="94" height="24" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.2"/>
+  <text x="230" y="436" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, monospace" fill="#92400E">intset</text>
+  <text x="440" y="436" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, monospace" fill="#92400E">listpack</text>
+  <text x="650" y="436" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, monospace" fill="#4F46E5">hashtable</text>
+
+  
+  <line x1="271" y1="432" x2="392" y2="432" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_2_5_arrow)"/>
+  <line x1="488" y1="432" x2="599" y2="432" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_2_5_arrow)"/>
+  <text x="331.5" y="424" text-anchor="middle" font-size="10.5" fill="#374151">混入非整数，规模仍小</text>
+  <text x="543.5" y="424" text-anchor="middle" font-size="10.5" fill="#374151">继续增长</text>
+
+  
+  <path d="M 230 448 Q 230 470 320 470 L 560 470 Q 650 470 650 457 L 650 447" fill="none" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_2_5_arrow)"/>
+  <text x="440" y="485" text-anchor="middle" font-size="10.5" fill="#374151">纯整数规模增大，或混入非整数后已不适合紧凑编码：直接转哈希表；升级后不自动降级</text>
+</svg>
+</div><figcaption>图 2-5　Redis 五种底层结构与升级路径：五种结构各成卡片，底部标出小数据编码的升级去向，其中 Set 有两条独立的转换路径。</figcaption></figure>
+<h3 id="sec-2.2.2">2.2.2 MySQL：面向磁盘页和通用查询的 B+ 树与行格式</h3>
+<p>MySQL（InnoDB）以页组织磁盘数据，默认页大小为 16KB。数据不在缓冲池时，查找需要从磁盘读入相关页，经过的页数因此影响 I/O 成本。</p>
+<p><strong>B+ 树</strong> 是 InnoDB 唯一的主索引结构。一棵 B+ 树从上到下有根节点、内部节点和叶子节点。内部节点主要保存键和子页指针，一页可以容纳较多分支，减少从根到叶需要访问的页数。叶子之间用双向链表串联。聚簇索引的叶子保存完整行数据，InnoDB 的表本体按主键组织成树。二级索引的叶子保存索引键和主键值；读取索引之外的列时，再用主键回到聚簇索引取数据，这一步叫回表。</p>
+<p>点查沿树从根到叶定位；范围扫描找到起点后，可以顺着叶子链继续读取。哈希索引擅长等值查找，却不维护这种键顺序。B+ 树适合同时需要点查和有序访问的关系查询。</p>
+<p>B+ 树插入新键可能触发页分裂（页满时一拆为二，级联向上），分裂会增加页修改和日志记录，之后还可能增加脏页刷盘的工作量。跳表插入更新相关指针与跨度，没有页分裂。<a class="xref" href="#fig-2-6">图 2-6</a> 画了一棵三层的示例树。</p>
+<figure class="fig" id="fig-2-6"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 63 900 508" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_2_6_arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2563EB"/>
+    </marker>
+    <marker id="fig_2_6_arrow-lblue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#60A5FA"/>
+    </marker>
+    <marker id="fig_2_6_arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="340" y="75" width="220" height="70" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="2"/>
+  <text x="450" y="98" text-anchor="middle" font-size="13" font-weight="700" fill="#1E40AF">根节点（Root）</text>
+  <text x="450" y="118" text-anchor="middle" font-size="10" fill="#4B5563">只存键 + 子节点指针</text>
+  <text x="450" y="136" text-anchor="middle" font-size="10" fill="#6B7280">例：[30] → 2 个子节点指针</text>
+
+  
+  <rect x="565" y="75" width="70" height="70" rx="4" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="600" y="105" text-anchor="middle" font-size="10.5" font-weight="600" fill="#92400E">1 页</text>
+  <text x="600" y="120" text-anchor="middle" font-size="10.5" fill="#92400E">16KB</text>
+  <text x="600" y="135" text-anchor="middle" font-size="10.5" fill="#92400E">键与指针</text>
+
+  
+  <line x1="390" y1="145" x2="230" y2="195" stroke="#2563EB" stroke-width="1.5" marker-end="url(#fig_2_6_arrow-blue)"/>
+  <text x="272" y="160" text-anchor="middle" font-size="10.5" fill="#2563EB">键值 &lt; 30</text>
+
+  <line x1="510" y1="145" x2="670" y2="195" stroke="#2563EB" stroke-width="1.5" marker-end="url(#fig_2_6_arrow-blue)"/>
+  <text x="645" y="160" text-anchor="middle" font-size="10.5" fill="#2563EB">键值 ≥ 30</text>
+
+  
+  
+  <rect x="70" y="200" width="320" height="70" rx="8" fill="#EFF6FF" stroke="#60A5FA" stroke-width="2"/>
+  <text x="230" y="223" text-anchor="middle" font-size="13" font-weight="700" fill="#1E40AF">内部节点（Internal）</text>
+  <text x="230" y="243" text-anchor="middle" font-size="10" fill="#4B5563">只存键 + 子节点指针（不存行数据）</text>
+  <text x="230" y="261" text-anchor="middle" font-size="10" fill="#6B7280">例：[10] → 子节点指针 × 2</text>
+
+  
+  <rect x="510" y="200" width="320" height="70" rx="8" fill="#EFF6FF" stroke="#60A5FA" stroke-width="2"/>
+  <text x="670" y="223" text-anchor="middle" font-size="13" font-weight="700" fill="#1E40AF">内部节点（Internal）</text>
+  <text x="670" y="243" text-anchor="middle" font-size="10" fill="#4B5563">只存键 + 子节点指针（不存行数据）</text>
+  <text x="670" y="261" text-anchor="middle" font-size="10" fill="#6B7280">例：[40 | 80] → 子节点指针 × 3</text>
+
+  
+  <rect x="838" y="222" width="50" height="26" rx="4" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="863" y="239" text-anchor="middle" font-size="10.5" font-weight="600" fill="#92400E">16KB 页</text>
+
+  
+  <line x1="160" y1="270" x2="126" y2="340" stroke="#60A5FA" stroke-width="1.5" marker-end="url(#fig_2_6_arrow-lblue)"/>
+  <line x1="300" y1="270" x2="274" y2="340" stroke="#60A5FA" stroke-width="1.5" marker-end="url(#fig_2_6_arrow-lblue)"/>
+
+  <line x1="570" y1="270" x2="430" y2="340" stroke="#60A5FA" stroke-width="1.5" marker-end="url(#fig_2_6_arrow-lblue)"/>
+  <line x1="670" y1="270" x2="583" y2="340" stroke="#60A5FA" stroke-width="1.5" marker-end="url(#fig_2_6_arrow-lblue)"/>
+  <line x1="770" y1="270" x2="730" y2="340" stroke="#60A5FA" stroke-width="1.5" marker-end="url(#fig_2_6_arrow-lblue)"/>
+
+  
+  
+  <rect x="60" y="345" width="127" height="80" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="123.5" y="370" text-anchor="middle" font-size="12" font-weight="700" fill="#065F46">叶子节点</text>
+  <text x="123.5" y="390" text-anchor="middle" font-size="10.5" fill="#4B5563">[5] [8]</text>
+  <text x="123.5" y="405" text-anchor="middle" font-size="10.5" fill="#4B5563">+ 完整行数据</text>
+  <text x="123.5" y="420" text-anchor="middle" font-size="10.5" fill="#6B7280">→ 下一页</text>
+
+  
+  <rect x="213" y="345" width="127" height="80" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="276.5" y="370" text-anchor="middle" font-size="12" font-weight="700" fill="#065F46">叶子节点</text>
+  <text x="276.5" y="390" text-anchor="middle" font-size="10.5" fill="#4B5563">[12] [18]</text>
+  <text x="276.5" y="405" text-anchor="middle" font-size="10.5" fill="#4B5563">+ 完整行数据</text>
+  <text x="276.5" y="420" text-anchor="middle" font-size="10.5" fill="#6B7280">→ 下一页</text>
+
+  
+  <rect x="366" y="345" width="127" height="80" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="429.5" y="370" text-anchor="middle" font-size="12" font-weight="700" fill="#065F46">叶子节点</text>
+  <text x="429.5" y="390" text-anchor="middle" font-size="10.5" fill="#4B5563">[35] [38]</text>
+  <text x="429.5" y="405" text-anchor="middle" font-size="10.5" fill="#4B5563">+ 完整行数据</text>
+  <text x="429.5" y="420" text-anchor="middle" font-size="10.5" fill="#6B7280">→ 下一页</text>
+
+  
+  <rect x="519" y="345" width="127" height="80" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="582.5" y="370" text-anchor="middle" font-size="12" font-weight="700" fill="#065F46">叶子节点</text>
+  <text x="582.5" y="390" text-anchor="middle" font-size="10.5" fill="#4B5563">[72] [78]</text>
+  <text x="582.5" y="405" text-anchor="middle" font-size="10.5" fill="#4B5563">+ 完整行数据</text>
+  <text x="582.5" y="420" text-anchor="middle" font-size="10.5" fill="#6B7280">→ 下一页</text>
+
+  
+  <rect x="672" y="345" width="127" height="80" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="735.5" y="370" text-anchor="middle" font-size="12" font-weight="700" fill="#065F46">叶子节点</text>
+  <text x="735.5" y="390" text-anchor="middle" font-size="10.5" fill="#4B5563">[90] [98]</text>
+  <text x="735.5" y="405" text-anchor="middle" font-size="10.5" fill="#4B5563">+ 完整行数据</text>
+  <text x="735.5" y="420" text-anchor="middle" font-size="10.5" fill="#6B7280">→ 下一页</text>
+
+  
+  <rect x="807" y="372" width="58" height="26" rx="4" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="836" y="389" text-anchor="middle" font-size="10.5" font-weight="600" fill="#92400E">16KB 页</text>
+
+  
+  <line x1="189" y1="385" x2="211" y2="385" stroke="#059669" stroke-width="2" marker-start="url(#fig_2_6_arrow-green)" marker-end="url(#fig_2_6_arrow-green)"/>
+  <line x1="342" y1="385" x2="364" y2="385" stroke="#059669" stroke-width="2" marker-start="url(#fig_2_6_arrow-green)" marker-end="url(#fig_2_6_arrow-green)"/>
+  <line x1="495" y1="385" x2="517" y2="385" stroke="#059669" stroke-width="2" marker-start="url(#fig_2_6_arrow-green)" marker-end="url(#fig_2_6_arrow-green)"/>
+  <line x1="648" y1="385" x2="670" y2="385" stroke="#059669" stroke-width="2" marker-start="url(#fig_2_6_arrow-green)" marker-end="url(#fig_2_6_arrow-green)"/>
+
+  
+  <rect x="50" y="500" width="800" height="55" rx="6" fill="#F9FAFB" stroke="#E5E7EB" stroke-width="1"/>
+  <text x="70" y="522" font-size="11" font-weight="700" fill="#111827">图例</text>
+
+  <rect x="70" y="532" width="14" height="14" rx="3" fill="#DBEAFE" stroke="#2563EB" stroke-width="1"/>
+  <text x="90" y="544" font-size="10" fill="#4B5563">根/内部节点（只存键+指针）</text>
+
+  <rect x="240" y="532" width="14" height="14" rx="3" fill="#ECFDF5" stroke="#059669" stroke-width="1"/>
+  <text x="260" y="544" font-size="10" fill="#4B5563">叶子节点（存键+完整行数据+链表指针）</text>
+
+  <rect x="440" y="532" width="14" height="14" rx="3" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="460" y="544" font-size="10" fill="#4B5563">每个节点 = 1 个 16KB 磁盘页</text>
+
+  <line x1="620" y1="539" x2="640" y2="539" stroke="#059669" stroke-width="2" marker-start="url(#fig_2_6_arrow-green)" marker-end="url(#fig_2_6_arrow-green)"/>
+  <text x="652" y="544" font-size="10" fill="#4B5563">双向链表方向</text>
+</svg>
+</div><figcaption>图 2-6　InnoDB B+ 树三层结构：一棵示例树，每个方框对应一个 16KB 磁盘页。</figcaption></figure>
+<p>这张图与<a class="xref" href="#fig-2-2">图 2-2</a> 的跳表对照：两者都为顺序访问准备了底层结构，差别在于，跳表按单个内存节点组织数据，B+ 树则把一整个 16KB 磁盘页作为节点——节点的大小，对齐的是所在介质的访问单位。</p>
+<p><strong>行格式（Row Format）</strong> 决定一行数据怎样放进页里。以 Dynamic 为例，行太长时，可以把部分较长的变长列移到溢出页，行内留下指针。读取被移出的列时，沿指针访问溢出页。索引页由此可以容纳更多记录。</p>
+<p><strong>自适应哈希索引</strong> 是 InnoDB 在 B+ 树之上的额外一层。InnoDB 根据索引页上的查询模式，按合适的索引键前缀在内存中建立哈希索引；能够命中它的查询，可以通过平均 O(1) 的哈希查找直接定位记录，省去 B+ 树 O(log N) 的逐层查找。这层哈希也要占内存、维护自身结构，并可能带来锁竞争。查找省下的时间抵不过维护成本时，关闭它反而更合算。</p>
+<h3 id="sec-2.2.3">2.2.3 Kafka 的 RecordBatch：批量、顺序、演进</h3>
+<p>Kafka 需要一种适合<strong>磁盘顺序追加、批量压缩和格式演进</strong>的数据结构。它采用 RecordBatch，把多条消息组织成一个批次。</p>
+<p><strong>RecordBatch 是 Kafka 组织消息的基本单元。</strong> 生产者把同一分区的消息组织成批发送，Broker 按批追加到日志段，消费者再成批拉取。协议与日志复用批格式，减少重新组织数据的工作；改变压缩方式时则可能需要重新编码。</p>
+<p>RecordBatch V2 将整批共享的信息放在头部。<a class="xref" href="#table-2-1">表 2-1</a> 按用途归组，<a class="xref" href="#fig-2-7">图 2-7</a> 标出批头与记录体的关系。</p>
+<p class="tab-label"><strong>表 2-1　Kafka RecordBatch V2 头部字段分组</strong></p>
+<div class="table-wrap"><table id="table-2-1"><thead><tr><th>用途</th><th>字段</th><th>作用</th></tr></thead><tbody><tr><td>定位与边界</td><td><code>baseOffset</code>、<code>batchLength</code>、<code>lastOffsetDelta</code>、<code>recordsCount</code></td><td>界定批在日志中的范围、长度与记录数</td></tr><tr><td>压缩与时间</td><td><code>attributes</code>、<code>baseTimestamp</code>、<code>maxTimestamp</code></td><td>记录压缩、时间戳类型与事务标记，并给记录提供时间基准；LogAppendTime 模式下，<code>maxTimestamp</code> 记录 Broker 的追加时间</td></tr><tr><td>校验</td><td><code>CRC</code></td><td>一批保存一个校验值</td></tr><tr><td>幂等与事务</td><td><code>producerId</code>、<code>producerEpoch</code>、<code>baseSequence</code></td><td>以生产者身份、任期和序列识别重试，支持幂等与事务</td></tr><tr><td>格式与任期</td><td><code>magic</code>、<code>partitionLeaderEpoch</code></td><td>标记批格式版本和写入时的 Leader 任期</td></tr></tbody></table></div>
+<p>头部之后是消息记录。记录中的偏移量和时间戳保存为相对批头基准的差值；差值较小时，变长整数编码能进一步减少逐条开销。</p>
+<figure class="fig" id="fig-2-7"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  
+
+  
+  <rect x="40" y="55" width="800" height="350" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="1.8"/>
+  <text x="440" y="83" text-anchor="middle" font-size="15" font-weight="700" fill="#065F46">RecordBatch V2：批头 + 多条记录</text>
+
+  
+  <rect x="60" y="102" width="760" height="197" rx="6" fill="#FFFFFF" stroke="#10B981" stroke-width="1.3"/>
+  <text x="440" y="127" text-anchor="middle" font-size="13" font-weight="700" fill="#065F46">批头：61 字节，整批共用</text>
+
+  <rect x="78" y="143" width="226" height="113" rx="6" fill="#F9FAFB" stroke="#D1D5DB" stroke-width="1.1"/>
+  <text x="191" y="168" text-anchor="middle" font-size="12.5" font-weight="700" fill="#374151">定位与时间</text>
+  <text x="191" y="191" text-anchor="middle" font-size="11" font-family="ui-monospace, monospace" fill="#374151">baseOffset · baseTimestamp</text>
+  <text x="191" y="217" text-anchor="middle" font-size="11" fill="#6B7280">提供记录差值的基准</text>
+
+  <rect x="327" y="143" width="226" height="113" rx="6" fill="#F9FAFB" stroke="#D1D5DB" stroke-width="1.1"/>
+  <text x="440" y="168" text-anchor="middle" font-size="12.5" font-weight="700" fill="#374151">格式与校验</text>
+  <text x="440" y="191" text-anchor="middle" font-size="11" fill="#374151">magic 标识批格式</text>
+  <text x="440" y="217" text-anchor="middle" font-size="11" fill="#6B7280">CRC 是批级校验值</text>
+
+  <rect x="576" y="143" width="226" height="113" rx="6" fill="#F9FAFB" stroke="#D1D5DB" stroke-width="1.1"/>
+  <text x="689" y="168" text-anchor="middle" font-size="12.5" font-weight="700" fill="#374151">幂等与事务</text>
+  <text x="689" y="191" text-anchor="middle" font-size="11" fill="#374151">生产者身份、任期、序列</text>
+  <text x="689" y="217" text-anchor="middle" font-size="11" fill="#6B7280">用于识别重试的记录批</text>
+
+  <text x="440" y="281" text-anchor="middle" font-size="11.5" fill="#374151">maxTimestamp：CreateTime 为批内最大时间；LogAppendTime 为 Broker 追加时间</text>
+
+  
+  <rect x="60" y="317" width="760" height="69" rx="6" fill="#FFFFFF" stroke="#10B981" stroke-width="1.3"/>
+  <text x="440" y="341" text-anchor="middle" font-size="13" font-weight="700" fill="#065F46">记录体：Record 1 … Record N</text>
+  <text x="440" y="365" text-anchor="middle" font-size="11.5" fill="#374151">每条记录的 offset 与时间戳按批头基准保存差值，差值较小时可用变长整数减少开销</text>
+
+</svg>
+</div><figcaption>图 2-7　RecordBatch V2 字段分组：按功能分组，不表示磁盘字节顺序。整批消息共享 61 字节头部中的元数据，记录中的偏移量和时间戳使用相对差值。</figcaption></figure>
+<p>同一批中的消息共享元数据和 CRC；需要压缩时，也以批为单位。新旧格式能否共存，取决于读写双方支持的版本；<code>magic</code> 用来辨认批格式版本。Kafka 重点服务追加写和按 offset 定位后的连续读取，不提供按业务 key 的点查。</p>
+<h2 id="sec-2.3">2.3 通信协议：客户端和服务端怎么对话</h2>
+<h3 id="sec-2.3.1">2.3.1 Redis RESP：能被人眼读懂的极简协议</h3>
+<p>Redis 的协议叫 RESP（REdis Serialization Protocol）。它的设计目标包括实现简单、解析快速、便于人工调试，以及能表达所有 Redis 命令和返回值。文本参数可以直接辨读，也能用 <code>nc</code> 手工发送简单命令。</p>
+<p>以 RESP2 为例，首字节区分五种基本类型：<code>+</code> 是简单字符串，<code>-</code> 是错误，<code>:</code> 是整数，<code>$</code> 是批量字符串，<code>*</code> 是数组。数组先给出元素个数，批量字符串先给出内容的字节长度，解析器据此识别边界。</p>
+<p>例如，<code>SET key value</code> 是一个包含三个批量字符串的数组：</p>
+<pre><code class="lang-text">*3\r\n
+$3\r\nSET\r\n
+$3\r\nkey\r\n
+$5\r\nvalue\r\n</code></pre>
+<p>RESP 在命令内容之外还发送文本前缀和长度信息：上面的 <code>SET key value</code> 编码后有三十多个字节。Pipeline 把多条独立编码的命令连续发出，减少网络往返；每条命令各自返回结果，命令格式不变。</p>
+<p>Redis 6.0 引入 RESP 3，客户端可用 <code>HELLO</code> 在握手时选择协议版本，服务端仍兼容 RESP 2。切换到 RESP 3 后，部分命令的返回类型会变（如 <code>HGETALL</code> 从扁平数组变为 Map），客户端需要适配。</p>
+<h3 id="sec-2.3.2">2.3.2 MySQL 二进制协议：封帧与预编译</h3>
+<p>MySQL 采用<strong>二进制封帧</strong>，但经典查询的结果行主要按文本编码；预编译语句则使用二进制结果集。在高并发 OLTP（联机事务处理）中，预编译通常可以复用解析结果，二进制结果集也能减少部分数据类型的传输开销。</p>
+<p>MySQL 协议分为几个阶段：握手（服务端发送能力标志和认证随机数、客户端按认证插件要求回传认证响应）、命令（客户端发送 SQL 或预编译语句 ID）、响应（服务端返回结果集或 OK/ERR）。</p>
+<p>MySQL 经典协议包先有一个 4 字节头：3 字节记录后面载荷的长度，1 字节记录包序号。接收方因此知道这一包有多少字节。</p>
+<p>包内的整数再按字段选择定长或变长编码。采用变长编码时，小整数可以少占字节，大整数再使用更长的编码；采用长度前缀编码的字符串，则先给长度，再放内容。固定包头界定整包边界，包内字段再按各自的编码规则确定边界，这是两个层次。</p>
+<p><strong>预编译语句</strong> 是 MySQL 协议在“效率”上的关键设计。客户端先用 <code>COM_STMT_PREPARE</code> 把一条带占位符 <code>?</code> 的 SQL 模板发给服务端，服务端完成解析与语义检查、返回一个 <code>statement_id</code>。此后每次执行只需发 <code>COM_STMT_EXECUTE</code> + <code>statement_id</code> + 占位符的值。解析结果通常可以复用，执行计划则在每次执行时按当时的统计信息重新生成，反复执行时省掉的是逐次解析的 CPU 开销。这和 Redis Pipeline 不同：Pipeline 省的是网络往返（RTT，Round-Trip Time），预编译语句省的是服务端 CPU。</p>
+<p><strong>二进制结果集</strong> 按列类型编码行数据，整数、浮点数与日期时间字段需结合列元数据与协议规则解析，不再能直接按文本辨读。传输字节数要按类型和值比较：部分数值与日期时间数据的二进制表示可以更小，短小整数的文本表示也可能更省字节，字符串列两种编码几乎一样大。</p>
+<h3 id="sec-2.3.3">2.3.3 Kafka 请求/响应协议：统一头部、版本化、批量优先</h3>
+<p>Kafka 的协议按请求类型组织。Produce、Fetch、Metadata 等请求各有自己的 Schema 和版本，可以独立演进。</p>
+<p>请求头中的 <code>api_key</code> 标识类型，<code>api_version</code> 指定格式版本，<code>correlation_id</code> 匹配请求与响应，<code>client_id</code> 识别请求来源。客户端可先通过 <code>ApiVersions</code> 查询 Broker 支持的版本范围，再选择双方共同支持的版本。</p>
+<p><strong>批量优先</strong> 主要体现在消息写入与读取路径。Produce 可以携带多个分区的消息批，Fetch 按分区和 offset 拉取记录。多条记录合并处理，可以摊薄请求与传输开销。</p>
+<figure class="fig" id="fig-2-8"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 325" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+
+
+
+
+  <rect x="20" y="55" width="270" height="255" rx="8" fill="#F9FAFB" stroke="#D1D5DB" stroke-width="1.2"/>
+  <rect x="20" y="55" width="270" height="61" rx="8" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="155" y="81" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">Redis RESP</text>
+  <text x="155" y="103" text-anchor="middle" font-size="11" fill="#374151">类型前缀 + 长度前缀</text>
+  <rect x="40" y="139" width="230" height="53" rx="6" fill="#FFFFFF" stroke="#C7D2FE" stroke-width="1"/>
+  <text x="155" y="160" text-anchor="middle" font-size="11.5" font-weight="700" fill="#374151">类型前缀区分值</text>
+  <text x="155" y="180" text-anchor="middle" font-size="11" fill="#6B7280">长度前缀界定内容字节</text>
+  <rect x="40" y="204" width="230" height="53" rx="6" fill="#FFFFFF" stroke="#C7D2FE" stroke-width="1"/>
+  <text x="155" y="225" text-anchor="middle" font-size="11.5" font-weight="700" fill="#374151">按长度接收值</text>
+  <text x="155" y="245" text-anchor="middle" font-size="11" fill="#6B7280">二进制内容也能正确分界</text>
+  <text x="155" y="296" text-anchor="middle" font-size="11" fill="#4F46E5">可读前缀便于人工检查</text>
+
+
+  <rect x="305" y="55" width="270" height="255" rx="8" fill="#F9FAFB" stroke="#D1D5DB" stroke-width="1.2"/>
+  <rect x="305" y="55" width="270" height="61" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="440" y="81" text-anchor="middle" font-size="15" font-weight="700" fill="#92400E">MySQL 经典协议</text>
+  <text x="440" y="103" text-anchor="middle" font-size="11" fill="#374151">二进制封帧 + 预编译</text>
+  <rect x="325" y="139" width="230" height="53" rx="6" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1"/>
+  <text x="440" y="160" text-anchor="middle" font-size="11.5" font-weight="700" fill="#374151">包头界定载荷长度</text>
+  <text x="440" y="180" text-anchor="middle" font-size="11" fill="#6B7280">预编译语句复用解析结果</text>
+  <rect x="325" y="204" width="230" height="53" rx="6" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1"/>
+  <text x="440" y="225" text-anchor="middle" font-size="11.5" font-weight="700" fill="#374151">经典结果行主要用文本</text>
+  <text x="440" y="245" text-anchor="middle" font-size="11" fill="#6B7280">预编译使用二进制结果集</text>
+  <text x="440" y="296" text-anchor="middle" font-size="11" fill="#92400E">部分类型可减少传输字节</text>
+
+
+  <rect x="590" y="55" width="270" height="255" rx="8" fill="#F9FAFB" stroke="#D1D5DB" stroke-width="1.2"/>
+  <rect x="590" y="55" width="270" height="61" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="725" y="81" text-anchor="middle" font-size="15" font-weight="700" fill="#065F46">Kafka 协议</text>
+  <text x="725" y="103" text-anchor="middle" font-size="11" fill="#374151">按 API 版本演进 + 批量优先</text>
+  <rect x="610" y="139" width="230" height="53" rx="6" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="725" y="160" text-anchor="middle" font-size="11.5" font-weight="700" fill="#374151">请求头标识 API 与版本</text>
+  <text x="725" y="180" text-anchor="middle" font-size="11" fill="#6B7280">correlation_id 匹配响应</text>
+  <rect x="610" y="204" width="230" height="53" rx="6" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="725" y="225" text-anchor="middle" font-size="11.5" font-weight="700" fill="#374151">Produce / Fetch 批量读写</text>
+  <text x="725" y="245" text-anchor="middle" font-size="11" fill="#6B7280">批格式贯穿传输与日志</text>
+  <text x="725" y="296" text-anchor="middle" font-size="11" fill="#065F46">每类 API 可独立演进</text>
+</svg>
+</div><figcaption>图 2-8　三个软件通信协议的设计重点</figcaption></figure>
+<h2 id="sec-2.4">2.4 横向对比</h2>
+<p><a class="xref" href="#table-2-2">表 2-2</a> 对照三个软件的内部数据结构与通信协议，比较它们如何适应各自的主要访问方式。</p>
+<p class="tab-label"><strong>表 2-2　三个软件数据结构与协议的横向对比</strong></p>
+<div class="table-wrap"><table id="table-2-2"><thead><tr><th>维度</th><th>Redis</th><th>MySQL</th><th>Kafka</th></tr></thead><tbody><tr><td>核心目标</td><td>低延迟</td><td>事务与通用查询</td><td>高吞吐</td></tr><tr><td>存储介质定位</td><td>全内存（磁盘仅为恢复）</td><td>磁盘为主（内存是缓存）</td><td>磁盘日志本体（顺序追加）</td></tr><tr><td>核心数据结构</td><td>SDS / 跳表 / 字典 / listpack / intset</td><td>B+ 树 + Dynamic 行格式 + 自适应哈希</td><td>RecordBatch V2（批量+差值编码）</td></tr><tr><td>数据结构优化目标</td><td>O(1)/O(log N) + 低内存占用</td><td>减少查找时访问的页数 + 兼顾点查与范围扫描</td><td>批量压缩 + 顺序追加 + 格式可演进</td></tr><tr><td>编码与分帧特点</td><td>类型前缀与长度信息组织 RESP 数据</td><td>固定包头界定载荷；结果行按文本或二进制编码</td><td>长度前缀界定消息，请求头标明 API 与版本</td></tr><tr><td>协议核心设计</td><td>5 种前缀字符（RESP2），人眼可读</td><td>预编译语句 + 二进制结果集</td><td>api_key + api_version + correlation_id</td></tr><tr><td>批量/复用策略</td><td>Pipeline（连续发送多条独立命令）</td><td>预编译语句（复用解析结果，多次执行）</td><td>RecordBatch（同一分区的多条消息组成一批）</td></tr><tr><td>版本演进方式</td><td>HELLO 版本协商（6.0 起，此前靠手工约定）</td><td>能力标志（握手时交换）</td><td>api_version（每种请求独立版本号）</td></tr><tr><td>人工可读性</td><td>文本前缀与文本参数可直接辨读，参数也可包含二进制数据</td><td>SQL 与经典查询的文本结果行可辨读，预编译结果集需按类型解码</td><td>需按协议解码二进制字段</td></tr></tbody></table></div>
+<h2 id="sec-2.5">2.5 架构启示</h2>
+<p>数据结构决定哪些访问可以直接完成；协议则决定每次访问还要重复多少工作。</p>
+<h3 id="s36">启示一：核心查询决定额外结构的价值</h3>
+<p>本章开头的排行榜，给 score 建索引已能高效取前 100 名；若还要频繁查询任意用户的名次，索引并没有直接保存所需的位置信息，ZSET 维护的跨度才有价值。额外结构会增加内存和更新成本。</p>
+<h3 id="s37">启示二：协议设计服务于主要访问方式</h3>
+<p>网络往返多时，Redis Pipeline 把多条命令连续发送；相同 SQL 反复执行时，MySQL 预编译复用解析结果；消息成批写入和读取时，Kafka 的批格式分摊传输与存储开销。三种做法处理的瓶颈不同。协议不必暴露内部结构，但其传输单位和复用边界应与常见访问方式相符。</p>
+<h3 id="s38">启示三：版本边界决定升级的牵连范围</h3>
+<p>MySQL 在握手时协商连接能力，Kafka 为每类 API 单独设版本，RESP 3 则用 <code>HELLO</code> 增加版本入口。为了兼容尚未升级的客户端，服务端往往需要同时支持新旧格式。按 API 分版本能缩小一次改动牵连的接口范围，也要求服务端维护更多兼容分支。</p>
+<h2 id="sec-2.6">2.6 小结</h2>
+<p>三个软件的结构和协议，都围绕常见访问方式组织。Redis 为不同操作选择不同的内存结构，InnoDB 用页式 B+ 树兼顾点查和有序访问，Kafka 用批组织追加与传输。</p><nav class="page-nav"><a href="01-introduction.html">← 第 1 章 引言 — 为什么是这三个软件</a><a href="03-lifecycle.html">第 3 章 生命周期管理 — 优雅启动与关闭 →</a></nav></article>
+</main>
+</div>
+<script>
+(function(){
+  var btn=document.querySelector('.toc-toggle'),nav=document.getElementById('toc'),bd=document.getElementById('bd');
+  if(btn){btn.addEventListener('click',function(){nav.classList.toggle('open');if(bd)bd.classList.toggle('show',nav.classList.contains('open'))});}
+  if(bd){bd.addEventListener('click',function(){nav.classList.remove('open');bd.classList.remove('show');});}
+  // 当前章节高亮
+  var secs=Array.prototype.slice.call(document.querySelectorAll('section.chapter'));
+  var links=Array.prototype.slice.call(document.querySelectorAll('nav.toc a[data-target]'));
+  if('IntersectionObserver' in window && links.length){
+    var map={};links.forEach(function(a){map[a.getAttribute('data-target')]=a;});
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){a.parentElement.classList.remove('active');});
+          var a=map[e.target.id]; if(a)a.parentElement.classList.add('active');
+        }
+      });
+    },{rootMargin:'-10% 0px -75% 0px',threshold:0});
+    secs.forEach(function(s){io.observe(s);});
+  }
+})();
+</script>
+<script>
+(function(){
+  var layout=document.querySelector('.layout'),drag=document.getElementById('tocDrag');
+  var colBtn=document.getElementById('tocCollapse'),expBtn=document.getElementById('tocExpand');
+  var KEY_W='paged.tocW',KEY_C='paged.tocCollapsed';
+  try{
+    var w=localStorage.getItem(KEY_W);
+    if(w&&layout)layout.style.setProperty('--toc-w',w);
+    if(localStorage.getItem(KEY_C)==='1')document.body.classList.add('toc-collapsed');
+  }catch(e){}
+  if(colBtn){colBtn.addEventListener('click',function(){
+    document.body.classList.add('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'1');}catch(e){}
+  });}
+  if(expBtn){expBtn.addEventListener('click',function(){
+    document.body.classList.remove('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'0');}catch(e){}
+  });}
+  if(drag&&layout){
+    drag.addEventListener('pointerdown',function(e){
+      e.preventDefault();
+      document.body.classList.add('toc-dragging');
+      drag.classList.add('active');
+      function mv(ev){
+        var left=layout.getBoundingClientRect().left;
+        var w=Math.min(Math.max(ev.clientX-left,200),520);
+        layout.style.setProperty('--toc-w',Math.round(w)+'px');
+      }
+      function up(){
+        document.body.classList.remove('toc-dragging');
+        drag.classList.remove('active');
+        try{localStorage.setItem(KEY_W,layout.style.getPropertyValue('--toc-w'));}catch(e2){}
+        window.removeEventListener('pointermove',mv);
+        window.removeEventListener('pointerup',up);
+      }
+      window.addEventListener('pointermove',mv);
+      window.addEventListener('pointerup',up);
+    });
+  }
+})();
+</script>
+</body>
+</html>

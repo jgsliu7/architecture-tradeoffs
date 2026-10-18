@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 547" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9CA3AF"/>
+    </marker>
+  </defs>
+
+  <!-- ============ 图内标题（构建期剥离）============ -->
+  <text x="480" y="30" text-anchor="middle" font-size="17" font-weight="700" fill="#111827">图 2-3　渐进式 rehash 的双表搬迁过程</text>
+
+  <!-- ============ 图例行：灰=已搬空/空桶，红=本次搬迁，靛=待搬，绿=已迁入新表 ============ -->
+  <rect x="313" y="46" width="12" height="12" rx="3" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="330" y="57" font-size="10.5" fill="#374151">已搬空/空桶</text>
+  <rect x="423" y="46" width="12" height="12" rx="3" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.1"/>
+  <text x="440" y="57" font-size="10.5" fill="#374151">本次搬迁</text>
+  <rect x="506" y="46" width="12" height="12" rx="3" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.1"/>
+  <text x="523" y="57" font-size="10.5" fill="#374151">待搬</text>
+  <rect x="568" y="46" width="12" height="12" rx="3" fill="#ECFDF5" stroke="#10B981" stroke-width="1.1"/>
+  <text x="585" y="57" font-size="10.5" fill="#374151">已迁入新表</text>
+
+  <!-- ============ 面板 A：搬迁前（x 12..460）；ht[0] 桶 x 52..192，ht[1] 桶 x 300..440，中间注区 192..268 ============ -->
+  <rect x="12" y="78" width="448" height="360" rx="8" fill="#F9FAFB" stroke="#D1D5DB" stroke-width="1.2"/>
+  <text x="236" y="104" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">搬迁前：旧表桶 2 仍有键</text>
+
+  <!-- 面板 A · ht[0] 旧表：行 y 140/188/236/284，高 40 -->
+  <text x="122" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#4F46E5">ht[0] 旧表</text>
+  <rect x="52" y="140" width="140" height="40" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.2"/>
+  <text x="44" y="165" text-anchor="end" font-size="12" fill="#6B7280">桶0</text>
+  <text x="122" y="165" text-anchor="middle" font-size="12" fill="#9CA3AF">已搬空</text>
+  <rect x="52" y="188" width="140" height="40" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.2"/>
+  <text x="44" y="213" text-anchor="end" font-size="12" fill="#6B7280">桶1</text>
+  <text x="122" y="213" text-anchor="middle" font-size="12" fill="#9CA3AF">已搬空</text>
+  <rect x="52" y="236" width="140" height="40" rx="5" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.8"/>
+  <text x="44" y="261" text-anchor="end" font-size="12" font-weight="700" fill="#B91C1C">桶2</text>
+  <text x="122" y="261" text-anchor="middle" font-size="12.5" font-family="ui-monospace, monospace" fill="#B91C1C">k7 → k3 → k9</text>
+  <rect x="52" y="284" width="140" height="40" rx="5" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.3"/>
+  <text x="44" y="309" text-anchor="end" font-size="12" fill="#6B7280">桶3</text>
+  <text x="122" y="309" text-anchor="middle" font-size="12.5" font-family="ui-monospace, monospace" fill="#4F46E5">k2 → k5</text>
+  <!-- 面板 A · 中间注 -->
+  <text x="230" y="261" text-anchor="middle" font-size="10.5" font-weight="700" fill="#B91C1C">← 本次搬迁</text>
+
+  <!-- 面板 A · ht[1] 新表：行 y 140+34i，高 28 -->
+  <text x="370" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#059669">ht[1] 新表</text>
+  <rect x="300" y="140" width="140" height="28" rx="5" fill="#ECFDF5" stroke="#10B981" stroke-width="1.3"/>
+  <text x="292" y="159" text-anchor="end" font-size="11" fill="#6B7280">桶0</text>
+  <text x="370" y="159" text-anchor="middle" font-size="11.5" font-family="ui-monospace, monospace" fill="#065F46">k1</text>
+  <rect x="300" y="174" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="292" y="193" text-anchor="end" font-size="11" fill="#6B7280">桶1</text>
+  <rect x="300" y="208" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="292" y="227" text-anchor="end" font-size="11" fill="#6B7280">桶2</text>
+  <rect x="300" y="242" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="292" y="261" text-anchor="end" font-size="11" fill="#6B7280">桶3</text>
+  <rect x="300" y="276" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="292" y="295" text-anchor="end" font-size="11" fill="#6B7280">桶4</text>
+  <rect x="300" y="310" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="292" y="329" text-anchor="end" font-size="11" fill="#6B7280">桶5</text>
+  <rect x="300" y="344" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="292" y="363" text-anchor="end" font-size="11" fill="#6B7280">桶6</text>
+  <rect x="300" y="378" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="292" y="397" text-anchor="end" font-size="11" fill="#6B7280">桶7</text>
+
+  <!-- ============ 面板间过渡箭头 ============ -->
+  <line x1="464" y1="258" x2="496" y2="258" stroke="#9CA3AF" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ============ 面板 B：搬迁后（x 500..948）；ht[0] 桶 x 540..680，ht[1] 桶 x 788..928，中间注区 680..756 ============ -->
+  <rect x="500" y="78" width="448" height="360" rx="8" fill="#F9FAFB" stroke="#D1D5DB" stroke-width="1.2"/>
+  <text x="724" y="104" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">搬迁后：旧表桶 2 清空</text>
+
+  <!-- 面板 B · ht[0] 旧表 -->
+  <text x="610" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#4F46E5">ht[0] 旧表</text>
+  <rect x="540" y="140" width="140" height="40" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.2"/>
+  <text x="532" y="165" text-anchor="end" font-size="12" fill="#6B7280">桶0</text>
+  <text x="610" y="165" text-anchor="middle" font-size="12" fill="#9CA3AF">已搬空</text>
+  <rect x="540" y="188" width="140" height="40" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.2"/>
+  <text x="532" y="213" text-anchor="end" font-size="12" fill="#6B7280">桶1</text>
+  <text x="610" y="213" text-anchor="middle" font-size="12" fill="#9CA3AF">已搬空</text>
+  <rect x="540" y="236" width="140" height="40" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.2"/>
+  <text x="532" y="261" text-anchor="end" font-size="12" fill="#6B7280">桶2</text>
+  <text x="610" y="261" text-anchor="middle" font-size="12" fill="#9CA3AF">已搬空</text>
+  <rect x="540" y="284" width="140" height="40" rx="5" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.3"/>
+  <text x="532" y="309" text-anchor="end" font-size="12" fill="#6B7280">桶3</text>
+  <text x="610" y="309" text-anchor="middle" font-size="12.5" font-family="ui-monospace, monospace" fill="#4F46E5">k2 → k5</text>
+  <!-- 面板 B · ht[1] 新表 -->
+  <text x="858" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#059669">ht[1] 新表</text>
+  <rect x="788" y="140" width="140" height="28" rx="5" fill="#ECFDF5" stroke="#10B981" stroke-width="1.3"/>
+  <text x="780" y="159" text-anchor="end" font-size="11" fill="#6B7280">桶0</text>
+  <text x="858" y="159" text-anchor="middle" font-size="11.5" font-family="ui-monospace, monospace" fill="#065F46">k1</text>
+  <rect x="788" y="174" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="780" y="193" text-anchor="end" font-size="11" fill="#6B7280">桶1</text>
+  <rect x="788" y="208" width="140" height="28" rx="5" fill="#ECFDF5" stroke="#10B981" stroke-width="1.8"/>
+  <text x="780" y="227" text-anchor="end" font-size="11" font-weight="700" fill="#6B7280">桶2</text>
+  <text x="858" y="227" text-anchor="middle" font-size="11.5" font-family="ui-monospace, monospace" fill="#065F46">k9 → k7</text>
+  <rect x="788" y="242" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="780" y="261" text-anchor="end" font-size="11" fill="#6B7280">桶3</text>
+  <rect x="788" y="276" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="780" y="295" text-anchor="end" font-size="11" fill="#6B7280">桶4</text>
+  <rect x="788" y="310" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="780" y="329" text-anchor="end" font-size="11" fill="#6B7280">桶5</text>
+  <rect x="788" y="344" width="140" height="28" rx="5" fill="#ECFDF5" stroke="#10B981" stroke-width="1.8"/>
+  <text x="780" y="363" text-anchor="end" font-size="11" font-weight="700" fill="#6B7280">桶6</text>
+  <text x="858" y="363" text-anchor="middle" font-size="11.5" font-family="ui-monospace, monospace" fill="#065F46">k3</text>
+  <rect x="788" y="378" width="140" height="28" rx="5" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.1"/>
+  <text x="780" y="397" text-anchor="end" font-size="11" fill="#6B7280">桶7</text>
+  <!-- ============ 底部信息框 ============ -->
+  <rect x="60" y="468" width="400" height="64" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.3"/>
+  <text x="260" y="490" text-anchor="middle" font-size="12.5" font-weight="700" fill="#4F46E5">搬迁期间的读写</text>
+  <text x="260" y="508" text-anchor="middle" font-size="11.5" fill="#374151">查找/删除：先查 ht[0] 再查 ht[1]</text>
+  <text x="260" y="524" text-anchor="middle" font-size="11.5" fill="#374151">新写入的键只进 ht[1]</text>
+
+  <rect x="500" y="468" width="400" height="64" rx="6" fill="#ECFDF5" stroke="#10B981" stroke-width="1.3"/>
+  <text x="700" y="490" text-anchor="middle" font-size="12.5" font-weight="700" fill="#065F46">搬完之后</text>
+  <text x="700" y="512" text-anchor="middle" font-size="11.5" fill="#374151">旧表迁完 → 新表接替旧表，旧表释放</text>
+</svg>

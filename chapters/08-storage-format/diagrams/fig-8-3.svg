@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 62 940 498" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  <!-- 左右两栏各宽 420，间隔 20：比较重写期间增量的去处与生效对象。 -->
+  <rect x="40" y="76" width="420" height="464" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+  <rect x="480" y="76" width="420" height="464" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+  <text x="250" y="105" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">7.0 之前：单文件 AOF</text>
+  <text x="690" y="105" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">7.0 起：Multi-Part AOF</text>
+  <line x1="60" y1="120" x2="440" y2="120" stroke="#CBD5E1"/>
+  <line x1="500" y1="120" x2="880" y2="120" stroke="#CBD5E1"/>
+
+  <!-- 第一行：父进程接住新写入，子进程依据当前内存生成全量部分。 -->
+  <rect x="65" y="146" width="180" height="72" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="155" y="169" text-anchor="middle" font-size="13" font-weight="700" fill="#4F46E5">父进程</text>
+  <text x="155" y="190" text-anchor="middle" font-size="11" fill="#374151">旧 AOF 继续追加新写入</text>
+  <text x="155" y="207" text-anchor="middle" font-size="11" fill="#374151">增量另存，待补新文件</text>
+
+  <rect x="255" y="146" width="180" height="72" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="345" y="169" text-anchor="middle" font-size="13" font-weight="700" fill="#4F46E5">子进程</text>
+  <text x="345" y="190" text-anchor="middle" font-size="11" fill="#374151">从当前内存生成新 AOF</text>
+  <text x="345" y="207" text-anchor="middle" font-size="11" fill="#374151">写出全量部分</text>
+
+  <rect x="505" y="146" width="180" height="72" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="595" y="169" text-anchor="middle" font-size="13" font-weight="700" fill="#4F46E5">父进程</text>
+  <text x="595" y="190" text-anchor="middle" font-size="11" fill="#374151">新开 incr 承接后续写入</text>
+  <text x="595" y="207" text-anchor="middle" font-size="11" fill="#374151">增量独立保存</text>
+
+  <rect x="695" y="146" width="180" height="72" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="785" y="169" text-anchor="middle" font-size="13" font-weight="700" fill="#4F46E5">子进程</text>
+  <text x="785" y="190" text-anchor="middle" font-size="11" fill="#374151">从当前内存生成新 base</text>
+  <text x="785" y="207" text-anchor="middle" font-size="11" fill="#374151">可用 RDB 或 AOF 格式</text>
+
+  <!-- 两路汇合：旧版要把增量补进新单文件；新版保留分立文件。 -->
+  <path d="M 155 218 L 155 247 L 205 247 L 205 277" fill="none" stroke="#EF4444" stroke-width="1.5" marker-end="url(#arrowR)"/>
+  <path d="M 345 218 L 345 247 L 295 247 L 295 277" fill="none" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <path d="M 595 218 L 595 247 L 645 247 L 645 277" fill="none" stroke="#EF4444" stroke-width="1.5" marker-end="url(#arrowR)"/>
+  <path d="M 785 218 L 785 247 L 735 247 L 735 277" fill="none" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="115" y="280" width="270" height="74" rx="6" fill="#FEF2F7" stroke="#EF4444" stroke-width="1.7"/>
+  <text x="250" y="305" text-anchor="middle" font-size="13" font-weight="700" fill="#EF4444">新 AOF 单文件</text>
+  <text x="250" y="327" text-anchor="middle" font-size="11" fill="#374151">全量部分 + 补入的重写增量</text>
+  <text x="250" y="344" text-anchor="middle" font-size="10.5" fill="#6B7280">切换前旧 AOF 继续有效</text>
+
+  <rect x="555" y="280" width="270" height="74" rx="6" fill="#FEF2F7" stroke="#EF4444" stroke-width="1.7"/>
+  <text x="690" y="305" text-anchor="middle" font-size="13" font-weight="700" fill="#EF4444">分立的新 base 与新 incr</text>
+  <text x="690" y="327" text-anchor="middle" font-size="11" fill="#374151">增量保存在 incr，不补入 base</text>
+  <text x="690" y="344" text-anchor="middle" font-size="10.5" fill="#6B7280">切换前旧组合连同新 incr 可恢复</text>
+
+  <!-- 生效动作不同：替换完整单文件，或原子替换 manifest。 -->
+  <line x1="250" y1="354" x2="250" y2="384" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="690" y1="354" x2="690" y2="384" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="115" y="387" width="270" height="50" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="250" y="417" text-anchor="middle" font-size="12.5" font-weight="700" fill="#111827">完整后原子替换旧单文件</text>
+  <rect x="555" y="387" width="270" height="50" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="690" y="417" text-anchor="middle" font-size="12.5" font-weight="700" fill="#111827">原子替换 manifest</text>
+
+  <!-- 恢复时读取的对象。 -->
+  <line x1="250" y1="437" x2="250" y2="465" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="690" y1="437" x2="690" y2="465" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="115" y="468" width="270" height="48" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="250" y="497" text-anchor="middle" font-size="12.5" font-weight="700" fill="#4F46E5">恢复读取：新 AOF 单文件</text>
+  <rect x="555" y="468" width="270" height="48" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="690" y="497" text-anchor="middle" font-size="12.5" font-weight="700" fill="#4F46E5">恢复读取：新 base + 新 incr</text>
+</svg>

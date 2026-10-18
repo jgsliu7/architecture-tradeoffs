@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 67 940 460" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  <!-- ============ Normal flush path (top) ============ -->
+  <text x="40" y="90" font-size="14" font-weight="700" fill="#111827">正常落盘顺序</text>
+
+  <!-- buffer pool dirty page -->
+  <rect x="40" y="110" width="150" height="60" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="115" y="135" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">缓冲池脏页</text>
+  <text x="115" y="155" text-anchor="middle" font-size="11" fill="#374151">内存中被改过的页</text>
+
+  <!-- WAL: write redo first -->
+  <rect x="240" y="110" width="150" height="60" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="315" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">相应 redo log</text>
+  <text x="315" y="150" text-anchor="middle" font-size="10" fill="#374151">先于对应脏页落盘（WAL）</text>
+
+  <line x1="190" y1="140" x2="240" y2="140" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="215" y="132" text-anchor="middle" font-size="10" fill="#374151">WAL</text>
+
+  <!-- doublewrite buffer -->
+  <rect x="440" y="110" width="170" height="60" rx="6" fill="#FEF2F7" stroke="#EF4444" stroke-width="2"/>
+  <text x="525" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#EF4444">双写区（完整页）</text>
+  <text x="525" y="150" text-anchor="middle" font-size="10" fill="#374151">先写入完整页并刷盘</text>
+
+  <line x1="390" y1="140" x2="440" y2="140" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- formal page -->
+  <rect x="660" y="110" width="170" height="60" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="745" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">正式数据页</text>
+  <text x="745" y="150" text-anchor="middle" font-size="10" fill="#374151">.ibd 独立表空间</text>
+  <text x="745" y="164" text-anchor="middle" font-size="10" fill="#374151">原地改写</text>
+
+  <line x1="610" y1="140" x2="660" y2="140" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="635" y="132" text-anchor="middle" font-size="10" fill="#374151">再写</text>
+
+  <!-- partial write risk note -->
+  <rect x="845" y="110" width="85" height="60" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="887" y="135" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">风险</text>
+  <text x="887" y="152" text-anchor="middle" font-size="10.5" fill="#6B7280">断电半写</text>
+  <text x="887" y="164" text-anchor="middle" font-size="10.5" fill="#6B7280">页损坏</text>
+  <line x1="830" y1="140" x2="845" y2="140" stroke="#EF4444" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#arrowR)"/>
+
+  <!-- ============ Crash recovery path (bottom) ============ -->
+  <text x="40" y="230" font-size="14" font-weight="700" fill="#111827">崩溃恢复路径</text>
+
+  <!-- crash -->
+  <rect x="40" y="250" width="130" height="60" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="105" y="278" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">重启 / 恢复</text>
+  <text x="105" y="297" text-anchor="middle" font-size="10" fill="#6B7280">checkpoint 后扫描 redo</text>
+
+  <!-- check page checksum -->
+  <rect x="220" y="250" width="170" height="60" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="305" y="275" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">检查页 checksum</text>
+  <text x="305" y="294" text-anchor="middle" font-size="10" fill="#374151">核对头尾 LSN 对应部分</text>
+
+  <line x1="170" y1="280" x2="220" y2="280" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- decision diamond -->
+  <polygon points="500,280 560,250 620,280 560,310" fill="#FEF2F7" stroke="#EF4444" stroke-width="1.5"/>
+  <text x="560" y="278" text-anchor="middle" font-size="11" font-weight="700" fill="#EF4444">页完整？</text>
+  <text x="560" y="294" text-anchor="middle" font-size="10" fill="#374151">checksum</text>
+
+  <line x1="390" y1="280" x2="500" y2="280" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- NO branch: page broken -->
+  <rect x="690" y="250" width="200" height="60" rx="6" fill="#FEF2F7" stroke="#EF4444" stroke-width="2"/>
+  <text x="790" y="272" text-anchor="middle" font-size="12" font-weight="700" fill="#EF4444">否：若有有效副本则修复</text>
+  <text x="790" y="290" text-anchor="middle" font-size="10" fill="#374151">从双写缓冲取完整页</text>
+  <text x="790" y="304" text-anchor="middle" font-size="10" fill="#374151">覆盖损坏的正式页</text>
+
+  <line x1="620" y1="280" x2="687" y2="280" stroke="#EF4444" stroke-width="1.5" marker-end="url(#arrowR)"/>
+  <text x="655" y="272" text-anchor="middle" font-size="11" font-weight="700" fill="#EF4444">否</text>
+
+  <!-- YES branch -->
+  <line x1="560" y1="310" x2="560" y2="357" stroke="#059669" stroke-width="1.5" marker-end="url(#arrowG)"/>
+  <text x="575" y="335" font-size="11" font-weight="700" fill="#059669">是</text>
+
+  <!-- redo replay -->
+  <rect x="430" y="360" width="260" height="60" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="560" y="384" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">按页 LSN 应用 redo</text>
+  <text x="560" y="405" text-anchor="middle" font-size="10" fill="#374151">从有效完整页继续恢复</text>
+
+  <!-- recovered page -->
+  <rect x="430" y="460" width="260" height="50" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="560" y="482" text-anchor="middle" font-size="12" font-weight="700" fill="#059669">页到达一致状态</text>
+  <text x="560" y="500" text-anchor="middle" font-size="10" fill="#374151">随后完成事务恢复</text>
+
+  <line x1="560" y1="420" x2="560" y2="460" stroke="#059669" stroke-width="1.5" marker-end="url(#arrowG)"/>
+
+  <!-- NO branch loop back: after restore, still redo -->
+  <path d="M 790 310 Q 790 360, 690 380" fill="none" stroke="#EF4444" stroke-width="1.5" marker-end="url(#arrowR)"/>
+  <text x="805" y="343" font-size="10" font-weight="700" fill="#EF4444">修复后</text>
+
+</svg>

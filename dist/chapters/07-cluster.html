@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 7 章 集群架构 — 从单点到分布式</title>
+<style>
+*{box-sizing:border-box}
+:root{--ink:#1f2328;--mute:#57606a;--line:#d8dee4;--accent:#4f46e5;--bg:#fff;--soft:#f6f8fa}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;color:var(--ink);background:#fff;line-height:1.8;font-size:16px}
+.layout{display:grid;grid-template-columns:var(--toc-w,292px) 6px 1fr;max-width:1340px;margin:0 auto;transition:grid-template-columns .2s}
+body.toc-dragging .layout{transition:none}
+nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 24px 8px;font-size:14px;min-width:0}
+main.content{min-width:0}
+.toc-drag{position:sticky;top:0;align-self:start;height:100vh;cursor:col-resize;background:var(--line);transition:background .15s}
+.toc-drag:hover,.toc-drag.active{background:var(--accent)}
+body.toc-dragging{user-select:none;cursor:col-resize}
+.toc-collapse{position:absolute;top:16px;right:8px;border:1px solid var(--line);background:#fff;color:var(--mute);border-radius:6px;width:24px;height:24px;font-size:13px;line-height:1;cursor:pointer;padding:0}
+.toc-collapse:hover{color:var(--accent);border-color:var(--accent)}
+.toc-expand{display:none;position:fixed;left:0;top:120px;z-index:55;border:1px solid var(--line);border-left:none;background:#fff;color:var(--mute);border-radius:0 8px 8px 0;padding:10px 6px;font-size:14px;cursor:pointer;box-shadow:2px 2px 8px rgba(0,0,0,.08)}
+.toc-expand:hover{color:var(--accent)}
+body.toc-collapsed .layout{grid-template-columns:1fr}
+body.toc-collapsed nav.toc,body.toc-collapsed .toc-drag{display:none}
+body.toc-collapsed .toc-expand{display:block}
+.toc-title{font-weight:700;font-size:15px;color:var(--accent);margin:0 0 4px 8px}
+.toc-title a{color:inherit;text-decoration:none}
+.toc-sub{font-size:12px;color:var(--mute);margin:0 0 16px 8px}
+nav.toc ul{list-style:none;padding:0;margin:0}
+nav.toc li>a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.5}
+nav.toc li>a:hover{background:var(--soft)}
+nav.toc li.active>a{background:#eef2ff;color:var(--accent);font-weight:600}
+nav.toc li.nav-sub>a{padding-left:22px;font-size:13px;color:var(--mute)}
+.content{padding:32px 48px 120px;max-width:1000px;overflow-wrap:anywhere}
+.chapter-meta{color:var(--mute);font-size:13px;margin:0 0 18px}
+.page-nav{display:flex;justify-content:space-between;gap:16px;margin:40px 0 0;padding-top:20px;border-top:1px solid var(--line)}
+.page-nav a{display:block;max-width:48%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--ink);background:var(--soft);line-height:1.5}
+.page-nav a:hover{border-color:var(--accent);color:var(--accent)}
+.page-nav .empty{visibility:hidden}
+h1,h2,h3,h4{line-height:1.35;color:var(--ink);font-weight:700}
+h1{font-size:1.9em;margin:0 0 .6em;padding-bottom:.3em}
+h2{font-size:1.42em;margin:1.8em 0 .6em}
+h3{font-size:1.18em;margin:1.5em 0 .5em}
+h4{font-size:1.04em;margin:1.3em 0 .4em;color:#24292f}
+p{margin:0 0 1em}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+strong{font-weight:700;color:#111827}
+em{font-style:normal;color:var(--mute)}
+hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
+code{font-family:"SF Mono",Menlo,Consolas,monospace;background:var(--soft);padding:.12em .4em;border-radius:4px;font-size:.9em;color:#24292f}
+pre{background:#1e1e2e;color:#cdd6f4;padding:16px 18px;border-radius:8px;overflow-x:auto;line-height:1.55}
+pre code{background:none;color:inherit;padding:0;font-size:.86em}
+blockquote{margin:1.2em 0;padding:.6em 1em .6em 1.1em;border-left:4px solid var(--accent);background:#f7f8ff;color:#343a40;border-radius:0 6px 6px 0}
+blockquote strong{color:var(--accent)}
+ul,ol{margin:0 0 1em;padding-left:1.7em}
+li{margin:.25em 0}
+.table-wrap{overflow-x:auto;margin:1.2em 0}
+table{border-collapse:collapse;width:100%;font-size:.94em}
+th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+thead th{background:#eef2ff;color:#3730a3;font-weight:600}
+tbody tr:nth-child(even){background:#fafbfd}
+figure.fig{margin:2em calc((100% - 1000px)/2);text-align:center}
+.svg-wrap,.inline-svg{display:block;width:100%}
+figure.fig svg,.inline-svg svg,.svg-wrap svg,figure.fig img{width:100%;max-width:1000px;height:auto;display:block;margin:0 auto}
+figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
+.toc-toggle{display:none}
+.review-index{display:grid;gap:12px;margin:24px 0 0}
+.review-index a{display:block;padding:14px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;background:#fff}
+.review-index a:hover{border-color:var(--accent);background:#f7f8ff}
+.review-index strong{display:block;color:var(--ink)}
+.review-index span{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+@media(max-width:1200px){figure.fig{margin:2em auto}}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:fixed;left:0;top:0;width:292px;background:#fff;z-index:50;transform:translateX(-100%);transition:transform .2s;box-shadow:2px 0 12px rgba(0,0,0,.08)}
+  nav.toc.open{transform:translateX(0)}
+  body.toc-collapsed nav.toc{display:block}
+  .toc-drag,.toc-collapse,.toc-expand{display:none!important}
+  .content{padding:20px 18px 80px;max-width:100%;min-width:0}
+  .toc-toggle{display:inline-block;position:fixed;right:16px;bottom:16px;z-index:60;background:var(--accent);color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer}
+  .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:40}
+  .backdrop.show{display:block}
+  /* 窄屏宽图改为容器内横向滚动，文字保持可读 */
+  .svg-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  figure.fig svg{min-width:760px}
+}
+@media print{a.xref{color:inherit}}
+</style>
+</head>
+<body>
+<div class="backdrop" id="bd"></div>
+<button class="toc-toggle">目录</button>
+<button class="toc-expand" id="tocExpand" title="展开目录">»</button>
+<div class="layout">
+<nav class="toc" id="toc">
+  <button class="toc-collapse" id="tocCollapse" title="收起目录">«</button>
+  <div class="toc-title"><a href="../index.html">架构取舍之道</a></div>
+  <div class="toc-sub">在线阅读版</div>
+  <ul>
+<li><a href="../index.html">首页目录</a></li>
+<li><a href="00-preface.html">序言</a>
+</li>
+<li><a href="01-introduction.html">第 1 章 引言 — 为什么是这三个软件</a>
+</li>
+<li><a href="02-data-structures-protocols.html">第 2 章 数据结构与协议 — 为各自的目标而设计</a>
+</li>
+<li><a href="03-lifecycle.html">第 3 章 生命周期管理 — 优雅启动与关闭</a>
+</li>
+<li><a href="04-memory-disk.html">第 4 章 内存与磁盘 — 速度与持久化的平衡</a>
+</li>
+<li><a href="05-layered-architecture.html">第 5 章 分层架构设计 — 存储层 / 逻辑层 / 交互层</a>
+</li>
+<li><a href="06-security.html">第 6 章 安全机制 — 权限、加密、审计</a>
+</li>
+<li class="active"><a href="07-cluster.html">第 7 章 集群架构 — 从单点到分布式</a>
+<ul>
+<li class="nav-sub"><a href="#s135">本章导读</a></li>
+<li class="nav-sub"><a href="#sec-7.1">7.1 问题的本质</a></li>
+<li class="nav-sub"><a href="#sec-7.2">7.2 Redis 的做法</a></li>
+<li class="nav-sub"><a href="#sec-7.3">7.3 MySQL 的做法</a></li>
+<li class="nav-sub"><a href="#sec-7.4">7.4 Kafka 的做法</a></li>
+<li class="nav-sub"><a href="#sec-7.5">7.5 横向对比</a></li>
+<li class="nav-sub"><a href="#sec-7.6">7.6 架构启示</a></li>
+<li class="nav-sub"><a href="#sec-7.7">7.7 小结</a></li>
+</ul>
+</li>
+<li><a href="08-storage-format.html">第 8 章 磁盘存储格式 — 文件结构的设计哲学</a>
+</li>
+<li><a href="09-data-sync.html">第 9 章 数据同步机制 — 集群一致性的实现</a>
+</li>
+<li><a href="10-summary.html">第 10 章 总结：架构设计的共性规律与取舍</a>
+</li>
+<li><a href="10-epilogue.html">后记</a>
+</li>
+<li><a href="11-references.html">附录　参考文献与延伸阅读（按章索引）</a>
+</li>
+</ul>
+</nav>
+<div class="toc-drag" id="tocDrag" title="拖拽调整目录宽度"></div>
+<main class="content">
+<article class="chapter"><h1 id="s134">第 7 章 集群架构 — 从单点到分布式</h1>
+<h2 id="s135">本章导读</h2>
+<p>业务跑顺了，流量却开始翻倍。一台机器终会遇到 CPU、内存或磁盘的上限；它一旦宕机，服务也可能随之中断。集群把数据和服务分布到多台机器上。扩容与故障接管是两项不同的任务。</p>
+<p>Redis、MySQL、Kafka 都要处理数据分布、副本和故障转移，区别在于哪些能力由软件提供，哪些留给使用者组合。</p>
+<p>假设一个库存服务用 Redis Cluster 保存扣减结果。网络分区触发主从切换时，少数派老主在超时判定前仍可能接收写入；尚未到达新主的扣减，在网络恢复后可能丢失，造成库存超卖。评估自动故障转移，需要核对少数派何时停写，以及新主能否保留已确认的库存扣减。</p>
+<h2 id="sec-7.1">7.1 问题的本质</h2>
+<p>Redis 内存不足时，增加一个从节点能扩大数据容量吗？</p>
+<p>加从节点，是把同一份数据保存到其他机器上，形成复制（replication）。主节点宕机后，可以由从节点接管，缩短服务中断的时间；每个副本都保存全量数据，主节点内存不足的问题并没有解决。</p>
+<p>要扩大数据容量，需要把数据切开放到不同机器上，每台只存一部分，这叫分片（sharding，也叫 partitioning）。分片和复制可以独立选择：只分片不复制，容量增加了，一台机器故障就会使它负责的数据无法访问；只复制不分片，则只增加副本，不增加可保存的数据量。需要同时扩容和容错时，两者可以结合，分别承担数据分布和故障接管的任务。</p>
+<p>单机还有一条与数据量无关的上限：<strong>单节点吞吐瓶颈</strong>。分片后，各节点承担自己负责的那部分流量。即便数据量不大，每个节点的网络带宽、磁盘 IOPS（每秒 I/O 操作数）也可能成为吞吐上限。热点集中在一个分片时，它所在的节点可能先达到吞吐上限。</p>
+<p>采用分布式部署后，会带来四个新的问题。</p>
+<p><strong>第一，数据怎么切。</strong> 是按范围切（如 0–999 在节点 A、1000–1999 在节点 B），还是按哈希切（<code>hash(key) % N</code>）？按范围分片便于范围查询，也更容易遇到访问热点；简单按节点数取模，通常能分散键。</p>
+<p>节点数改变后，取模方案中大量键的落点也会变化。扩容时重新分布数据带来的迁移成本和影响，也决定了集群能不能平滑扩展。</p>
+<p><strong>第二，副本怎样保持一致。</strong> 主节点写入后，要不要等从节点确认再向客户端返回成功？等副本，用延迟换取故障时更高的数据保留概率；不等，刚确认的写入可能还没有到达接管的新主。副本确认的是收到数据还是持久化，故障后如何选择新主，都影响最终的数据一致性。</p>
+<p><strong>第三，故障怎么发现与转移。</strong> 一个节点多久没心跳算“掉线”？是单个节点就能确认，还是收集多个节点的意见后再确认？选新主按什么规则（优先级、日志进度、ID）？分区时少数派该怎么办：继续写（可能脑裂：两个主各自接受写入、数据分叉）还是停服（宁可不可用）？</p>
+<p><strong>第四，元数据怎么管理。</strong> 哪个节点承载哪些分片？谁是当前的主？副本同步到哪了？这些元数据（metadata）由谁维护、怎样传播？Kafka 由 Controller 协调，MySQL 组复制通过组通信维护成员视图，Redis Cluster 用 Gossip（节点间交换并传播状态）传递节点与槽信息。</p>
+<p>这四个问题之上，还有一条约束：<strong>CAP 定理</strong>。当网络分区（Partition）使节点之间无法通信时，系统不能同时保证原子一致性（Consistency）和所有非故障节点上的请求都能得到响应（Availability）。这里的一致性要求操作表现得像在一个节点上按顺序完成，并保留真实时间先后。下文重点比较分区时哪些请求还能执行，以及已确认数据在故障转移时如何保留。</p>
+<figure class="fig" id="fig-7-1"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 930 455" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_7_1_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+  
+
+  <rect x="20" y="52" width="290" height="385" rx="8" fill="#FAFAFF" stroke="#C7D2FE"/>
+  <rect x="30" y="62" width="270" height="36" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="165" y="86" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">Redis</text>
+  <rect x="35" y="112" width="260" height="205" rx="8" fill="#FFFFFF" stroke="#4F46E5" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="165" y="135" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">Redis Cluster</text>
+  <text x="165" y="152" text-anchor="middle" font-size="11" fill="#374151">槽分给不同主节点</text>
+  <rect x="50" y="169" width="105" height="53" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.4"/>
+  <text x="102.5" y="191" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">主 A</text>
+  <text x="102.5" y="208" text-anchor="middle" font-size="10.5" fill="#374151">部分槽</text>
+  <rect x="175" y="169" width="105" height="53" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.4"/>
+  <text x="227.5" y="191" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">主 B</text>
+  <text x="227.5" y="208" text-anchor="middle" font-size="10.5" fill="#374151">另一部分槽</text>
+  <line x1="102.5" y1="222" x2="102.5" y2="245" stroke="#4B5563" stroke-width="1.4" marker-end="url(#fig_7_1_arrow)"/>
+  <line x1="227.5" y1="222" x2="227.5" y2="245" stroke="#4B5563" stroke-width="1.4" marker-end="url(#fig_7_1_arrow)"/>
+  <rect x="50" y="248" width="105" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.2"/>
+  <text x="102.5" y="269" text-anchor="middle" font-size="12" fill="#111827">副本 A</text>
+  <text x="102.5" y="284" text-anchor="middle" font-size="10.5" fill="#374151">复制主 A</text>
+  <rect x="175" y="248" width="105" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.2"/>
+  <text x="227.5" y="269" text-anchor="middle" font-size="12" fill="#111827">副本 B</text>
+  <text x="227.5" y="284" text-anchor="middle" font-size="10.5" fill="#374151">复制主 B</text>
+  <rect x="35" y="330" width="260" height="96" rx="8" fill="#FFFFFF" stroke="#4F46E5" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="165" y="352" text-anchor="middle" font-size="11" font-weight="600" fill="#374151">另一方案：Sentinel 管理单主复制</text>
+  <rect x="50" y="367" width="94" height="43" rx="6" fill="#EEF2FF" stroke="#4F46E5"/>
+  <text x="97" y="394" text-anchor="middle" font-size="11" fill="#111827">Sentinel 组</text>
+  <line x1="144" y1="389" x2="169" y2="389" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_7_1_arrow)"/>
+  <rect x="173" y="367" width="107" height="43" rx="6" fill="#EEF2FF" stroke="#4F46E5"/>
+  <text x="226.5" y="394" text-anchor="middle" font-size="11" fill="#111827">单主与副本</text>
+
+  <rect x="320" y="52" width="290" height="385" rx="8" fill="#FFFCF5" stroke="#FCD34D"/>
+  <rect x="330" y="62" width="270" height="36" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="465" y="80" text-anchor="middle" font-size="13" font-weight="700" fill="#D97706">MySQL</text>
+  <text x="465" y="94" text-anchor="middle" font-size="11" fill="#92400E">InnoDB Cluster 单主示例</text>
+  <rect x="410" y="111" width="110" height="40" rx="6" fill="#F3F4F6" stroke="#6B7280"/>
+  <text x="465" y="137" text-anchor="middle" font-size="12" fill="#111827">客户端</text>
+  <line x1="465" y1="151" x2="465" y2="166" stroke="#4B5563" stroke-width="1.4" marker-end="url(#fig_7_1_arrow)"/>
+  <rect x="395" y="170" width="140" height="40" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.4"/>
+  <text x="465" y="196" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">MySQL Router</text>
+  <line x1="465" y1="210" x2="465" y2="226" stroke="#4B5563" stroke-width="1.4" marker-end="url(#fig_7_1_arrow)"/>
+  <rect x="340" y="230" width="250" height="126" rx="8" fill="#FFFFFF" stroke="#D97706" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="465" y="250" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">MGR 全量副本组</text>
+  <rect x="350" y="265" width="70" height="59" rx="6" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="385" y="288" text-anchor="middle" font-size="10.5" font-weight="600" fill="#111827">Primary</text>
+  <text x="385" y="309" text-anchor="middle" font-size="10" fill="#374151">全量数据</text>
+  <rect x="430" y="265" width="70" height="59" rx="6" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="465" y="288" text-anchor="middle" font-size="10.5" font-weight="600" fill="#111827">Secondary</text>
+  <text x="465" y="309" text-anchor="middle" font-size="10" fill="#374151">全量数据</text>
+  <rect x="510" y="265" width="70" height="59" rx="6" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="545" y="288" text-anchor="middle" font-size="10.5" font-weight="600" fill="#111827">Secondary</text>
+  <text x="545" y="309" text-anchor="middle" font-size="10" fill="#374151">全量数据</text>
+  <rect x="340" y="373" width="250" height="49" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-dasharray="4 3"/>
+  <text x="465" y="394" text-anchor="middle" font-size="11" font-weight="600" fill="#111827">分片由上层方案承担</text>
+
+  <rect x="620" y="52" width="290" height="385" rx="8" fill="#F7FDFB" stroke="#A7F3D0"/>
+  <rect x="630" y="62" width="270" height="36" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="765" y="86" text-anchor="middle" font-size="15" font-weight="700" fill="#059669">Kafka</text>
+  <rect x="650" y="110" width="230" height="74" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.4"/>
+  <text x="765" y="135" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">KRaft Controller 组</text>
+  <text x="765" y="154" text-anchor="middle" font-size="11" fill="#374151">维护元数据日志</text>
+  <text x="765" y="172" text-anchor="middle" font-size="10.5" fill="#374151">活跃 Controller 管理分区</text>
+  <line x1="765" y1="184" x2="765" y2="208" stroke="#4B5563" stroke-width="1.4" marker-end="url(#fig_7_1_arrow)"/>
+  <rect x="640" y="212" width="250" height="210" rx="8" fill="#FFFFFF" stroke="#059669" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="765" y="234" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">Broker 上的分区副本</text>
+  <rect x="652" y="252" width="104" height="88" rx="6" fill="#ECFDF5" stroke="#059669"/>
+  <text x="704" y="276" text-anchor="middle" font-size="11.5" font-weight="600" fill="#111827">Broker 1</text>
+  <text x="704" y="299" text-anchor="middle" font-size="10.5" fill="#374151">P0 Leader</text>
+  <text x="704" y="321" text-anchor="middle" font-size="10.5" fill="#374151">P1 Follower</text>
+  <rect x="774" y="252" width="104" height="88" rx="6" fill="#ECFDF5" stroke="#059669"/>
+  <text x="826" y="276" text-anchor="middle" font-size="11.5" font-weight="600" fill="#111827">Broker 2</text>
+  <text x="826" y="299" text-anchor="middle" font-size="10.5" fill="#374151">P0 Follower</text>
+  <text x="826" y="321" text-anchor="middle" font-size="10.5" fill="#374151">P1 Leader</text>
+  <line x1="756" y1="296" x2="771" y2="296" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_7_1_arrow)"/>
+  <line x1="774" y1="317" x2="759" y2="317" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_7_1_arrow)"/>
+  <text x="765" y="374" text-anchor="middle" font-size="11" fill="#374151">Follower 从对应 Leader 拉取</text>
+</svg>
+</div><figcaption>图 7-1　Redis、MySQL、Kafka 的集群能力与责任边界。</figcaption></figure>
+<h2 id="sec-7.2">7.2 Redis 的做法</h2>
+<h3 id="sec-7.2.1">7.2.1 主从复制：高可用的基础</h3>
+<p>Redis 最基础的复制拓扑是一个主节点带若干从节点。在从节点执行 <code>REPLICAOF host port</code>，即可指定上游。首次同步先取得快照，再补上期间的写入；短暂断线后，条件满足时可以只补差量。</p>
+<p>从节点可以分担读取，并为主节点故障后的接管保存一份数据。复制默认是<strong>异步</strong>的：主节点不等从节点确认便返回，刚确认的写入可能来不及复制。这种拓扑不分摊主节点写入，也不扩大数据容量。主节点故障后，需要人工提升从节点并调整复制关系。</p>
+<h3 id="sec-7.2.2">7.2.2 Sentinel：把人工故障转移自动化</h3>
+<p>Sentinel（哨兵）负责自动故障转移。Sentinel 本身是一组独立进程，它们监控主从节点。每个 Sentinel 周期性地给主从节点发心跳；超过 <code>down-after-milliseconds</code> 没回应，它就把主节点标记为<strong>主观下线</strong>（SDOWN，subjectively down），这是单个 Sentinel 的判断。随后它询问其他 Sentinel；认为主节点下线的 Sentinel 数量达到配置的 quorum（人工设定的判定票数），才标记为<strong>客观下线</strong>（ODOWN，objectively down）。</p>
+<p>接下来，Sentinel 选出一个 Leader 主持转移；授权票数既要达到多数派，也不能低于配置的 quorum。随后按优先级、复制偏移量（offset）、runid（实例每次启动时随机生成的运行 ID）三个维度，挑选一个从节点提升为新主，并通知其他从节点改连新主。</p>
+<figure class="fig" id="fig-7-2"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 522" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_7_2_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_7_2_arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+    <marker id="fig_7_2_arrowLG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6B7280"/>
+    </marker>
+  </defs>
+
+  
+
+  
+  
+  <rect x="40" y="64" width="270" height="232" rx="8" fill="#F9FAFB" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="56" y="88" font-size="11" font-weight="700" fill="#6B7280">数据层：主从异步复制</text>
+
+  <rect x="60" y="100" width="220" height="52" rx="6" fill="#FEE2E2" stroke="#EF4444" stroke-width="2"/>
+  <text x="170" y="123" text-anchor="middle" font-size="12.5" font-weight="700" fill="#111827">主节点 Master</text>
+  <text x="170" y="141" text-anchor="middle" font-size="10.5" fill="#EF4444">超时无回应（疑似宕机）</text>
+
+  <rect x="60" y="164" width="220" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="170" y="186" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">从节点 A</text>
+  <text x="170" y="202" text-anchor="middle" font-size="10" fill="#6B7280">异步复制中</text>
+
+  <rect x="60" y="220" width="220" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="170" y="242" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">从节点 B</text>
+  <text x="170" y="258" text-anchor="middle" font-size="10" fill="#6B7280">复制进度最靠前</text>
+
+  
+  <rect x="580" y="64" width="292" height="160" rx="8" fill="#F9FAFB" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="596" y="88" font-size="11" font-weight="700" fill="#6B7280">Sentinel 集群</text>
+
+  <rect x="600" y="108" width="72" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="636" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#4F46E5">S1</text>
+  <text x="636" y="150" text-anchor="middle" font-size="10" fill="#6B7280">发起询问</text>
+  <rect x="684" y="108" width="72" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="720" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#4F46E5">S2</text>
+  <text x="720" y="150" text-anchor="middle" font-size="10" fill="#6B7280">同判超时</text>
+  <rect x="768" y="108" width="72" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="804" y="132" text-anchor="middle" font-size="12" font-weight="700" fill="#4F46E5">S3</text>
+  <text x="804" y="150" text-anchor="middle" font-size="10" fill="#6B7280">同判超时</text>
+
+  
+  <text x="430" y="120" text-anchor="middle" font-size="10.5" fill="#6B7280">周期心跳：超过 down-after-milliseconds 无回应</text>
+  <line x1="578" y1="132" x2="282" y2="132" stroke="#6B7280" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#fig_7_2_arrowLG)"/>
+  <line x1="578" y1="186" x2="282" y2="186" stroke="#6B7280" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#fig_7_2_arrowLG)"/>
+
+  
+  
+  <rect x="40" y="330" width="190" height="70" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="135" y="356" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">① S1 标记 SDOWN</text>
+  <text x="135" y="376" text-anchor="middle" font-size="10" fill="#374151">主观下线</text>
+  <text x="135" y="392" text-anchor="middle" font-size="10" fill="#6B7280">单哨兵视角的判定</text>
+
+  
+  <rect x="252" y="330" width="190" height="70" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="347" y="356" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">② 询问其他哨兵</text>
+  <text x="347" y="376" text-anchor="middle" font-size="10" fill="#374151">S2、S3 是否同判超时</text>
+  <text x="347" y="392" text-anchor="middle" font-size="10" fill="#6B7280">交换各自视角</text>
+
+  
+  <rect x="464" y="330" width="190" height="70" rx="6" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.8"/>
+  <text x="559" y="356" text-anchor="middle" font-size="12" font-weight="700" fill="#B91C1C">③ 故障判断达 quorum</text>
+  <text x="559" y="376" text-anchor="middle" font-size="10" fill="#374151">ODOWN（客观下线）</text>
+  <text x="559" y="392" text-anchor="middle" font-size="10" fill="#6B7280">达到故障判断门槛</text>
+
+  
+  <rect x="676" y="330" width="190" height="70" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="771" y="356" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">④ 选 Leader 哨兵</text>
+  <text x="771" y="376" text-anchor="middle" font-size="10" fill="#374151">获多数派且不少于 quorum</text>
+  <text x="771" y="392" text-anchor="middle" font-size="10" fill="#6B7280">取得本次转移授权</text>
+
+  <line x1="232" y1="365" x2="250" y2="365" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_2_arrow)"/>
+  <line x1="444" y1="365" x2="462" y2="365" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_2_arrow)"/>
+  <line x1="656" y1="365" x2="674" y2="365" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_2_arrow)"/>
+
+  
+  <line x1="771" y1="402" x2="771" y2="438" stroke="#059669" stroke-width="1.6" marker-end="url(#fig_7_2_arrowG)"/>
+  <rect x="360" y="440" width="480" height="74" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.8"/>
+  <text x="600" y="463" text-anchor="middle" font-size="12.5" font-weight="700" fill="#065F46">⑤ Leader 哨兵主持故障转移</text>
+  <text x="600" y="483" text-anchor="middle" font-size="10.5" fill="#374151">按优先级 → 复制 offset → 挑从节点 B 提升为新主</text>
+  <text x="600" y="501" text-anchor="middle" font-size="10.5" fill="#374151">通知其他从节点改连新主；客户端经 Sentinel 获取新主地址</text>
+
+</svg>
+</div><figcaption>图 7-2　Sentinel 故障转移机制：心跳超时后，Sentinel 先将主节点标记为主观下线；故障判断达到 quorum 时，再标记为客观下线，随后选出获多数派授权的 Leader 哨兵主持转移。</figcaption></figure>
+<p>达到 quorum 的下线判断与 Leader 的多数派授权是两道门槛，约束的是故障判断和转移决策。节点宕机或网络分区都可能触发转移。主从数据采用异步复制，新主未必保留原主刚确认的写入。</p>
+<p>Sentinel 要求客户端从它那里获取当前主节点地址。Redis Cluster 则把分片与自动故障转移结合起来。</p>
+<h3 id="sec-7.2.3">7.2.3 Redis Cluster：分片加自动容错，去中心化元数据</h3>
+<p>Redis Cluster 在 key 与节点之间加入了 <strong>16384 个槽（slot）</strong>：key 先映射到 0–16383 的槽，再由槽映射到节点。每个主节点承载一组连续或不连续的槽。如果直接按 <code>hash(key) mod 节点数</code> 分布数据，节点数一变，大量 key 的落点就可能改变；槽的数量固定后，增加节点只需把部分槽从老节点迁移到新节点，大部分 key 不动。16384 个槽对应 2KB 的槽位 bitmap；槽太少会让迁移粒度过粗，太多则增加状态传播开销。</p>
+<p>没有哈希标签（hash tag）时，槽号按 <code>CRC16(key) mod 16384</code> 计算；key 含有效的非空 <code>{...}</code> 标签时，只对括号内内容计算 CRC16。Redis Cluster 要求多键命令（如 <code>MGET</code>、事务、Lua 脚本）涉及的所有 key 落在同一个槽，相同标签可以满足这一条件。例如，<code>{user:1001}.name</code> 和 <code>{user:1001}.email</code> 就会落在同一槽。</p>
+<figure class="fig" id="fig-7-3"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 56 940 544" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_7_3_arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_7_3_arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="fig_7_3_arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4F46E5"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="240" y="64" width="460" height="54" rx="6" fill="#F3F4F6" stroke="#6B7280"/>
+  <text x="470" y="99" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">无有效哈希标签时：槽号 = CRC16(key) mod 16384 → 查槽位表</text>
+
+  
+  
+  <rect x="50" y="145" width="260" height="120" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="180" y="170" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">节点 A（主）</text>
+  <line x1="70" y1="180" x2="290" y2="180" stroke="#C7D2FE" stroke-width="1"/>
+  <text x="180" y="202" text-anchor="middle" font-size="13" fill="#111827">承载槽：0 – 5460</text>
+  <text x="180" y="232" text-anchor="middle" font-size="11" fill="#374151">共 5461 个槽</text>
+
+  
+  <rect x="340" y="145" width="260" height="120" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="470" y="170" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">节点 B（主）</text>
+  <line x1="360" y1="180" x2="580" y2="180" stroke="#C7D2FE" stroke-width="1"/>
+  <text x="470" y="202" text-anchor="middle" font-size="13" fill="#111827">承载槽：5461 – 10922</text>
+  <text x="470" y="232" text-anchor="middle" font-size="11" fill="#374151">共 5462 个槽</text>
+
+  
+  <rect x="630" y="145" width="260" height="120" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="760" y="170" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">节点 C（主）</text>
+  <line x1="650" y1="180" x2="870" y2="180" stroke="#C7D2FE" stroke-width="1"/>
+  <text x="760" y="202" text-anchor="middle" font-size="13" fill="#111827">承载槽：10923 – 16383</text>
+  <text x="760" y="232" text-anchor="middle" font-size="11" fill="#374151">共 5461 个槽</text>
+
+  
+  <path d="M 470 265 Q 470 290 325 290 Q 180 290 180 275 L 180 265" fill="none" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#fig_7_3_arrow-red)"/>
+  <text x="325" y="308" text-anchor="middle" font-size="11" fill="#EF4444">迁移开始时：槽 8000 由 B 负责，目标为 A</text>
+
+  
+  <rect x="380" y="320" width="180" height="56" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="470" y="344" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">客户端</text>
+  <text x="470" y="364" text-anchor="middle" font-size="11" fill="#374151">本地缓存：槽位 → 节点映射表</text>
+
+  
+  <rect x="40" y="400" width="430" height="180" rx="8" fill="#FFFFFF" stroke="#4F46E5" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <rect x="40" y="400" width="430" height="28" rx="8" fill="#4F46E5"/>
+  <text x="255" y="419" text-anchor="middle" font-size="13" font-weight="700" fill="#FFFFFF">MOVED：迁移完成后</text>
+
+  <text x="55" y="448" font-size="12" fill="#374151">① 客户端访问 key，算出槽 8000，发往节点 B</text>
+  <line x1="60" y1="470" x2="60" y2="520" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_3_arrow-gray)"/>
+  <text x="75" y="478" font-size="12" fill="#374151">② 节点 B 发现槽 8000 已迁出，返回：</text>
+  <rect x="75" y="486" width="380" height="34" rx="4" fill="#F3F4F6" stroke="#6B7280"/>
+  <text x="265" y="507" text-anchor="middle" font-size="12" font-family="ui-monospace, monospace" fill="#111827">-MOVED 8000 a.example:6379</text>
+  <text x="75" y="540" font-size="12" fill="#374151">③ 客户端更新本地映射表，重发到节点 A</text>
+  <text x="75" y="560" font-size="12" font-style="italic" fill="#059669">语义：更新槽映射 · 后续先访问 A</text>
+
+  
+  <rect x="490" y="400" width="430" height="180" rx="8" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <rect x="490" y="400" width="430" height="28" rx="8" fill="#D97706"/>
+  <text x="705" y="419" text-anchor="middle" font-size="13" font-weight="700" fill="#FFFFFF">ASK：迁移中</text>
+
+  <text x="505" y="448" font-size="12" fill="#374151">① 客户端访问 key，算出槽 8000，发往节点 B</text>
+  <line x1="510" y1="470" x2="510" y2="520" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_3_arrow-gray)"/>
+  <text x="525" y="478" font-size="12" fill="#374151">② B 在本地找不到该 key，返回：</text>
+  <rect x="525" y="486" width="380" height="34" rx="4" fill="#F3F4F6" stroke="#6B7280"/>
+  <text x="715" y="507" text-anchor="middle" font-size="12" font-family="ui-monospace, monospace" fill="#111827">-ASK 8000 a.example:6379</text>
+  <text x="525" y="540" font-size="12" fill="#374151">③ 客户端向 A 发送 ASKING，再重发本次请求</text>
+  <text x="525" y="560" font-size="12" font-style="italic" fill="#059669">语义：一次性重定向 · 不更新本地表</text>
+</svg>
+</div><figcaption>图 7-3　Redis Cluster 16384 槽分布与 MOVED/ASK 路由：槽是 key 到节点的中间抽象，迁移只移动部分槽，大部分 key 不动。</figcaption></figure>
+<p>客户端可以缓存槽到节点的映射，让绝大多数请求直接到达目标节点。扩容、缩容或故障转移改变了槽归属时，节点可以返回 MOVED 重定向，客户端据此更新本地映射，后续请求使用新地址。</p>
+<p>槽正在迁移时，节点也可能返回 ASK 重定向，让这一次请求先到临时目标执行。客户端先向目标节点发送 <code>ASKING</code>，再发送本次请求，暂不更新槽映射；后续请求仍先访问原节点，迁移完成后的新归属由 MOVED 通知。</p>
+<p><strong>元数据分散维护，用 Gossip 传播状态。</strong> Redis Cluster 没有集中的协调者，节点通过集群总线交换槽归属、成员和故障信息。各节点视图在传播过程中可能暂时不同，客户端也可能暂时持有过期映射。</p>
+<p><strong>容错靠从节点发起选举。</strong> 当主节点被判定下线后，符合条件的从节点向其他主节点请求转移授权，获得多数主节点的票后提升为新主，接管原主的槽。epoch 用来区分选举和配置的新旧，新的槽归属再向其他节点传播。多数派授权决定谁接管。业务数据采用异步复制，原主刚确认的写入若尚未到达新主，转移后可能丢失。</p>
+<p>少数派主节点失去与多数派的联系后，会在 <code>cluster-node-timeout</code>（默认 15 秒）触发的超时判定后停止写入；检测到分区之前仍可能接收写入。开头库存场景中，在这个时间窗口内写到少数派老主并得到确认的扣减，也可能在转移后丢失。多数派一侧也需要为不可达的主节点找到可晋升副本，恢复槽覆盖。默认要求所有槽都有节点负责，缺槽期间整个集群会停止服务；配置为允许部分槽服务时，多数派一侧可以继续处理由可用主节点负责的槽。</p>
+<h2 id="sec-7.3">7.3 MySQL 的做法</h2>
+<p>MySQL <strong>主从复制</strong>由主节点（source）处理写入、记录 binlog，从节点（replica）接收并回放变更。每个从节点保存全量数据。复制默认是异步的：主节点提交后不等从节点便返回，切换到落后的从节点时，可能失去已确认事务。</p>
+<figure class="fig" id="fig-7-4"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 370" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_7_4_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+  
+  <text x="40" y="61" font-size="13" font-weight="700" fill="#D97706">正常运行</text>
+  <rect x="45" y="112" width="150" height="60" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4"/>
+  <text x="120" y="137" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">客户端</text>
+  <text x="120" y="158" text-anchor="middle" font-size="11" fill="#374151">写入请求</text>
+  <line x1="195" y1="142" x2="303" y2="142" stroke="#4B5563" stroke-width="1.6" marker-end="url(#fig_7_4_arrow)"/>
+  <rect x="305" y="92" width="220" height="100" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="1.7"/>
+  <text x="415" y="119" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">source</text>
+  <text x="415" y="145" text-anchor="middle" font-size="12" fill="#374151">处理写入 · 记录 binlog</text>
+  <text x="415" y="171" text-anchor="middle" font-size="11" fill="#374151">本地提交后即可返回</text>
+  <line x1="525" y1="142" x2="592" y2="142" stroke="#4B5563" stroke-width="1.6"/>
+  <line x1="595" y1="99" x2="595" y2="187" stroke="#4B5563" stroke-width="1.6"/>
+  <line x1="595" y1="99" x2="646" y2="99" stroke="#4B5563" stroke-width="1.6" marker-end="url(#fig_7_4_arrow)"/>
+  <line x1="595" y1="187" x2="646" y2="187" stroke="#4B5563" stroke-width="1.6" marker-end="url(#fig_7_4_arrow)"/>
+  <text x="580" y="217" text-anchor="middle" font-size="11" fill="#374151">默认异步复制</text>
+  <rect x="650" y="65" width="190" height="68" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.4"/>
+  <text x="745" y="91" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">replica A</text>
+  <text x="745" y="114" text-anchor="middle" font-size="11" fill="#374151">保存全量数据</text>
+  <rect x="650" y="153" width="190" height="68" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.4"/>
+  <text x="745" y="179" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">replica B</text>
+  <text x="745" y="202" text-anchor="middle" font-size="11" fill="#374151">保存全量数据</text>
+
+  <text x="40" y="267" font-size="13" font-weight="700" fill="#374151">source 故障后的接管</text>
+  <rect x="50" y="287" width="210" height="65" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="155" y="313" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">检查副本进度</text>
+  <text x="155" y="337" text-anchor="middle" font-size="10.5" fill="#374151">比较 replica 进度，评估缺失风险</text>
+  <line x1="260" y1="319" x2="332" y2="319" stroke="#4B5563" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#fig_7_4_arrow)"/>
+  <rect x="335" y="287" width="210" height="65" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="440" y="313" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">提升候选 replica</text>
+  <text x="440" y="337" text-anchor="middle" font-size="10.5" fill="#374151">候选副本可能缺少已确认事务</text>
+  <line x1="545" y1="319" x2="617" y2="319" stroke="#4B5563" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#fig_7_4_arrow)"/>
+  <rect x="620" y="287" width="210" height="65" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="725" y="313" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">客户端改连</text>
+  <text x="725" y="337" text-anchor="middle" font-size="10.5" fill="#374151">切到新的写入口</text>
+</svg>
+</div><figcaption>图 7-4　MySQL 复制拓扑与故障接管责任。</figcaption></figure>
+<h3 id="sec-7.3.1">7.3.1 异步复制与换源：GTID 简化进度对齐</h3>
+<p>启用全局事务标识（GTID，Global Transaction Identifier）后，每笔事务都有可识别的标识。从节点切换复制源时，可以用 GTID 集合对齐新旧复制源的事务进度，减少人工对齐日志文件和位置的工作。</p>
+<p>从节点接收日志后，还要在本地回放，接收进度与回放进度可能不同。回放落后时，读取可能看到旧数据，故障转移也不能只凭日志接收进度判断候选新主的状态。</p>
+<h3 id="sec-7.3.2">7.3.2 半同步复制：在异步与全同步之间</h3>
+<p>半同步复制（semi-sync replication）在异步复制上增加了副本确认：主节点至少等一个从节点接收并记录事务日志，再向客户端返回成功。确认超时可能降级为异步。半同步改变写入确认条件，不负责选主；切换时必须选中持有已确认事务的副本，才能在新主上保留它们。</p>
+<h3 id="sec-7.3.3">7.3.3 Group Replication</h3>
+<p>组复制（MGR，MySQL Group Replication）在组内协调事务顺序，底层使用基于 Paxos（一种多数派共识协议）的组通信组件 XCom。以单主模式为例，主节点提交事务前，组内成员按共同顺序对写集（事务改动行的标识）做冲突认证；认证通过后，主节点提交并返回成功，其他成员随后应用这笔事务。</p>
+<p>XCom 需要多数派成员才能继续作出决定：3 个成员能容忍 1 个故障，5 个能容忍 2 个。成员故障或加入会触发 View Change（视图变更），组内随之更新成员视图。网络分区后无法联系多数派时，MGR 无法继续确认新的组内写入。</p>
+<p>MGR 有两种模式。<strong>单主模式（single-primary）</strong> 是默认模式：组里只有一个主节点（Primary）可写，其他从节点（Secondary）只读，主节点故障时组内自动选新主。<strong>多主模式（multi-primary）</strong> 允许所有成员都可写，写入要在组内做冲突认证（Certification）：比较并发事务的写集，检查是否修改了同一行；冲突时，全序（组内统一认定的事务顺序）中排在前面的事务获胜，另一个事务在发起节点回滚。多主模式需要承担额外的写冲突和回滚开销。</p>
+<p>事务经多数派协调后，其他成员可能尚未应用完毕。MySQL 8.0 默认的一致性级别为 <code>EVENTUAL</code>，跨成员读取可能暂时看到旧数据，额外的等待由 <code>group_replication_consistency</code> 控制。跨节点通信和等待都可能增加事务延迟。</p>
+<h3 id="sec-7.3.4">7.3.4 MGR 不分片</h3>
+<p>MGR <strong>不分片</strong>，每个成员都持有<strong>全量数据</strong>。新增成员增加副本数，不会扩大单表容量，故障容忍度受多数派门槛约束。单主模式由一个主节点处理写入；多主模式允许多个成员接收写入，每个成员都要认证和应用全组事务，不能按分片方式扩展写入。</p>
+<p>MySQL 把副本组交给 MGR，数据分片则由 ShardingSphere、Vitess、MyCAT 等上层方案承担。需要同时扩充容量和提高可用性时，还得设计各分片的复制与故障转移。组合空间更大，集成与运维责任也更多地留给使用者。</p>
+<h3 id="sec-7.3.5">7.3.5 InnoDB Cluster：把组件打包成方案</h3>
+<p>MGR 负责副本组和组内选主，MySQL Router 则向客户端提供统一的连接入口。Router 读取集群拓扑，把读写连接路由到主节点，把只读连接按策略路由到相应成员。主节点切换后，新的连接可以路由到新主。</p>
+<p>MySQL Shell 提供建组、加成员和查看状态等运维管理功能，与 MGR、MySQL Router 一起构成基于全量复制的 InnoDB Cluster，降低了使用复杂度。</p>
+<h2 id="sec-7.4">7.4 Kafka 的做法</h2>
+<p>Kafka 围绕分区组织数据，主题的多个分区与副本可以分散到多台机器上。每个分区有一个 Leader，可以配置若干 Follower；写入由 Leader 处理，消费者默认也从 Leader 读取，Follower 从 Leader 拉取数据。</p>
+<figure class="fig" id="fig-7-5"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 53 800 387" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_7_5_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="250" y="65" width="300" height="36" rx="8" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="400" y="88" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">Topic：user-events（3 分区，3 副本）</text>
+
+  
+  <rect x="30" y="125" width="740" height="80" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2"/>
+  <text x="60" y="152" font-size="14" font-weight="700" fill="#4F46E5">Partition 0</text>
+
+  <rect x="140" y="135" width="180" height="58" rx="6" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2"/>
+  <text x="230" y="158" text-anchor="middle" font-size="13" font-weight="700" fill="#1E40AF">Leader</text>
+  <text x="230" y="178" text-anchor="middle" font-size="11" fill="#3B82F6">Broker 1 · 读写</text>
+
+  <rect x="340" y="135" width="180" height="58" rx="6" fill="#F3F4F6" stroke="#D1D5DB" stroke-width="1.2"/>
+  <text x="430" y="158" text-anchor="middle" font-size="13" font-weight="600" fill="#6B7280">Follower</text>
+  <text x="430" y="178" text-anchor="middle" font-size="11" fill="#9CA3AF">Broker 2 · 同步追赶</text>
+
+  <rect x="540" y="135" width="180" height="58" rx="6" fill="#F3F4F6" stroke="#D1D5DB" stroke-width="1.2"/>
+  <text x="630" y="158" text-anchor="middle" font-size="13" font-weight="600" fill="#6B7280">Follower</text>
+  <text x="630" y="178" text-anchor="middle" font-size="11" fill="#9CA3AF">Broker 3 · 同步追赶</text>
+
+  
+  <rect x="130" y="208" width="600" height="24" rx="4" fill="#ECFDF5" stroke="#6EE7B7" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="430" y="225" text-anchor="middle" font-size="11" fill="#065F46">ISR = {Broker 1 (L), Broker 2 (F), Broker 3 (F)}，三个副本都在同步窗口内</text>
+
+  
+  <rect x="30" y="245" width="740" height="80" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2"/>
+  <text x="60" y="272" font-size="14" font-weight="700" fill="#4F46E5">Partition 1</text>
+
+  <rect x="140" y="255" width="180" height="58" rx="6" fill="#F3F4F6" stroke="#D1D5DB" stroke-width="1.2"/>
+  <text x="230" y="278" text-anchor="middle" font-size="13" font-weight="600" fill="#6B7280">Follower</text>
+  <text x="230" y="298" text-anchor="middle" font-size="11" fill="#9CA3AF">Broker 1 · 同步追赶</text>
+
+  <rect x="340" y="255" width="180" height="58" rx="6" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2"/>
+  <text x="430" y="278" text-anchor="middle" font-size="13" font-weight="700" fill="#1E40AF">Leader</text>
+  <text x="430" y="298" text-anchor="middle" font-size="11" fill="#3B82F6">Broker 2 · 读写</text>
+
+  <rect x="540" y="255" width="180" height="58" rx="6" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <text x="630" y="278" text-anchor="middle" font-size="13" font-weight="600" fill="#DC2626">Follower（滞后）</text>
+  <text x="630" y="298" text-anchor="middle" font-size="11" fill="#EF4444">Broker 3 · 已移出 ISR</text>
+
+  
+  <rect x="130" y="328" width="600" height="24" rx="4" fill="#FEF2F2" stroke="#FCA5A5" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="430" y="345" text-anchor="middle" font-size="11" fill="#DC2626">ISR = {Broker 2 (L), Broker 1 (F)}，Broker 3 落后超 30 秒，已移出</text>
+
+  
+  <rect x="30" y="362" width="740" height="62" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2"/>
+  <text x="60" y="388" font-size="14" font-weight="700" fill="#4F46E5">Partition 2</text>
+
+  <rect x="140" y="372" width="180" height="44" rx="6" fill="#F3F4F6" stroke="#D1D5DB" stroke-width="1.2"/>
+  <text x="230" y="399" text-anchor="middle" font-size="13" font-weight="600" fill="#6B7280">Follower · Broker 1</text>
+
+  <rect x="340" y="372" width="180" height="44" rx="6" fill="#F3F4F6" stroke="#D1D5DB" stroke-width="1.2"/>
+  <text x="430" y="399" text-anchor="middle" font-size="13" font-weight="600" fill="#6B7280">Follower · Broker 2</text>
+
+  <rect x="540" y="372" width="180" height="44" rx="6" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2"/>
+  <text x="630" y="399" text-anchor="middle" font-size="13" font-weight="700" fill="#1E40AF">Leader · Broker 3</text>
+</svg>
+</div><figcaption>图 7-5　Kafka 分区与副本拓扑：Partition 是并行单位，每个分区一个 Leader 加若干 Follower，Leader 分散在各 Broker。</figcaption></figure>
+<h3 id="sec-7.4.1">7.4.1 Partition：分区即并行单位</h3>
+<p>一个主题（topic）被切成 N 个分区，每个分区是一份有序的、只能追加（append-only）的日志。分区同时决定并行度和顺序范围。Kafka 自身只保证单个分区内的顺序；若要由 Kafka 保证主题内的全局顺序，就只能使用一个分区，也就无法通过增加分区提高并行度。</p>
+<p>生产者未显式指定分区时，有 key 的默认路由是对序列化后的 key 做哈希，再按 N 取模；N 和序列化方式不变时，同一个 key 落到同一个分区。热点集中在某个分区时，它的 Leader 所在 Broker 可能成为瓶颈。没有 key 时，默认采用粘性策略：先向一个分区积累一批消息，再切换目标。这样比逐条分散发送更容易形成较大的批。</p>
+<p>生产、消费和存储都以分区为并行单位。增加分区后，可并行处理的日志数量随之增加；不同分区的 Leader 分散到不同 Broker 上，负载也随之分散。</p>
+<p>扩分区改变了映射中的 N，新消息按新的 N 选择分区，旧消息仍留在原分区。同一个 key 的新旧消息可能分居两个分区，原有的按键顺序就不再由 Kafka 保证。</p>
+<p>分区数太少会限制并行度，太多则增加 Broker 的文件、索引和内存开销，故障后还要逐个分区选新 Leader。分区数的选择因此同时受吞吐需求、元数据规模与恢复时间约束。</p>
+<h3 id="sec-7.4.2">7.4.2 Replica 与 ISR：同步达标的副本集合</h3>
+<p><strong>ISR（In-Sync Replicas，同步副本集合）</strong>由 Leader 和保持同步的 Follower 组成。Follower 从 Leader 拉取（fetch）数据，符合条件时进入 ISR，并需要在 <code>replica.lag.time.max.ms</code> 的时间窗口内追上 Leader，才能维持同步副本资格；掉线或落后超时的副本会被移出 ISR。</p>
+<p>Leader 故障时，默认从可用的 ISR 副本中选择新 Leader。开启 unclean 选举后，也允许选择非 ISR 副本，可能丢失已提交消息。ISR 按数据同步状态确定成员；Sentinel 的多数派用于授权故障转移，MGR 的多数派用于组内协调。</p>
+<h3 id="sec-7.4.3">7.4.3 acks：把副本确认范围做成可调参数</h3>
+<p>Kafka 在生产者端用 <code>acks</code> 设置写入成功前需要等待的确认范围，同一集群中的不同生产者可以分别选择。<code>acks=0</code> 不等待服务端确认，生产者无法据此判断 Leader 是否收到消息，相应的失败重试也不起作用；<code>acks=1</code> 等 Leader 写入本地日志后返回，不等待 Follower 确认，Leader 此时故障可能丢失刚确认的消息。</p>
+<p>默认的 <code>acks=all</code> 等待当前 ISR 中所有副本确认，只有 ISR 成员数达到 <code>min.insync.replicas</code> 时才能返回成功。这次确认表示日志已复制到当前 ISR，逐条 <code>fsync</code> 不是返回确认的前提。慢副本移出 ISR 后，不再等待它确认；移出前则可能拖慢写入。</p>
+<h3 id="sec-7.4.4">7.4.4 从 ZooKeeper 到 KRaft：元数据管理</h3>
+<p>Kafka 的元数据管理涉及 Broker 状态、分区 Leader、ISR 和副本分配，先后采用过 ZooKeeper + Controller 和 KRaft 两种方案。</p>
+<p>早期方案把元数据存在外部的 ZooKeeper 集群中，再从 Kafka Broker 中选出一个活跃 Controller，管理元数据和分区 Leader 选举。元数据与各节点的内存状态分散在两套系统里，需要同步变更；KIP-500 指出的一个风险是，未及时收到状态更新的 Broker 可能按过期的 Leader 信息处理请求。规模扩大后，Controller 切换时重新加载和传播状态的工作，以及 ZooKeeper 的 watch（变更订阅机制）通知和重复读取，都增加了元数据管理的开销。运维也要同时维护 Kafka 和 ZooKeeper 两套系统。</p>
+<p>KRaft 把元数据管理从 ZooKeeper 收回到 Kafka 内部。一组 Controller 通过 Raft 维护元数据日志，可以与 Broker 同进程部署，也可以独立成组；Broker 从 Controller 同步元数据变更。Controller 的热备成员持续跟进状态，切换时可以减少重新加载全部元数据的工作，日志与快照也支持按进度恢复。KRaft 简化了部署，并为管理更多分区提供了条件。</p>
+<p>KRaft 下有两层独立的 Leader 选举。Controller 之间的 Raft 选举产生活跃 Controller；分区 Leader 则由活跃 Controller 按副本状态与选举策略选择。</p>
+<h2 id="sec-7.5">7.5 横向对比</h2>
+<p class="tab-label"><strong>表 7-1　三个集群方案横向对比总表</strong></p>
+<div class="table-wrap"><table id="table-7-1"><thead><tr><th>对比维度</th><th>Redis</th><th>MySQL</th><th>Kafka</th></tr></thead><tbody><tr><td>数据分片策略</td><td>16384 槽哈希分片，客户端路由（MOVED/ASK）</td><td>不分片（MGR 全量复制），分片交给上层中间件</td><td>分区哈希/粘性策略，生产者端路由</td></tr><tr><td>写入确认条件</td><td>默认异步返回；客户端可在写入后另用 <code>WAIT</code> 等待副本确认</td><td>异步不等副本；半同步等至少一个副本记录日志；MGR 在组内排序与认证后提交</td><td><code>acks</code> 决定等待范围，<code>acks=all</code> 还受 <code>min.insync.replicas</code> 约束</td></tr><tr><td>故障检测与 Leader 选举</td><td>Gossip 传播故障状态，主节点多数派授权从节点提升</td><td>XCom/Paxos 协调成员视图，单主模式可自动选 Primary</td><td>活跃 Controller 按策略选 Leader，默认从可用 ISR 中选</td></tr><tr><td>元数据管理</td><td>Gossip 传播槽与节点状态，epoch 区分配置更新</td><td>组通信协调成员视图和主节点身份</td><td>KRaft Controller 组维护元数据日志</td></tr><tr><td>关键节点失联后的写入</td><td>少数派超时后停写；缺槽时默认整个集群停止服务</td><td>MGR 失去多数派时不能确认新的组内写入</td><td>无可用 ISR 副本时默认不能选新主；ISR 低于门槛时 <code>acks=all</code> 写入失败</td></tr><tr><td>横向扩展能力</td><td>分片提供写吞吐与容量扩展空间</td><td>副本可分担读取；容量横向扩展需上层分片</td><td>分区与 Broker 提供吞吐和容量扩展空间</td></tr></tbody></table></div>
+<p>Redis 迁移既有槽时，大多数 key 的路由不变；Kafka 增加分区后，同一个 key 的新消息可能落到新分区，原有消息不会重排。两者都能扩容，改动对业务顺序性的影响不同。</p>
+<p>扩容时，数据分布与请求路由也要随之调整。Kafka 通过副本重分配把已有分区的副本安排到新增 Broker。MySQL 增加副本后，则要按业务对陈旧读取的容忍度安排读路由，让副本分担主节点的读取负载。</p>
+<figure class="fig" id="fig-7-6"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 58 940 485" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_7_6_arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_7_6_arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="40"  y="70" width="280" height="34" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="180" y="92" text-anchor="middle" font-size="14" font-weight="700" fill="#4F46E5">Redis · Gossip + epoch 投票</text>
+
+  <rect x="330" y="70" width="280" height="34" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="470" y="92" text-anchor="middle" font-size="14" font-weight="700" fill="#D97706">MySQL · XCom/Paxos View Change</text>
+
+  <rect x="620" y="70" width="280" height="34" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="760" y="92" text-anchor="middle" font-size="14" font-weight="700" fill="#059669">Kafka · Controller + ISR</text>
+
+  
+  <rect x="55" y="120" width="250" height="48" rx="6" fill="#EEF2FF" stroke="#4F46E5"/>
+  <text x="180" y="142" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">主节点超时无响应</text>
+  <text x="180" y="160" text-anchor="middle" font-size="11" fill="#374151">（cluster-node-timeout）</text>
+
+  <line x1="180" y1="168" x2="180" y2="186" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_6_arrow-gray)"/>
+
+  <rect x="55" y="186" width="250" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5"/>
+  <text x="180" y="205" text-anchor="middle" font-size="12" fill="#374151">节点标记 PFAIL（疑似故障）</text>
+  <text x="180" y="221" text-anchor="middle" font-size="11" fill="#6B7280">Gossip PING/PONG 携带标记</text>
+
+  <line x1="180" y1="230" x2="180" y2="248" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_6_arrow-gray)"/>
+
+  <rect x="55" y="248" width="250" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5"/>
+  <text x="180" y="267" text-anchor="middle" font-size="12" fill="#374151">过半主节点确认 → FAIL</text>
+  <text x="180" y="283" text-anchor="middle" font-size="11" fill="#6B7280">（客观下线，广播 FAIL）</text>
+
+  <line x1="180" y1="292" x2="180" y2="310" stroke="#EF4444" stroke-width="1.8" marker-end="url(#fig_7_6_arrow-red)"/>
+
+  <rect x="55" y="310" width="250" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5"/>
+  <text x="180" y="329" text-anchor="middle" font-size="12" fill="#374151">票数不足：不能提升新主</text>
+  <text x="180" y="345" text-anchor="middle" font-size="10.5" fill="#EF4444">默认配置缺槽时：集群进入 FAIL 并拒绝请求</text>
+
+
+  <path d="M305 270 H325 V394 H307" fill="none" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_6_arrow-gray)"/>
+
+  <rect x="55" y="372" width="250" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5"/>
+  <text x="180" y="391" text-anchor="middle" font-size="12" fill="#374151">获多数派主节点票 → 当选</text>
+  <text x="180" y="407" text-anchor="middle" font-size="11" fill="#6B7280">（epoch 防过期投票）</text>
+
+  <line x1="180" y1="416" x2="180" y2="434" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_6_arrow-gray)"/>
+
+  <rect x="55" y="434" width="250" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="180" y="453" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">提升为新主 + Gossip 广播新拓扑</text>
+  <text x="180" y="469" text-anchor="middle" font-size="11" fill="#374151">传播新槽归属 · 客户端更新路由</text>
+
+  
+  <rect x="345" y="120" width="250" height="48" rx="6" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="470" y="142" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">成员故障 / 失联</text>
+  <text x="470" y="160" text-anchor="middle" font-size="11" fill="#374151">（组内 XCom 心跳超时）</text>
+
+  <line x1="470" y1="168" x2="470" y2="186" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_6_arrow-gray)"/>
+
+  <rect x="345" y="186" width="250" height="44" rx="6" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="470" y="205" text-anchor="middle" font-size="12" fill="#374151">存活成员发起 View Change</text>
+  <text x="470" y="221" text-anchor="middle" font-size="11" fill="#6B7280">提议剔除故障成员的新视图</text>
+
+  <line x1="470" y1="230" x2="470" y2="248" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_6_arrow-gray)"/>
+
+  <rect x="345" y="248" width="250" height="44" rx="6" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="470" y="267" text-anchor="middle" font-size="12" fill="#374151">XCom（Paxos）对视图投票</text>
+  <text x="470" y="283" text-anchor="middle" font-size="11" fill="#6B7280">需多数派成员同意</text>
+
+  <line x1="470" y1="292" x2="470" y2="310" stroke="#EF4444" stroke-width="1.8" marker-end="url(#fig_7_6_arrow-red)"/>
+
+  <rect x="345" y="310" width="250" height="44" rx="6" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="470" y="329" text-anchor="middle" font-size="12" fill="#374151">无多数派：组内写入无法继续</text>
+
+
+  <path d="M595 270 H615 V394 H597" fill="none" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_6_arrow-gray)"/>
+
+  <rect x="345" y="372" width="250" height="44" rx="6" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="470" y="391" text-anchor="middle" font-size="12" fill="#374151">多数派同意 → 新视图生效</text>
+  <text x="470" y="407" text-anchor="middle" font-size="11" fill="#6B7280">单主模式下按需选新 Primary</text>
+
+  <line x1="470" y1="416" x2="470" y2="434" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_6_arrow-gray)"/>
+
+  <rect x="345" y="434" width="250" height="44" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="470" y="453" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">新 Primary 提供读写服务</text>
+  <text x="470" y="469" text-anchor="middle" font-size="11" fill="#374151">组内排序与认证 · 应用等待可配置</text>
+
+  
+  <rect x="635" y="120" width="250" height="48" rx="6" fill="#ECFDF5" stroke="#059669"/>
+  <text x="760" y="142" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">Partition Leader 故障</text>
+  <text x="760" y="160" text-anchor="middle" font-size="11" fill="#374151">（ZK session 失效 / KRaft 心跳超时）</text>
+
+  <line x1="760" y1="168" x2="760" y2="186" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_6_arrow-gray)"/>
+
+  <rect x="635" y="186" width="250" height="44" rx="6" fill="#ECFDF5" stroke="#059669"/>
+  <text x="760" y="205" text-anchor="middle" font-size="12" fill="#374151">Controller 监听到 Broker 下线</text>
+  <text x="760" y="221" text-anchor="middle" font-size="11" fill="#6B7280">（活跃 Controller 统一决策）</text>
+
+  <line x1="760" y1="230" x2="760" y2="248" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_6_arrow-gray)"/>
+
+  <rect x="635" y="248" width="250" height="44" rx="6" fill="#ECFDF5" stroke="#059669"/>
+  <text x="760" y="267" text-anchor="middle" font-size="12" fill="#374151">读取该分区当前 ISR 列表</text>
+  <text x="760" y="283" text-anchor="middle" font-size="11" fill="#6B7280">（同步副本集合，成员动态调整）</text>
+
+  <line x1="760" y1="292" x2="760" y2="310" stroke="#EF4444" stroke-width="1.8" marker-end="url(#fig_7_6_arrow-red)"/>
+
+  <rect x="635" y="310" width="250" height="44" rx="6" fill="#ECFDF5" stroke="#059669"/>
+  <text x="760" y="329" text-anchor="middle" font-size="12" fill="#374151">无可用 ISR：默认等待恢复</text>
+  <text x="760" y="345" text-anchor="middle" font-size="11" fill="#EF4444">（可配置 unclean 选举，有丢失风险）</text>
+
+
+  <path d="M885 270 H910 V394 H887" fill="none" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_6_arrow-gray)"/>
+
+  <rect x="635" y="372" width="250" height="44" rx="6" fill="#ECFDF5" stroke="#059669"/>
+  <text x="760" y="398" text-anchor="middle" font-size="12" fill="#374151">默认从可用 ISR 副本中选新 Leader</text>
+
+  <line x1="760" y1="416" x2="760" y2="434" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_7_6_arrow-gray)"/>
+
+  <rect x="635" y="434" width="250" height="44" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="760" y="453" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">更新元数据，客户端刷新路由</text>
+
+  
+  <line x1="40" y1="500" x2="900" y2="500" stroke="#E5E7EB" stroke-width="1"/>
+  <text x="470" y="525" text-anchor="middle" font-size="12" font-style="italic" fill="#6B7280">
+    红色箭头标注故障转移或继续写入受限的条件
+  </text>
+</svg>
+</div><figcaption>图 7-6　故障转移决策路径</figcaption></figure>
+<p>规模上限也受元数据维护约束。Redis 节点增多会增加状态传播和故障收敛开销；MGR 最多支持 9 个成员，成员间协调也有成本；Kafka KRaft 用元数据日志与快照维护控制器状态，可管理的分区数受元数据量和恢复时间限制。</p>
+<h2 id="sec-7.6">7.6 架构启示</h2>
+<h3 id="s154">启示一：写入确认要与故障接管、读取路径一起判断</h3>
+<p>写入返回成功后，若主节点立刻故障，新主能否保留这笔数据？Redis 默认采用异步复制，成功返回时，写入可能还没有到达任何从节点。Redis Cluster 的多数主节点为接管授权，这些票并不表示投票节点保存了这笔写入。MySQL 半同步在未超时降级时，主节点至少要等一个从节点把事务日志写入中继日志（relay log）并返回确认，才向客户端返回成功。确认前是否已同步到持久介质，还受副本的 <code>sync_relay_log</code> 配置影响。故障转移还要选中持有这笔日志的副本；如果提升的是尚未收到日志的副本，新主就会缺少这笔数据。</p>
+<p>Kafka 把副本确认与接管资格联系起来。<code>acks=all</code> 等当前同步副本集合（ISR）中的所有副本复制完成，副本数还需达到 <code>min.insync.replicas</code> 的门槛；默认从可用的 ISR 副本中选择新 Leader。这次确认表示消息已复制到这些副本，逐条 <code>fsync</code> 不是返回确认的前提。</p>
+<p>写入得到确认后，读取端也未必能立刻看到新数据。如果读请求发给尚未执行这笔写入的 Redis 从节点，就可能读到旧值。保存日志后，MySQL 副本还要回放日志，在本地执行并提交事务中的修改。如果读请求发给了尚未完成这一步的副本，就可能读到旧值。Kafka 的普通非事务消息，要复制到当前 ISR 中的副本，才达到可供消费者读取的提交条件；<code>acks=1</code> 在 Leader 写入本地日志后便返回，这时消费者还可能读不到这条消息。</p>
+<p>三者的差异说明，写入成功的条件需要与接管规则、读取条件连起来判断。接管的新主须持有已确认的写入，后续读取还须访问已经执行相应修改的节点，或等待消息达到可供消费者读取的提交条件。</p>
+<h3 id="s155">启示二：集群协调方式影响扩容与恢复</h3>
+<p>Redis Cluster 的各节点维护槽归属、成员和故障信息，通过 Gossip 传播变化。节点增加后，需要维护和交换的节点状态也随之增加，迁槽或故障接管后的新归属还要传到其他节点与客户端。</p>
+<p>MySQL MGR 通过组通信协调成员视图和主节点身份，成员加入或退出时，要在组内更新成员视图；单主模式下，主节点故障还要选出新的主节点。</p>
+<p>Kafka 则由 KRaft Controller 组维护分区 Leader、ISR 和副本分配；分区增加后，需要维护的分区状态也随之增多，故障后选择 Leader 的工作量也会增加。Kafka 的备用 Controller 持续跟进元数据日志，日志与快照支持 Controller 恢复状态。</p>
+<p>业务数据尚未触及容量上限时，这些状态传播、成员协调和恢复工作就可能构成约束。评估扩容需要同时计入新增节点、成员或分区带来的状态量，以及故障后重新确定数据归属与主节点所需的时间。</p>
+<h3 id="s156">启示三：分片与副本的组合影响集成成本</h3>
+<p>Redis Cluster 扩容时，把部分槽迁移到新增节点，key 到槽的映射不变。Kafka 增加 Broker 后，可以通过分区副本重分配，把已有分区的负载安排到新机器；这不改变分区数，也不改变按 key 选择分区的规则。MySQL MGR 新增成员保存的仍是全量数据，不会扩大单表容量。需要让多台机器分摊数据容量时，要由上层分片方案把数据分给不同的 MySQL 实例或副本组。</p>
+<p>需要同时扩容和容错时，Redis Cluster 与 Kafka 已经把分片、副本和故障接管组合在软件内部；MySQL 将副本组与数据分片分开，使用者需要组合分片路由、数据迁移，以及每个分片的复制与故障接管方案。内置的组合也带有业务约束：Redis Cluster 的多键操作要求相关 key 落在同一个槽，Kafka 的顺序保证落在单个分区内。</p>
+<p>选择集群方案时，要把软件已经提供的路由、迁移和接管能力，与业务能否接受相应的操作限制一起考虑。</p>
+<h2 id="sec-7.7">7.7 小结</h2>
+<p>在开头的库存场景中，自动故障转移仍可能丢失已确认的扣减。集群能否承担某项业务，取决于容量与吞吐怎样分摊，也取决于故障后已确认的数据能否保留、请求何时恢复。</p>
+<p><a class="xref" href="08-storage-format.html">第 8 章</a>看数据在磁盘上的组织方式，<a class="xref" href="09-data-sync.html">第 9 章</a>看节点间怎样同步以及如何确认进度。</p><nav class="page-nav"><a href="06-security.html">← 第 6 章 安全机制 — 权限、加密、审计</a><a href="08-storage-format.html">第 8 章 磁盘存储格式 — 文件结构的设计哲学 →</a></nav></article>
+</main>
+</div>
+<script>
+(function(){
+  var btn=document.querySelector('.toc-toggle'),nav=document.getElementById('toc'),bd=document.getElementById('bd');
+  if(btn){btn.addEventListener('click',function(){nav.classList.toggle('open');if(bd)bd.classList.toggle('show',nav.classList.contains('open'))});}
+  if(bd){bd.addEventListener('click',function(){nav.classList.remove('open');bd.classList.remove('show');});}
+  // 当前章节高亮
+  var secs=Array.prototype.slice.call(document.querySelectorAll('section.chapter'));
+  var links=Array.prototype.slice.call(document.querySelectorAll('nav.toc a[data-target]'));
+  if('IntersectionObserver' in window && links.length){
+    var map={};links.forEach(function(a){map[a.getAttribute('data-target')]=a;});
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){a.parentElement.classList.remove('active');});
+          var a=map[e.target.id]; if(a)a.parentElement.classList.add('active');
+        }
+      });
+    },{rootMargin:'-10% 0px -75% 0px',threshold:0});
+    secs.forEach(function(s){io.observe(s);});
+  }
+})();
+</script>
+<script>
+(function(){
+  var layout=document.querySelector('.layout'),drag=document.getElementById('tocDrag');
+  var colBtn=document.getElementById('tocCollapse'),expBtn=document.getElementById('tocExpand');
+  var KEY_W='paged.tocW',KEY_C='paged.tocCollapsed';
+  try{
+    var w=localStorage.getItem(KEY_W);
+    if(w&&layout)layout.style.setProperty('--toc-w',w);
+    if(localStorage.getItem(KEY_C)==='1')document.body.classList.add('toc-collapsed');
+  }catch(e){}
+  if(colBtn){colBtn.addEventListener('click',function(){
+    document.body.classList.add('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'1');}catch(e){}
+  });}
+  if(expBtn){expBtn.addEventListener('click',function(){
+    document.body.classList.remove('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'0');}catch(e){}
+  });}
+  if(drag&&layout){
+    drag.addEventListener('pointerdown',function(e){
+      e.preventDefault();
+      document.body.classList.add('toc-dragging');
+      drag.classList.add('active');
+      function mv(ev){
+        var left=layout.getBoundingClientRect().left;
+        var w=Math.min(Math.max(ev.clientX-left,200),520);
+        layout.style.setProperty('--toc-w',Math.round(w)+'px');
+      }
+      function up(){
+        document.body.classList.remove('toc-dragging');
+        drag.classList.remove('active');
+        try{localStorage.setItem(KEY_W,layout.style.getPropertyValue('--toc-w'));}catch(e2){}
+        window.removeEventListener('pointermove',mv);
+        window.removeEventListener('pointerup',up);
+      }
+      window.addEventListener('pointermove',mv);
+      window.addEventListener('pointerup',up);
+    });
+  }
+})();
+</script>
+</body>
+</html>

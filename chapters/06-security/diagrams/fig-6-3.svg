@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 63 880 425" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  <!-- Two lifelines: Client / Redis Server -->
+  <!-- Client (Redis accent) -->
+  <rect x="120" y="75" width="160" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="200" y="94" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">客户端</text>
+  <text x="200" y="110" text-anchor="middle" font-size="11" fill="#374151">alice@redis-cli</text>
+
+  <!-- Redis Server -->
+  <rect x="600" y="75" width="160" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="680" y="94" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">Redis 服务端</text>
+  <text x="680" y="110" text-anchor="middle" font-size="11" fill="#374151">ACL 检查</text>
+
+  <!-- Lifelines (dashed) -->
+  <line x1="200" y1="119" x2="200" y2="480" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="680" y1="119" x2="680" y2="168" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="680" y1="214" x2="680" y2="285" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="680" y1="341" x2="680" y2="402" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="680" y1="458" x2="680" y2="478" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- Phase 1: AUTH (认证阶段) -->
+  <text x="40" y="148" font-size="12" font-weight="700" fill="#4F46E5">阶段一</text>
+  <text x="40" y="164" font-size="12" fill="#374151">认证</text>
+  <rect x="20" y="135" width="4" height="70" fill="#4F46E5"/>
+
+  <!-- 1. AUTH -->
+  <line x1="200" y1="160" x2="676" y2="160" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="440" y="153" text-anchor="middle" font-size="12" fill="#111827">① AUTH alice &lt;密码&gt;</text>
+
+  <!-- 2. Server check -->
+  <rect x="580" y="168" width="200" height="46" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1" stroke-dasharray="3 2"/>
+  <text x="680" y="186" text-anchor="middle" font-size="11" fill="#374151">查 ACL 用户表，校验密码</text>
+  <text x="680" y="204" text-anchor="middle" font-size="11" fill="#374151">绑定连接 → 用户 alice</text>
+
+  <!-- 3. +OK -->
+  <line x1="680" y1="220" x2="204" y2="220" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="440" y="213" text-anchor="middle" font-size="12" fill="#111827">② +OK（认证通过，进入会话）</text>
+
+  <!-- Phase 2: 每命令授权 (self-loop on server) -->
+  <text x="40" y="258" font-size="12" font-weight="700" fill="#4F46E5">阶段二</text>
+  <text x="40" y="274" font-size="12" fill="#374151">每命令授权</text>
+  <rect x="20" y="245" width="4" height="220" fill="#4F46E5"/>
+
+  <!-- Command A: GET keys:1 (允许) -->
+  <line x1="200" y1="270" x2="676" y2="270" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="440" y="263" text-anchor="middle" font-size="12" fill="#111827">③ 命令 GET keys:1</text>
+
+  <!-- authorization check box -->
+  <rect x="600" y="285" width="200" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1" stroke-dasharray="3 2"/>
+  <text x="700" y="302" text-anchor="middle" font-size="11" fill="#374151">授权检查</text>
+  <text x="700" y="318" text-anchor="middle" font-size="10" fill="#111827">命令 +get ✓　键模式 ~keys:* ✓</text>
+  <text x="700" y="333" text-anchor="middle" font-size="10" fill="#059669" font-weight="600">命中 → 允许</text>
+
+  <line x1="680" y1="355" x2="204" y2="355" stroke="#059669" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="440" y="348" text-anchor="middle" font-size="12" fill="#111827">④ 返回 keys:1 的 value</text>
+
+  <!-- Command B: FLUSHALL (拒绝) -->
+  <line x1="200" y1="388" x2="676" y2="388" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="440" y="381" text-anchor="middle" font-size="12" fill="#111827">⑤ 命令 FLUSHALL</text>
+
+  <!-- authorization check box -->
+  <rect x="600" y="402" width="200" height="56" rx="4" fill="#FEF2F2" stroke="#EF4444" stroke-width="1" stroke-dasharray="3 2"/>
+  <text x="700" y="419" text-anchor="middle" font-size="11" fill="#374151">授权检查</text>
+  <text x="700" y="435" text-anchor="middle" font-size="10" fill="#111827">命令 FLUSHALL ✗　未获授权</text>
+  <text x="700" y="450" text-anchor="middle" font-size="10" fill="#EF4444" font-weight="600">未命中 → 拒绝 + 写 ACL LOG</text>
+
+  <line x1="680" y1="475" x2="204" y2="475" stroke="#EF4444" stroke-width="1.8" marker-end="url(#arrow-red)"/>
+  <text x="440" y="468" text-anchor="middle" font-size="12" fill="#111827">⑥ 返回 NOPERM（无权限）</text>
+
+</svg>

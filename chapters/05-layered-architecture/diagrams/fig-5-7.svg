@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 58 880 413" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrowDown" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+
+  <!-- 统一视角 三行标签 -->
+  <rect x="40" y="92" width="120" height="56" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="100" y="118" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">交互层</text>
+  <text x="100" y="138" text-anchor="middle" font-size="11" fill="#374151">协议 / 连接</text>
+
+  <rect x="40" y="200" width="120" height="56" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="100" y="226" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">逻辑层</text>
+  <text x="100" y="246" text-anchor="middle" font-size="11" fill="#374151">命令 / 查询处理</text>
+
+  <rect x="40" y="308" width="120" height="56" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="100" y="334" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">存储层</text>
+  <text x="100" y="354" text-anchor="middle" font-size="11" fill="#374151">数据组织</text>
+
+  <!-- 统一视角内部的纵向箭头 -->
+  <line x1="100" y1="148" x2="100" y2="196" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+  <line x1="100" y1="256" x2="100" y2="304" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+
+  <!-- ===== Redis 列 ===== -->
+  <text x="300" y="82" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">Redis</text>
+  <rect x="210" y="92" width="180" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="300" y="116" text-anchor="middle" font-size="13" fill="#111827">RESP 解析</text>
+  <text x="300" y="136" text-anchor="middle" font-size="11" fill="#374151">单线程多路复用 / 多线程 I/O</text>
+
+  <rect x="210" y="200" width="180" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="300" y="224" text-anchor="middle" font-size="13" fill="#111827">命令表 redisCommandTable</text>
+  <text x="300" y="244" text-anchor="middle" font-size="11" fill="#374151">按命令名查表分派</text>
+
+  <rect x="210" y="308" width="180" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="300" y="332" text-anchor="middle" font-size="13" fill="#111827">键空间 / robj 数据对象</text>
+  <text x="300" y="352" text-anchor="middle" font-size="11" fill="#374151">内存为主；RDB/AOF 可选</text>
+
+  <!-- Redis 列纵向衔接（函数调用） -->
+  <line x1="300" y1="148" x2="300" y2="196" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+  <line x1="300" y1="256" x2="300" y2="304" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+  <text x="320" y="176" font-size="11" fill="#374151">函数调用</text>
+  <text x="320" y="284" font-size="11" fill="#374151">对象指针</text>
+
+  <!-- ===== MySQL 列 ===== -->
+  <text x="560" y="82" text-anchor="middle" font-size="15" font-weight="700" fill="#D97706">MySQL</text>
+  <rect x="470" y="92" width="180" height="56" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="560" y="116" text-anchor="middle" font-size="13" fill="#111827">连接 / 认证</text>
+  <text x="560" y="136" text-anchor="middle" font-size="10" fill="#374151">thread-per-connection / 线程池</text>
+
+  <rect x="470" y="200" width="180" height="56" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="560" y="224" text-anchor="middle" font-size="13" fill="#111827">解析 → 优化 → 执行</text>
+  <text x="560" y="244" text-anchor="middle" font-size="11" fill="#374151">服务层（含子层）</text>
+
+  <rect x="470" y="308" width="180" height="56" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="560" y="332" text-anchor="middle" font-size="13" fill="#111827">Handler API 可插拔引擎</text>
+  <text x="560" y="352" text-anchor="middle" font-size="11" fill="#374151">InnoDB / MyISAM / MEMORY…</text>
+
+  <line x1="560" y1="148" x2="560" y2="196" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+  <line x1="560" y1="256" x2="560" y2="304" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+  <text x="580" y="176" font-size="11" fill="#374151">THD 对象</text>
+  <text x="580" y="284" font-size="11" fill="#374151">handler 虚函数</text>
+
+  <!-- ===== Kafka 列 ===== -->
+  <text x="795" y="82" text-anchor="middle" font-size="15" font-weight="700" fill="#059669">Kafka</text>
+  <rect x="730" y="92" width="130" height="56" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="795" y="116" text-anchor="middle" font-size="13" fill="#111827">SocketServer</text>
+  <text x="795" y="136" text-anchor="middle" font-size="11" fill="#374151">Reactor 多线程</text>
+
+  <rect x="730" y="200" width="130" height="56" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="795" y="224" text-anchor="middle" font-size="13" fill="#111827">KafkaApis</text>
+  <text x="795" y="244" text-anchor="middle" font-size="11" fill="#374151">请求分派 / 鉴权配额</text>
+
+  <rect x="730" y="308" width="130" height="56" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="795" y="332" text-anchor="middle" font-size="13" fill="#111827">Log 日志</text>
+  <text x="795" y="352" text-anchor="middle" font-size="11" fill="#374151">追加写 + 按偏移量读</text>
+
+  <line x1="795" y1="148" x2="795" y2="196" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+  <line x1="795" y1="256" x2="795" y2="304" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrowDown)"/>
+  <text x="700" y="176" text-anchor="end" font-size="11" fill="#374151">队列</text>
+  <text x="716" y="284" text-anchor="end" font-size="11" fill="#374151">对象方法</text>
+
+  <!-- Kafka 的副本与集群控制单列，不混入三段共同视角 -->
+  <rect x="670" y="396" width="190" height="50" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.3"/>
+  <text x="765" y="416" text-anchor="middle" font-size="11" font-weight="600" fill="#111827">副本与集群控制</text>
+  <text x="765" y="434" text-anchor="middle" font-size="10" fill="#374151">ReplicaManager / Controller</text>
+</svg>

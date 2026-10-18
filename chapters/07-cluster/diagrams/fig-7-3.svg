@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 56 940 544" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4F46E5"/>
+    </marker>
+  </defs>
+
+  <!-- ===== Top: hash formula ===== -->
+  <rect x="240" y="64" width="460" height="54" rx="6" fill="#F3F4F6" stroke="#6B7280"/>
+  <text x="470" y="99" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">无有效哈希标签时：槽号 = CRC16(key) mod 16384 → 查槽位表</text>
+
+  <!-- ===== Three master nodes with slot ranges ===== -->
+  <!-- Node A -->
+  <rect x="50" y="145" width="260" height="120" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="180" y="170" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">节点 A（主）</text>
+  <line x1="70" y1="180" x2="290" y2="180" stroke="#C7D2FE" stroke-width="1"/>
+  <text x="180" y="202" text-anchor="middle" font-size="13" fill="#111827">承载槽：0 – 5460</text>
+  <text x="180" y="232" text-anchor="middle" font-size="11" fill="#374151">共 5461 个槽</text>
+
+  <!-- Node B -->
+  <rect x="340" y="145" width="260" height="120" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="470" y="170" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">节点 B（主）</text>
+  <line x1="360" y1="180" x2="580" y2="180" stroke="#C7D2FE" stroke-width="1"/>
+  <text x="470" y="202" text-anchor="middle" font-size="13" fill="#111827">承载槽：5461 – 10922</text>
+  <text x="470" y="232" text-anchor="middle" font-size="11" fill="#374151">共 5462 个槽</text>
+
+  <!-- Node C -->
+  <rect x="630" y="145" width="260" height="120" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="760" y="170" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">节点 C（主）</text>
+  <line x1="650" y1="180" x2="870" y2="180" stroke="#C7D2FE" stroke-width="1"/>
+  <text x="760" y="202" text-anchor="middle" font-size="13" fill="#111827">承载槽：10923 – 16383</text>
+  <text x="760" y="232" text-anchor="middle" font-size="11" fill="#374151">共 5461 个槽</text>
+
+  <!-- migration note: slot 8000 migrating from B to A -->
+  <path d="M 470 265 Q 470 290 325 290 Q 180 290 180 275 L 180 265" fill="none" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-red)"/>
+  <text x="325" y="308" text-anchor="middle" font-size="11" fill="#EF4444">迁移开始时：槽 8000 由 B 负责，目标为 A</text>
+
+  <!-- ===== Client ===== -->
+  <rect x="380" y="320" width="180" height="56" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="470" y="344" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">客户端</text>
+  <text x="470" y="364" text-anchor="middle" font-size="11" fill="#374151">本地缓存：槽位 → 节点映射表</text>
+
+  <!-- ===== MOVED scenario box ===== -->
+  <rect x="40" y="400" width="430" height="180" rx="8" fill="#FFFFFF" stroke="#4F46E5" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <rect x="40" y="400" width="430" height="28" rx="8" fill="#4F46E5"/>
+  <text x="255" y="419" text-anchor="middle" font-size="13" font-weight="700" fill="#FFFFFF">MOVED：迁移完成后</text>
+
+  <text x="55" y="448" font-size="12" fill="#374151">① 客户端访问 key，算出槽 8000，发往节点 B</text>
+  <line x1="60" y1="470" x2="60" y2="520" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+  <text x="75" y="478" font-size="12" fill="#374151">② 节点 B 发现槽 8000 已迁出，返回：</text>
+  <rect x="75" y="486" width="380" height="34" rx="4" fill="#F3F4F6" stroke="#6B7280"/>
+  <text x="265" y="507" text-anchor="middle" font-size="12" font-family="ui-monospace, monospace" fill="#111827">-MOVED 8000 a.example:6379</text>
+  <text x="75" y="540" font-size="12" fill="#374151">③ 客户端更新本地映射表，重发到节点 A</text>
+  <text x="75" y="560" font-size="12" font-style="italic" fill="#059669">语义：更新槽映射 · 后续先访问 A</text>
+
+  <!-- ===== ASK scenario box ===== -->
+  <rect x="490" y="400" width="430" height="180" rx="8" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <rect x="490" y="400" width="430" height="28" rx="8" fill="#D97706"/>
+  <text x="705" y="419" text-anchor="middle" font-size="13" font-weight="700" fill="#FFFFFF">ASK：迁移中</text>
+
+  <text x="505" y="448" font-size="12" fill="#374151">① 客户端访问 key，算出槽 8000，发往节点 B</text>
+  <line x1="510" y1="470" x2="510" y2="520" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+  <text x="525" y="478" font-size="12" fill="#374151">② B 在本地找不到该 key，返回：</text>
+  <rect x="525" y="486" width="380" height="34" rx="4" fill="#F3F4F6" stroke="#6B7280"/>
+  <text x="715" y="507" text-anchor="middle" font-size="12" font-family="ui-monospace, monospace" fill="#111827">-ASK 8000 a.example:6379</text>
+  <text x="525" y="540" font-size="12" fill="#374151">③ 客户端向 A 发送 ASKING，再重发本次请求</text>
+  <text x="525" y="560" font-size="12" font-style="italic" fill="#059669">语义：一次性重定向 · 不更新本地表</text>
+</svg>

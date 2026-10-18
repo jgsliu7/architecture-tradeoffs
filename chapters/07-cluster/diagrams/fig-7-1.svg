@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 930 455" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+  <text x="30" y="28" font-size="16" font-weight="700" fill="#111827">图 7-1　三家集群能力的组件关系</text>
+
+  <rect x="20" y="52" width="290" height="385" rx="8" fill="#FAFAFF" stroke="#C7D2FE"/>
+  <rect x="30" y="62" width="270" height="36" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="165" y="86" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">Redis</text>
+  <rect x="35" y="112" width="260" height="205" rx="8" fill="#FFFFFF" stroke="#4F46E5" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="165" y="135" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">Redis Cluster</text>
+  <text x="165" y="152" text-anchor="middle" font-size="11" fill="#374151">槽分给不同主节点</text>
+  <rect x="50" y="169" width="105" height="53" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.4"/>
+  <text x="102.5" y="191" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">主 A</text>
+  <text x="102.5" y="208" text-anchor="middle" font-size="10.5" fill="#374151">部分槽</text>
+  <rect x="175" y="169" width="105" height="53" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.4"/>
+  <text x="227.5" y="191" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">主 B</text>
+  <text x="227.5" y="208" text-anchor="middle" font-size="10.5" fill="#374151">另一部分槽</text>
+  <line x1="102.5" y1="222" x2="102.5" y2="245" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <line x1="227.5" y1="222" x2="227.5" y2="245" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <rect x="50" y="248" width="105" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.2"/>
+  <text x="102.5" y="269" text-anchor="middle" font-size="12" fill="#111827">副本 A</text>
+  <text x="102.5" y="284" text-anchor="middle" font-size="10.5" fill="#374151">复制主 A</text>
+  <rect x="175" y="248" width="105" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.2"/>
+  <text x="227.5" y="269" text-anchor="middle" font-size="12" fill="#111827">副本 B</text>
+  <text x="227.5" y="284" text-anchor="middle" font-size="10.5" fill="#374151">复制主 B</text>
+  <rect x="35" y="330" width="260" height="96" rx="8" fill="#FFFFFF" stroke="#4F46E5" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="165" y="352" text-anchor="middle" font-size="11" font-weight="600" fill="#374151">另一方案：Sentinel 管理单主复制</text>
+  <rect x="50" y="367" width="94" height="43" rx="6" fill="#EEF2FF" stroke="#4F46E5"/>
+  <text x="97" y="394" text-anchor="middle" font-size="11" fill="#111827">Sentinel 组</text>
+  <line x1="144" y1="389" x2="169" y2="389" stroke="#4B5563" stroke-width="1.3" marker-end="url(#arrow)"/>
+  <rect x="173" y="367" width="107" height="43" rx="6" fill="#EEF2FF" stroke="#4F46E5"/>
+  <text x="226.5" y="394" text-anchor="middle" font-size="11" fill="#111827">单主与副本</text>
+
+  <rect x="320" y="52" width="290" height="385" rx="8" fill="#FFFCF5" stroke="#FCD34D"/>
+  <rect x="330" y="62" width="270" height="36" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="465" y="80" text-anchor="middle" font-size="13" font-weight="700" fill="#D97706">MySQL</text>
+  <text x="465" y="94" text-anchor="middle" font-size="11" fill="#92400E">InnoDB Cluster 单主示例</text>
+  <rect x="410" y="111" width="110" height="40" rx="6" fill="#F3F4F6" stroke="#6B7280"/>
+  <text x="465" y="137" text-anchor="middle" font-size="12" fill="#111827">客户端</text>
+  <line x1="465" y1="151" x2="465" y2="166" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <rect x="395" y="170" width="140" height="40" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.4"/>
+  <text x="465" y="196" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">MySQL Router</text>
+  <line x1="465" y1="210" x2="465" y2="226" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <rect x="340" y="230" width="250" height="126" rx="8" fill="#FFFFFF" stroke="#D97706" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="465" y="250" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">MGR 全量副本组</text>
+  <rect x="350" y="265" width="70" height="59" rx="6" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="385" y="288" text-anchor="middle" font-size="10.5" font-weight="600" fill="#111827">Primary</text>
+  <text x="385" y="309" text-anchor="middle" font-size="10" fill="#374151">全量数据</text>
+  <rect x="430" y="265" width="70" height="59" rx="6" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="465" y="288" text-anchor="middle" font-size="10.5" font-weight="600" fill="#111827">Secondary</text>
+  <text x="465" y="309" text-anchor="middle" font-size="10" fill="#374151">全量数据</text>
+  <rect x="510" y="265" width="70" height="59" rx="6" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="545" y="288" text-anchor="middle" font-size="10.5" font-weight="600" fill="#111827">Secondary</text>
+  <text x="545" y="309" text-anchor="middle" font-size="10" fill="#374151">全量数据</text>
+  <rect x="340" y="373" width="250" height="49" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-dasharray="4 3"/>
+  <text x="465" y="394" text-anchor="middle" font-size="11" font-weight="600" fill="#111827">分片由上层方案承担</text>
+
+  <rect x="620" y="52" width="290" height="385" rx="8" fill="#F7FDFB" stroke="#A7F3D0"/>
+  <rect x="630" y="62" width="270" height="36" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="765" y="86" text-anchor="middle" font-size="15" font-weight="700" fill="#059669">Kafka</text>
+  <rect x="650" y="110" width="230" height="74" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.4"/>
+  <text x="765" y="135" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">KRaft Controller 组</text>
+  <text x="765" y="154" text-anchor="middle" font-size="11" fill="#374151">维护元数据日志</text>
+  <text x="765" y="172" text-anchor="middle" font-size="10.5" fill="#374151">活跃 Controller 管理分区</text>
+  <line x1="765" y1="184" x2="765" y2="208" stroke="#4B5563" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <rect x="640" y="212" width="250" height="210" rx="8" fill="#FFFFFF" stroke="#059669" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="765" y="234" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">Broker 上的分区副本</text>
+  <rect x="652" y="252" width="104" height="88" rx="6" fill="#ECFDF5" stroke="#059669"/>
+  <text x="704" y="276" text-anchor="middle" font-size="11.5" font-weight="600" fill="#111827">Broker 1</text>
+  <text x="704" y="299" text-anchor="middle" font-size="10.5" fill="#374151">P0 Leader</text>
+  <text x="704" y="321" text-anchor="middle" font-size="10.5" fill="#374151">P1 Follower</text>
+  <rect x="774" y="252" width="104" height="88" rx="6" fill="#ECFDF5" stroke="#059669"/>
+  <text x="826" y="276" text-anchor="middle" font-size="11.5" font-weight="600" fill="#111827">Broker 2</text>
+  <text x="826" y="299" text-anchor="middle" font-size="10.5" fill="#374151">P0 Follower</text>
+  <text x="826" y="321" text-anchor="middle" font-size="10.5" fill="#374151">P1 Leader</text>
+  <line x1="756" y1="296" x2="771" y2="296" stroke="#4B5563" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="774" y1="317" x2="759" y2="317" stroke="#4B5563" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <text x="765" y="374" text-anchor="middle" font-size="11" fill="#374151">Follower 从对应 Leader 拉取</text>
+</svg>

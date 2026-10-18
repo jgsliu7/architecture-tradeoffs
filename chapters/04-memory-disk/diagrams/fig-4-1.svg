@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 88 880 352" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+
+  <!-- ============ 绘图区参数 ============
+       X 轴起点 x0 = 240，终点 x1 = 820（宽 580）
+       对数刻度：1ns 在 x0，10ms(=10,000,000ns) 在 x1
+       跨 7 个 10 倍刻度 → 每格 580/7 ≈ 82.857
+       log10(value) -> x = x0 + (log10(value) - 0) / 7 * 580
+  -->
+
+  <!-- 对数刻度网格线（每 10 倍一条） -->
+  <g stroke="#E5E7EB" stroke-width="1">
+    <line x1="240"   y1="100" x2="240"   y2="380"/>
+    <line x1="322.9" y1="100" x2="322.9" y2="380"/>
+    <line x1="405.7" y1="100" x2="405.7" y2="380"/>
+    <line x1="488.6" y1="100" x2="488.6" y2="380"/>
+    <line x1="571.4" y1="100" x2="571.4" y2="380"/>
+    <line x1="654.3" y1="100" x2="654.3" y2="380"/>
+    <line x1="737.1" y1="100" x2="737.1" y2="380"/>
+    <line x1="820"   y1="100" x2="820"   y2="380"/>
+  </g>
+
+  <!-- X 轴底线 -->
+  <line x1="240" y1="380" x2="820" y2="380" stroke="#374151" stroke-width="1.5"/>
+
+  <!-- X 轴刻度标签 -->
+  <g font-size="11" fill="#6B7280" text-anchor="middle">
+    <text x="240"   y="398">1 ns</text>
+    <text x="322.9" y="398">10 ns</text>
+    <text x="405.7" y="398">100 ns</text>
+    <text x="488.6" y="398">1 μs</text>
+    <text x="571.4" y="398">10 μs</text>
+    <text x="654.3" y="398">100 μs</text>
+    <text x="737.1" y="398">1 ms</text>
+    <text x="820"   y="398">10 ms</text>
+  </g>
+  <text x="530" y="422" text-anchor="middle" font-size="12" fill="#374151">单次随机访问延迟（对数轴，每格 ×10）</text>
+
+  <!-- ============ 4 条横向柱 ============
+       柱高 36，间距 18；首柱 y=112
+       1: L1      ~1 ns      -> x 终点 240
+       2: 主内存   ~100 ns    -> log10(100)=2 -> 240 + 2/7*580 = 405.7
+       3: SSD随机 ~100000 ns -> log10(1e5)=5  -> 240 + 5/7*580 = 654.3  [红色高亮]
+       4: 机械盘随机访问 ~1e7 ns -> log10(1e7)=7 -> 820
+  -->
+
+  <!-- 柱 1: L1/L2 缓存 -->
+  <text x="230" y="135" text-anchor="end" font-size="12.5" font-weight="600" fill="#111827">L1 缓存</text>
+  <text x="230" y="150" text-anchor="end" font-size="11" fill="#6B7280">CPU 片内 · ~1 ns</text>
+  <rect x="240" y="124" width="0.1" height="32" fill="#4F46E5" opacity="0.85"/>
+  <circle cx="240" cy="140" r="4" fill="#4F46E5"/>
+  <text x="252" y="144" font-size="11.5" font-weight="600" fill="#4F46E5">1 ns</text>
+
+  <!-- 柱 2: 主内存随机读 -->
+  <text x="230" y="185" text-anchor="end" font-size="12.5" font-weight="600" fill="#111827">内存随机读</text>
+  <text x="230" y="200" text-anchor="end" font-size="11" fill="#6B7280">DRAM · ~100 ns</text>
+  <rect x="240" y="174" width="165.7" height="32" fill="#4F46E5" opacity="0.85"/>
+  <text x="415" y="194" font-size="11.5" font-weight="600" fill="#4F46E5">100 ns</text>
+
+  <!-- 柱 3: SSD 随机读（红色高亮） -->
+  <text x="230" y="235" text-anchor="end" font-size="12.5" font-weight="600" fill="#111827">SSD 随机读</text>
+  <text x="230" y="250" text-anchor="end" font-size="11" fill="#6B7280">随机 · ~100 μs</text>
+  <rect x="240" y="224" width="414.3" height="32" fill="#EF4444" opacity="0.85"/>
+  <text x="664" y="244" font-size="11.5" font-weight="600" fill="#EF4444">≈100 μs</text>
+
+  <!-- 柱 4: 机械盘随机访问 -->
+  <text x="230" y="285" text-anchor="end" font-size="12.5" font-weight="600" fill="#111827">机械盘随机访问</text>
+  <text x="230" y="300" text-anchor="end" font-size="11" fill="#6B7280">寻道、旋转等待 · ~10 ms</text>
+  <rect x="240" y="274" width="580" height="32" fill="#D97706" opacity="0.85"/>
+  <text x="812" y="289" font-size="11.5" font-weight="600" fill="#111827" text-anchor="end">10 ms</text>
+  <text x="812" y="302" font-size="9.5" fill="#111827" text-anchor="end">(10,000,000 ns)</text>
+
+  <!-- ============ 内存 vs 机械盘随机访问延迟跨度 ============ -->
+  <rect x="40" y="322" width="178" height="42" rx="5" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2"/>
+  <text x="129" y="339" text-anchor="middle" font-size="11.5" font-weight="700" fill="#111827">随机访问延迟</text>
+  <text x="129" y="356" text-anchor="middle" font-size="11.5" font-weight="700" fill="#EF4444">机械盘延迟约为内存的 10⁵ 倍</text>
+</svg>

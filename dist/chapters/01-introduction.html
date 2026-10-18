@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 1 章 引言 — 为什么是这三个软件</title>
+<style>
+*{box-sizing:border-box}
+:root{--ink:#1f2328;--mute:#57606a;--line:#d8dee4;--accent:#4f46e5;--bg:#fff;--soft:#f6f8fa}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;color:var(--ink);background:#fff;line-height:1.8;font-size:16px}
+.layout{display:grid;grid-template-columns:var(--toc-w,292px) 6px 1fr;max-width:1340px;margin:0 auto;transition:grid-template-columns .2s}
+body.toc-dragging .layout{transition:none}
+nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 24px 8px;font-size:14px;min-width:0}
+main.content{min-width:0}
+.toc-drag{position:sticky;top:0;align-self:start;height:100vh;cursor:col-resize;background:var(--line);transition:background .15s}
+.toc-drag:hover,.toc-drag.active{background:var(--accent)}
+body.toc-dragging{user-select:none;cursor:col-resize}
+.toc-collapse{position:absolute;top:16px;right:8px;border:1px solid var(--line);background:#fff;color:var(--mute);border-radius:6px;width:24px;height:24px;font-size:13px;line-height:1;cursor:pointer;padding:0}
+.toc-collapse:hover{color:var(--accent);border-color:var(--accent)}
+.toc-expand{display:none;position:fixed;left:0;top:120px;z-index:55;border:1px solid var(--line);border-left:none;background:#fff;color:var(--mute);border-radius:0 8px 8px 0;padding:10px 6px;font-size:14px;cursor:pointer;box-shadow:2px 2px 8px rgba(0,0,0,.08)}
+.toc-expand:hover{color:var(--accent)}
+body.toc-collapsed .layout{grid-template-columns:1fr}
+body.toc-collapsed nav.toc,body.toc-collapsed .toc-drag{display:none}
+body.toc-collapsed .toc-expand{display:block}
+.toc-title{font-weight:700;font-size:15px;color:var(--accent);margin:0 0 4px 8px}
+.toc-title a{color:inherit;text-decoration:none}
+.toc-sub{font-size:12px;color:var(--mute);margin:0 0 16px 8px}
+nav.toc ul{list-style:none;padding:0;margin:0}
+nav.toc li>a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.5}
+nav.toc li>a:hover{background:var(--soft)}
+nav.toc li.active>a{background:#eef2ff;color:var(--accent);font-weight:600}
+nav.toc li.nav-sub>a{padding-left:22px;font-size:13px;color:var(--mute)}
+.content{padding:32px 48px 120px;max-width:1000px;overflow-wrap:anywhere}
+.chapter-meta{color:var(--mute);font-size:13px;margin:0 0 18px}
+.page-nav{display:flex;justify-content:space-between;gap:16px;margin:40px 0 0;padding-top:20px;border-top:1px solid var(--line)}
+.page-nav a{display:block;max-width:48%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--ink);background:var(--soft);line-height:1.5}
+.page-nav a:hover{border-color:var(--accent);color:var(--accent)}
+.page-nav .empty{visibility:hidden}
+h1,h2,h3,h4{line-height:1.35;color:var(--ink);font-weight:700}
+h1{font-size:1.9em;margin:0 0 .6em;padding-bottom:.3em}
+h2{font-size:1.42em;margin:1.8em 0 .6em}
+h3{font-size:1.18em;margin:1.5em 0 .5em}
+h4{font-size:1.04em;margin:1.3em 0 .4em;color:#24292f}
+p{margin:0 0 1em}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+strong{font-weight:700;color:#111827}
+em{font-style:normal;color:var(--mute)}
+hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
+code{font-family:"SF Mono",Menlo,Consolas,monospace;background:var(--soft);padding:.12em .4em;border-radius:4px;font-size:.9em;color:#24292f}
+pre{background:#1e1e2e;color:#cdd6f4;padding:16px 18px;border-radius:8px;overflow-x:auto;line-height:1.55}
+pre code{background:none;color:inherit;padding:0;font-size:.86em}
+blockquote{margin:1.2em 0;padding:.6em 1em .6em 1.1em;border-left:4px solid var(--accent);background:#f7f8ff;color:#343a40;border-radius:0 6px 6px 0}
+blockquote strong{color:var(--accent)}
+ul,ol{margin:0 0 1em;padding-left:1.7em}
+li{margin:.25em 0}
+.table-wrap{overflow-x:auto;margin:1.2em 0}
+table{border-collapse:collapse;width:100%;font-size:.94em}
+th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+thead th{background:#eef2ff;color:#3730a3;font-weight:600}
+tbody tr:nth-child(even){background:#fafbfd}
+figure.fig{margin:2em calc((100% - 1000px)/2);text-align:center}
+.svg-wrap,.inline-svg{display:block;width:100%}
+figure.fig svg,.inline-svg svg,.svg-wrap svg,figure.fig img{width:100%;max-width:1000px;height:auto;display:block;margin:0 auto}
+figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
+.toc-toggle{display:none}
+.review-index{display:grid;gap:12px;margin:24px 0 0}
+.review-index a{display:block;padding:14px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;background:#fff}
+.review-index a:hover{border-color:var(--accent);background:#f7f8ff}
+.review-index strong{display:block;color:var(--ink)}
+.review-index span{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+@media(max-width:1200px){figure.fig{margin:2em auto}}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:fixed;left:0;top:0;width:292px;background:#fff;z-index:50;transform:translateX(-100%);transition:transform .2s;box-shadow:2px 0 12px rgba(0,0,0,.08)}
+  nav.toc.open{transform:translateX(0)}
+  body.toc-collapsed nav.toc{display:block}
+  .toc-drag,.toc-collapse,.toc-expand{display:none!important}
+  .content{padding:20px 18px 80px;max-width:100%;min-width:0}
+  .toc-toggle{display:inline-block;position:fixed;right:16px;bottom:16px;z-index:60;background:var(--accent);color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer}
+  .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:40}
+  .backdrop.show{display:block}
+  /* 窄屏宽图改为容器内横向滚动，文字保持可读 */
+  .svg-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  figure.fig svg{min-width:760px}
+}
+@media print{a.xref{color:inherit}}
+</style>
+</head>
+<body>
+<div class="backdrop" id="bd"></div>
+<button class="toc-toggle">目录</button>
+<button class="toc-expand" id="tocExpand" title="展开目录">»</button>
+<div class="layout">
+<nav class="toc" id="toc">
+  <button class="toc-collapse" id="tocCollapse" title="收起目录">«</button>
+  <div class="toc-title"><a href="../index.html">架构取舍之道</a></div>
+  <div class="toc-sub">在线阅读版</div>
+  <ul>
+<li><a href="../index.html">首页目录</a></li>
+<li><a href="00-preface.html">序言</a>
+</li>
+<li class="active"><a href="01-introduction.html">第 1 章 引言 — 为什么是这三个软件</a>
+<ul>
+<li class="nav-sub"><a href="#s3">本章导读</a></li>
+<li class="nav-sub"><a href="#sec-1.1">1.1 为什么是这三个软件</a></li>
+<li class="nav-sub"><a href="#sec-1.2">1.2 先认识这三个软件</a></li>
+<li class="nav-sub"><a href="#sec-1.3">1.3 架构视角 vs 使用视角</a></li>
+<li class="nav-sub"><a href="#sec-1.4">1.4 如何读本书</a></li>
+<li class="nav-sub"><a href="#sec-1.5">1.5 小结</a></li>
+</ul>
+</li>
+<li><a href="02-data-structures-protocols.html">第 2 章 数据结构与协议 — 为各自的目标而设计</a>
+</li>
+<li><a href="03-lifecycle.html">第 3 章 生命周期管理 — 优雅启动与关闭</a>
+</li>
+<li><a href="04-memory-disk.html">第 4 章 内存与磁盘 — 速度与持久化的平衡</a>
+</li>
+<li><a href="05-layered-architecture.html">第 5 章 分层架构设计 — 存储层 / 逻辑层 / 交互层</a>
+</li>
+<li><a href="06-security.html">第 6 章 安全机制 — 权限、加密、审计</a>
+</li>
+<li><a href="07-cluster.html">第 7 章 集群架构 — 从单点到分布式</a>
+</li>
+<li><a href="08-storage-format.html">第 8 章 磁盘存储格式 — 文件结构的设计哲学</a>
+</li>
+<li><a href="09-data-sync.html">第 9 章 数据同步机制 — 集群一致性的实现</a>
+</li>
+<li><a href="10-summary.html">第 10 章 总结：架构设计的共性规律与取舍</a>
+</li>
+<li><a href="10-epilogue.html">后记</a>
+</li>
+<li><a href="11-references.html">附录　参考文献与延伸阅读（按章索引）</a>
+</li>
+</ul>
+</nav>
+<div class="toc-drag" id="tocDrag" title="拖拽调整目录宽度"></div>
+<main class="content">
+<article class="chapter"><h1 id="s2">第 1 章 引言 — 为什么是这三个软件</h1>
+<h2 id="s3">本章导读</h2>
+<p>熟练使用 Redis、MySQL 和 Kafka，并不意味着我们已经理解了它们的设计。比如，Redis 为什么采用单线程执行命令，InnoDB 为什么用 B+ 树组织主键索引，Kafka 的日志为什么采用追加写？这些设计各自解决了什么问题，又做了哪些取舍？如果换一种方案，结果会怎样？</p>
+<p>我想以 Redis、MySQL 和 Kafka 为例，讨论它们面对过哪些约束、为什么这样设计，以及这些选择能给我们自己的系统设计带来什么启发。</p>
+<p>这一章先讨论三个问题：为什么选这三个软件、它们各自是什么样，以及“架构视角”和“使用视角”看到的到底有什么不同。</p>
+<h2 id="sec-1.1">1.1 为什么是这三个软件</h2>
+<p>在日常工作中，我几乎天天都要和这几个软件打交道。面对相同的问题，它们采用的方案却很不一样。我选它们做观察样本，就是想比较不同方案各自的取舍。</p>
+<h3 id="sec-1.1.1">1.1.1 从三类常见需求说起</h3>
+<p>第一类是<strong>快速读写</strong>。缓存热点数据、计数器、实时对话，这些场景的共同诉求是低延迟、高并发。例如，请求命中热点数据的缓存后，就可以节约从原始存储读取的耗时；计数器和实时对话通常也在读取时更新数据，单次访问的耗时会增加请求的响应时间。</p>
+<p>第二类是<strong>可靠存储</strong>。订单、账户、交易记录，这些数据一旦产生就不容丢失、不容错乱，还要支持复杂查询和事务。对这类能力，一致性和持久性是硬性要求。</p>
+<p>第三类是<strong>异步解耦与流转</strong>。系统之间的通知、事件的分发、日志的汇聚、数据的搬运，都需要一个中间介质把生产者和消费者解耦。这类能力的关键在吞吐和可扩展性。</p>
+<p>这三类能力是互补的。一个典型的电商订单系统常常会同时用到三者，比如 Redis 来保存购物车与库存计数、MySQL 保存订单与账户、Kafka 把“订单已创建”这个事件广播给履约、推荐、风控等下游。</p>
+<p>本书以 Redis、MySQL、Kafka 这三个成熟的软件为观察样本，分别关注驻内存数据结构、关系事务处理和分区日志。<a class="xref" href="#fig-1-1">图 1-1</a> 给出它们在上述订单系统中的分工。</p>
+<figure class="fig" id="fig-1-1"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 52 880 424" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_1_1_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_1_1_arrow-flow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  
+
+  
+  <text x="40" y="74" font-size="13" font-weight="600" fill="#374151">电商订单系统中的三类需求</text>
+
+  
+  <rect x="40" y="86" width="240" height="70" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="160" y="110" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">快速读写</text>
+  <text x="160" y="132" text-anchor="middle" font-size="12.5" fill="#374151">缓存 · 计数 · 会话 · 锁</text>
+
+  
+  <rect x="320" y="86" width="240" height="70" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="440" y="110" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">可靠存储</text>
+  <text x="440" y="132" text-anchor="middle" font-size="12.5" fill="#374151">事务 · 查询 · 持久化</text>
+
+  
+  <rect x="600" y="86" width="240" height="70" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="720" y="110" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">异步解耦与流转</text>
+  <text x="720" y="132" text-anchor="middle" font-size="12.5" fill="#374151">消息 · 流 · 事件</text>
+
+  
+  <text x="40" y="186" font-size="13" font-weight="600" fill="#374151">示例中的软件分工</text>
+  <line x1="160" y1="156" x2="160" y2="200" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_1_1_arrow)"/>
+  <line x1="440" y1="156" x2="440" y2="200" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_1_1_arrow)"/>
+  <line x1="720" y1="156" x2="720" y2="200" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_1_1_arrow)"/>
+
+  
+  
+  <rect x="40" y="204" width="240" height="92" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.8"/>
+  <text x="160" y="230" text-anchor="middle" font-size="16" font-weight="700" fill="#111827">Redis</text>
+  <text x="160" y="252" text-anchor="middle" font-size="12.5" fill="#374151">内存数据结构服务器</text>
+  <text x="160" y="272" text-anchor="middle" font-size="12" fill="#4F46E5">按键操作内存数据</text>
+  <text x="160" y="288" text-anchor="middle" font-size="12" fill="#6B7280">容量受内存约束，复杂聚合受限</text>
+
+  
+  <rect x="320" y="204" width="240" height="92" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.8"/>
+  <text x="440" y="230" text-anchor="middle" font-size="16" font-weight="700" fill="#111827">MySQL</text>
+  <text x="440" y="252" text-anchor="middle" font-size="12.5" fill="#374151">关系库（表/行 + SQL + 引擎）</text>
+  <text x="440" y="272" text-anchor="middle" font-size="12" fill="#D97706">查询与事务处理</text>
+  <text x="440" y="288" text-anchor="middle" font-size="12" fill="#6B7280">代价：提交延迟、调优门槛</text>
+
+  
+  <rect x="600" y="204" width="240" height="92" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.8"/>
+  <text x="720" y="230" text-anchor="middle" font-size="16" font-weight="700" fill="#111827">Kafka</text>
+  <text x="720" y="252" text-anchor="middle" font-size="12.5" fill="#374151">追加写日志的分布式流平台</text>
+  <text x="720" y="272" text-anchor="middle" font-size="12" fill="#059669">按分区追加与批量读取</text>
+  <text x="720" y="288" text-anchor="middle" font-size="12" fill="#6B7280">批量等待增加延迟，随机查询受限</text>
+
+  
+  <rect x="40" y="346" width="800" height="118" rx="8" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <text x="440" y="368" text-anchor="middle" font-size="13.5" font-weight="600" fill="#374151">示例：电商下单链路</text>
+
+  
+  <rect x="63" y="386" width="138" height="56" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="132" y="411" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">用户下单</text>
+  <text x="132" y="430" text-anchor="middle" font-size="11.5" fill="#374151">读购物车 / 校验</text>
+
+  
+  <rect x="217" y="386" width="138" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="286" y="408" text-anchor="middle" font-size="13" font-weight="700" fill="#4F46E5">Redis</text>
+  <text x="286" y="430" text-anchor="middle" font-size="11.5" fill="#374151">购物车 / 库存计数缓存</text>
+
+  
+  <rect x="371" y="386" width="138" height="56" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="440" y="408" text-anchor="middle" font-size="13" font-weight="700" fill="#D97706">MySQL</text>
+  <text x="440" y="430" text-anchor="middle" font-size="11.5" fill="#374151">订单 / 账户落库（事务）</text>
+
+  
+  <rect x="525" y="386" width="138" height="56" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="594" y="408" text-anchor="middle" font-size="13" font-weight="700" fill="#059669">Kafka</text>
+  <text x="594" y="430" text-anchor="middle" font-size="11.5" fill="#374151">发布“订单已创建”事件</text>
+
+  
+  <rect x="679" y="386" width="138" height="56" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="748" y="408" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">下游消费者</text>
+  <text x="748" y="430" text-anchor="middle" font-size="11.5" fill="#374151">履约 / 推荐 / 风控</text>
+
+  
+  <line x1="201" y1="414" x2="215" y2="414" stroke="#EF4444" stroke-width="1.8" marker-end="url(#fig_1_1_arrow-flow)"/>
+  <line x1="355" y1="414" x2="369" y2="414" stroke="#EF4444" stroke-width="1.8" marker-end="url(#fig_1_1_arrow-flow)"/>
+  <line x1="509" y1="414" x2="523" y2="414" stroke="#EF4444" stroke-width="1.8" marker-end="url(#fig_1_1_arrow-flow)"/>
+  <line x1="663" y1="414" x2="677" y2="414" stroke="#EF4444" stroke-width="1.8" marker-end="url(#fig_1_1_arrow-flow)"/>
+
+  
+  <text x="208" y="402" text-anchor="middle" font-size="10.5" fill="#EF4444">读</text>
+  <text x="362" y="402" text-anchor="middle" font-size="10.5" fill="#EF4444">写</text>
+  <text x="516" y="402" text-anchor="middle" font-size="10.5" fill="#EF4444">发</text>
+  <text x="670" y="402" text-anchor="middle" font-size="10.5" fill="#EF4444">消</text>
+</svg>
+</div><figcaption>图 1-1　电商订单系统中的三类需求与软件分工。</figcaption></figure>
+<h3 id="sec-1.1.2">1.1.2 为什么选择这三个样本</h3>
+<p>在内存数据结构存储领域，<strong>Redis</strong> 是最广泛使用的实现之一，独到之处是“数据结构服务器（data structure server）”这一抽象：一套结构化类型加原子命令。</p>
+<p><strong>MySQL</strong> 是全球使用最广的开源关系型数据库之一。它的 InnoDB 引擎组合了事务、MVCC（多版本并发控制，Multi-Version Concurrency Control）、B+ 树聚簇索引、WAL（预写日志，Write-Ahead Log）等机制。更值得关注的是它如何随需求变化而调整设计：从早期的 MyISAM 到 InnoDB 默认化，再到组复制（MGR，MySQL Group Replication），每次迭代都在回应真实需求，也呈现了关系库在“怎么把数据存对”上的取舍。</p>
+<p><strong>Kafka</strong> 从 LinkedIn 内部的日志采集系统起步，逐步演化为一个分布式流平台。LinkedIn 2014 年公开的基准里，用 3 台廉价机测得约 200 万次写入/秒（当时的 Kafka 开发主干、100 字节消息），作为历史参考足够了。它把整个系统构建在追加写日志（append-only log）之上，这种设计影响了后面的 Pulsar、各种事件溯源（Event Sourcing）方案和 CDC（Change Data Capture）管道等一大批系统。</p>
+<h2 id="sec-1.2">1.2 先认识这三个软件</h2>
+<p>正式对比之前，先介绍三个软件的出身、设计取向与关键取舍。</p>
+<h3 id="sec-1.2.1">1.2.1 Redis：数据全部放在内存</h3>
+<p>Redis 的起点很朴素。2009 年，意大利开发者 Salvatore Sanfilippo（网名 antirez）在为自己的实时 Web 分析项目找一个能扛住高频访问统计的数据存储时，发现市面上的工具要么不够快、要么能力太单薄，于是干脆自己写了一个。</p>
+<p>Redis 最有价值的贡献，是提出了<strong>数据结构服务器</strong>这一核心抽象。传统缓存如 Memcached 对外只暴露扁平的字符串键值，复杂操作要靠客户端读出来、改完再写回去。Redis 则走了相反的路：把字符串、哈希、列表、集合、有序集合、Stream 等结构化类型直接作为一等公民对外暴露，并为这些类型提供原子操作命令。比如对有序集合做 <code>ZADD</code> 和 <code>ZRANGEBYSCORE</code>，对列表做 <code>LPUSH</code> 和 <code>BRPOP</code>。这套抽象的好处是：一套原语就能支持 Redis 承担缓存、排行榜、消息队列、计数器、分布式锁这些角色，省去了在每个场景中重复实现这些能力的麻烦。</p>
+<p>Redis 把全部数据放在内存中，以单线程执行命令；自 6.0 起，还可启用多线程 I/O 来加速网络读写。持久化靠 RDB（快照文件）与 AOF（Append-Only File，仅追加文件）两种方式互补。网络层采用事件驱动模型。内存和单线程的组合服务于低延迟与简单实现，RDB 和 AOF 则用于重启后恢复数据。</p>
+<p>这种选择的代价：数据量受物理内存约束，若把 Redis 当成 MySQL 用，很快就会碰到内存上限。CPU 单核吞吐有上限，对一个键做重计算会卡住后面所有命令。复杂聚合与多表关联不是它的强项，要做就得把数据拉回应用层处理。这些短板是有意接受的：这些场景该交给别的系统，Redis 则专注于前面所说的低延迟与简单实现。</p>
+<p>典型场景因此也高度集中在它的核心优势领域：缓存、分布式锁、计数器、排行榜、会话存储、轻量级消息。这些场景的共同点是访问频繁、结构清晰、对延迟敏感——<a class="xref" href="#sec-1.1">1.1 节</a>那个购物车与库存计数就是典型。</p>
+<p><strong>Redis 是为“快”和“简单”两个目标设计的内存数据结构存储。</strong></p>
+<h3 id="sec-1.2.2">1.2.2 MySQL：关系模型与事务存储</h3>
+<p>MySQL 的发展历史是一部商业与工程交织的演化史。它 1995 年起源于瑞典 MySQL AB，2008 年被 Sun Microsystems 收购，2010 年随 Sun 被 Oracle 收购后正式归入 Oracle 旗下。这个发展过程并不顺利：它经历过商业化收购的震荡、催生了 MariaDB 这样的分支，也经历了存储引擎从 MyISAM 到 InnoDB 默认化的更迭。但至今它仍是 Web 应用最常用的关系型数据库之一。</p>
+<p>MySQL 的核心抽象是<strong>关系（表与行）+ SQL + 可插拔存储引擎</strong>。上层是统一的 SQL 接口与基于成本的查询优化器，对应用屏蔽底层差异；下层是 InnoDB 等可替换的引擎，真正执行存取。这种分层让 MySQL 既能提供标准化的访问方式，又能在存储层做差异化取舍。InnoDB 是默认引擎，本书讨论 MySQL 时以它为主，它把数据组织成<strong>页（page，默认 16KB）</strong>，以 B+ 树聚簇索引为中心来管理整张表。</p>
+<p>InnoDB 提供 ACID（原子性、一致性、隔离性、持久性）事务、靠 MVCC 实现的非阻塞读、行级锁。MVCC 利用 undo log（回滚日志）保留重建旧版本所需的信息，一致性读根据 Read View 判断版本是否可见：视图记录当时的活跃事务集合，读取时沿版本链从新到旧寻找可见版本。Read View 的生成时机与隔离级别有关：默认的 REPEATABLE READ 通常在首次一致性读时建立视图，后续复用；READ COMMITTED 则在每次一致性读时建立新视图。这类读不靠行锁阻塞写操作，而是读取可见版本，因此能与写操作并行。</p>
+<p>InnoDB 维护着 redo log（重做日志，记录物理修改）与 undo log 两套日志，MySQL 服务层另有 binlog（二进制日志）用于复制与时间点恢复；数据访问先经过缓冲池（Buffer Pool），把热点页留在内存里减少磁盘随机 I/O。</p>
+<p>优先保证数据正确性的代价体现在提交延迟和调优门槛上。在每次提交都刷盘的配置下，事务提交需要等待日志落盘，可通过 fsync 等机制把缓冲的写强制刷到磁盘。开启 binlog 时，redo log 与 binlog 还要通过内部两阶段提交协调：两份日志分属存储层和服务层，以 prepare、commit 阶段配合 binlog 写入，让崩溃恢复时能够判断事务的提交状态。</p>
+<p>长事务持有的视图如果仍需要旧版本，相应的 undo 信息就不能清理，积累后可能拖累性能。调优门槛也高，缓冲池、刷新策略、隔离级别都需要根据负载仔细配置。此外，单机扩展有上限，纵向加内存、加 CPU 容易，横向分库分表则代价不菲。</p>
+<p>MySQL 常用于交易系统，保存订单、账户等需要事务与复杂查询的业务数据。这些场景错不起：数据价值高、查询模式复杂，一笔错账的代价远高于一次慢查询。</p>
+<h3 id="sec-1.2.3">1.2.3 Kafka：以“日志”为核心抽象的流平台</h3>
+<p>Kafka 的出身决定了它的设计取向。2010 年前后，LinkedIn 内部需要把海量的活动日志（用户行为、监控指标、审计流水）从各处采集出来，分发给下游的分析与处理系统。传统的企业级消息队列在那个规模下要么吞吐不够、要么运维太重。于是 LinkedIn 自己写了一套以“日志”为核心的系统，2011 年捐给 Apache，逐步演化为今天功能完备的分布式流平台。</p>
+<p>Kafka 最核心的抽象，是<strong>追加写日志</strong>。一个主题（Topic）被切成多个分区（partition），每个分区本质上就是一条只追加、按偏移量（offset）寻址的有序日志。生产者只往尾部追加，消费者各自维护自己的偏移量向前读。这种“只追加、不修改、按偏移量定位”的模型看着朴素，但消息队列、事件流、数据管道、流处理都能用它实现。因为这些应用形态都需要有序事件持续流转。</p>
+<p>Kafka 的日志以分区为并行处理单位，分区可以分散到多个节点。磁盘 I/O 走顺序写，配合操作系统的页缓存（PageCache）与未启用 TLS 时的零拷贝（sendfile），换来很高的单机吞吐。Kafka 还为分区日志保留副本（replica），用 ISR（In-Sync Replicas，同步副本集合）跟踪其中保持同步的副本。</p>
+<p>随机查询不是 Kafka 的强项；批量等待可以用额外延迟换吞吐。消息默认按时间或大小保留；启用压实（compaction）时，可以用同一键的新值或删除标记表达更新与删除，再由后台清理旧记录。Kafka 优先保证吞吐与可扩展性。</p>
+<p>压缩（compression）通过更紧凑的编码减少数据体积，解压后可以还原原始数据。压实则清理同一键的过时记录，不保证保留完整的变更历史。这两种机制可以同时使用。</p>
+<p>所以 Kafka 用得最多的是高吞吐的流转场景：日志与事件采集、异步解耦、流处理管道、数据同步（CDC 的下游消费端）。这些场景的特点是数据量大、生产消费要解耦、能容忍一点延迟——还是 <a class="xref" href="#sec-1.1">1.1 节</a>那笔订单，履约、推荐、风控各自消费订单事件，彼此不必等待。</p>
+<p><strong>Kafka 是建立在日志抽象之上的高吞吐分布式流平台。</strong></p>
+<h3 id="sec-1.2.4">1.2.4 小结</h3>
+<p><a class="xref" href="#table-1-1">表 1-1</a> 从五个维度对比这三个软件的设计。</p>
+<p class="tab-label"><strong>表 1-1　三个软件设计概览对比</strong></p>
+<div class="table-wrap"><table id="table-1-1"><thead><tr><th>维度</th><th>Redis</th><th>MySQL</th><th>Kafka</th></tr></thead><tbody><tr><td>出身</td><td>2009，antirez 个人项目，为解决真实访问统计问题而写</td><td>1995，MySQL AB，经 Sun 入 Oracle，长期主流的关系库</td><td>2010，LinkedIn 内部日志系统，2011 捐 Apache</td></tr><tr><td>核心抽象</td><td>数据结构服务器（结构化类型 + 原子命令）</td><td>关系 + SQL + 可插拔存储引擎（InnoDB 为默认）</td><td>追加写日志（分区 + 偏移量）</td></tr><tr><td>本书重点观察</td><td>驻内存结构化操作的低延迟</td><td>事务处理与持久化</td><td>分区扩展与批量吞吐</td></tr><tr><td>主要限制与开销</td><td>容量受内存约束，复杂聚合能力有限</td><td>事务提交与日志维护开销</td><td>批量等待增加延迟，随机查询能力有限</td></tr><tr><td>典型场景</td><td>缓存、锁、计数器、排行榜、会话</td><td>交易、订单、账户、核心业务库</td><td>日志采集、异步解耦、流处理、CDC</td></tr></tbody></table></div>
+<p><a class="xref" href="#fig-1-2">图 1-2</a> 从低延迟、高吞吐、事务支持、数据容量、查询灵活度五个维度对比三个软件。事务支持关注提交、回滚与并发控制能力。</p>
+<figure class="fig" id="fig-1-2"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 90 880 453" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+
+  
+
+  
+  <polygon points="300.0,290.0 338.0,317.6 323.5,362.4 276.5,362.4 262.0,317.6"
+           fill="none" stroke="#E5E7EB" stroke-width="1"/>
+  <polygon points="300.0,210.0 414.1,292.9 370.5,427.1 229.5,427.1 185.9,292.9"
+           fill="none" stroke="#E5E7EB" stroke-width="1"/>
+  <polygon points="300.0,130.0 490.2,268.2 417.6,491.8 182.4,491.8 109.8,268.2"
+           fill="none" stroke="#D1D5DB" stroke-width="1.3"/>
+
+  
+  <g stroke="#D1D5DB" stroke-width="1">
+    <line x1="300" y1="330" x2="300.0" y2="130.0"/>
+    <line x1="300" y1="330" x2="490.2" y2="268.2"/>
+    <line x1="300" y1="330" x2="417.6" y2="491.8"/>
+    <line x1="300" y1="330" x2="182.4" y2="491.8"/>
+    <line x1="300" y1="330" x2="109.8" y2="268.2"/>
+  </g>
+
+  
+  <g font-size="9.5" fill="#9CA3AF" text-anchor="start">
+    <text x="305" y="293">1</text>
+    <text x="305" y="213">3</text>
+    <text x="305" y="143">5</text>
+  </g>
+
+  
+  <circle cx="300" cy="330" r="2.2" fill="#6B7280"/>
+
+  
+  <g font-size="13" font-weight="700" fill="#111827" text-anchor="middle">
+    <text x="300.0" y="112">低延迟</text>
+    <text x="528" y="265">高吞吐</text>
+    <text x="442" y="514">事务支持</text>
+    <text x="158" y="514">数据容量</text>
+    <text x="72" y="265">查询灵活度</text>
+  </g>
+  
+  <g font-size="10.5" fill="#6B7280" text-anchor="middle">
+    <text x="300.0" y="126">延迟越低，评分越高</text>
+    <text x="528" y="280">每秒处理量</text>
+    <text x="442" y="528">提交、回滚与并发控制</text>
+    <text x="158" y="528">能存多少</text>
+    <text x="72" y="280" font-size="10.5" text-anchor="middle">SQL/过滤/聚合</text>
+  </g>
+
+  
+  
+
+  
+  <polygon points="300.0,130.0 414.1,292.9 347.0,394.7 276.5,362.4 223.9,305.3"
+           fill="#4F46E5" fill-opacity="0.18" stroke="#4F46E5" stroke-width="2"/>
+  <g fill="#4F46E5">
+    <circle cx="300.0" cy="130.0" r="3.5"/>
+    <circle cx="414.1" cy="292.9" r="3.5"/>
+    <circle cx="347.0" cy="394.7" r="3.5"/>
+    <circle cx="276.5" cy="362.4" r="3.5"/>
+    <circle cx="223.9" cy="305.3" r="3.5"/>
+  </g>
+
+  
+  <polygon points="300.0,250.0 376.1,305.3 417.6,491.8 182.4,491.8 109.8,268.2"
+           fill="#D97706" fill-opacity="0.18" stroke="#D97706" stroke-width="2"/>
+  <g fill="#D97706">
+    <circle cx="300.0" cy="250.0" r="3.5"/>
+    <circle cx="376.1" cy="305.3" r="3.5"/>
+    <circle cx="417.6" cy="491.8" r="3.5"/>
+    <circle cx="182.4" cy="491.8" r="3.5"/>
+    <circle cx="109.8" cy="268.2" r="3.5"/>
+  </g>
+
+  
+  <polygon points="300.0,210.0 490.2,268.2 370.5,427.1 206.0,459.4 262.0,317.6"
+           fill="#059669" fill-opacity="0.18" stroke="#059669" stroke-width="2"/>
+  <g fill="#059669">
+    <circle cx="300.0" cy="210.0" r="3.5"/>
+    <circle cx="490.2" cy="268.2" r="3.5"/>
+    <circle cx="370.5" cy="427.1" r="3.5"/>
+    <circle cx="206.0" cy="459.4" r="3.5"/>
+    <circle cx="262.0" cy="317.6" r="3.5"/>
+  </g>
+
+  
+  <text x="600" y="120" font-size="14" font-weight="700" fill="#111827">图例与评分（0-5 分）</text>
+
+  
+  <rect x="600" y="138" width="20" height="14" rx="2" fill="#4F46E5" fill-opacity="0.35" stroke="#4F46E5" stroke-width="1.8"/>
+  <text x="628" y="150" font-size="13" font-weight="700" fill="#4F46E5">Redis</text>
+  <text x="672" y="150" font-size="11.5" fill="#374151">· 低延迟</text>
+
+  
+  <rect x="600" y="162" width="20" height="14" rx="2" fill="#D97706" fill-opacity="0.35" stroke="#D97706" stroke-width="1.8"/>
+  <text x="628" y="174" font-size="13" font-weight="700" fill="#D97706">MySQL</text>
+  <text x="678" y="174" font-size="11.5" fill="#374151">· 事务支持</text>
+
+  
+  <rect x="600" y="186" width="20" height="14" rx="2" fill="#059669" fill-opacity="0.35" stroke="#059669" stroke-width="1.8"/>
+  <text x="628" y="198" font-size="13" font-weight="700" fill="#059669">Kafka</text>
+  <text x="672" y="198" font-size="11.5" fill="#374151">· 高吞吐</text>
+
+  
+  <rect x="596" y="218" width="252" height="180" rx="6" fill="#F9FAFB" stroke="#E5E7EB" stroke-width="1"/>
+  
+  <text x="608" y="238" font-size="11.5" font-weight="700" fill="#374151">维度</text>
+  <text x="744" y="238" font-size="11.5" font-weight="700" fill="#4F46E5" text-anchor="middle">Redis</text>
+  <text x="788" y="238" font-size="11.5" font-weight="700" fill="#D97706" text-anchor="middle">MySQL</text>
+  <text x="832" y="238" font-size="11.5" font-weight="700" fill="#059669" text-anchor="middle">Kafka</text>
+  <line x1="604" y1="246" x2="840" y2="246" stroke="#E5E7EB" stroke-width="1"/>
+  
+  <g font-size="11.5" fill="#374151">
+    <text x="608" y="264">低延迟</text>
+    <text x="744" y="264" text-anchor="middle" font-weight="700" fill="#4F46E5">5</text>
+    <text x="788" y="264" text-anchor="middle">2</text>
+    <text x="832" y="264" text-anchor="middle">3</text>
+
+    <text x="608" y="288">高吞吐</text>
+    <text x="744" y="288" text-anchor="middle">3</text>
+    <text x="788" y="288" text-anchor="middle">2</text>
+    <text x="832" y="288" text-anchor="middle" font-weight="700" fill="#059669">5</text>
+
+    <text x="608" y="312">事务支持</text>
+    <text x="744" y="312" text-anchor="middle">2</text>
+    <text x="788" y="312" text-anchor="middle" font-weight="700" fill="#D97706">5</text>
+    <text x="832" y="312" text-anchor="middle">3</text>
+
+    <text x="608" y="336">数据容量</text>
+    <text x="744" y="336" text-anchor="middle">1</text>
+    <text x="788" y="336" text-anchor="middle" font-weight="700" fill="#D97706">5</text>
+    <text x="832" y="336" text-anchor="middle">4</text>
+
+    <text x="608" y="360">查询灵活度</text>
+    <text x="744" y="360" text-anchor="middle">2</text>
+    <text x="788" y="360" text-anchor="middle" font-weight="700" fill="#D97706">5</text>
+    <text x="832" y="360" text-anchor="middle">1</text>
+
+    <text x="608" y="388" font-size="10.5" fill="#6B7280" font-style="italic">粗体 = 本图该维度最高分</text>
+  </g>
+</svg>
+</div><figcaption>图 1-2　三个软件在五个维度上的定位雷达。评分为作者主观量级判断，仅作示意。</figcaption></figure>
+<h2 id="sec-1.3">1.3 架构视角 vs 使用视角</h2>
+<p>同一个系统，从使用视角和架构视角去看，关注的重点不同。我们研究架构的核心方法是反复追问“为什么这样设计，反过来会怎样”，把视线从配置参数移到设计决策。</p>
+<h3 id="sec-1.3.1">1.3.1 两种视角看到的同一个系统</h3>
+<p>面对“Redis 用单线程执行命令”这个事实，使用者关心的是怎样避免阻塞整个实例，例如避免执行 <code>KEYS *</code>，也避免对大集合做重计算。架构师追问的是：<strong>单线程在哪些负载下有优势、多线程 I/O 如何嵌入、这套设计在什么规模下就会吃力，以及换成多线程执行需要付出什么代价。</strong></p>
+<p class="tab-label"><strong>表 1-2　使用视角 vs 架构视角对照</strong></p>
+<div class="table-wrap"><table id="table-1-2"><thead><tr><th>关注维度</th><th>使用视角（怎么做）</th><th>架构视角（为什么这么做）</th></tr></thead><tbody><tr><td>提问方式</td><td>怎么配？怎么调？踩过哪些坑？</td><td>为什么这么选？反过来会怎样？边界在哪？</td></tr><tr><td>Redis 单线程</td><td>避免 <code>KEYS *</code>、避免重计算、压测能达到多少 QPS（每秒查询数）</td><td>单线程在哪些负载下有优势？多线程 I/O 如何嵌入？瓶颈何时出现？</td></tr><tr><td>MySQL 日志</td><td>开 binlog、设 sync_binlog、配主从</td><td>redo 与 binlog 为何要两阶段提交？日志作为数据正本，边界到哪为止？</td></tr><tr><td>Kafka 副本</td><td>设 acks=all、min.insync.replicas=2（ISR 至少有 2 个副本，并等待当前 ISR 全部确认）</td><td>ISR 为何要“动态收缩”？Leader 切换与一致性如何兼顾？</td></tr><tr><td>知识形态</td><td>配方、参数、最佳实践</td><td>取舍、约束、演化逻辑、可迁移的设计思想</td></tr><tr><td>终极目标</td><td>把现有系统用好、用稳</td><td>理解设计决策，并在自己的系统里做对取舍</td></tr></tbody></table></div>
+<h3 id="sec-1.3.2">1.3.2 架构视角的三个方法</h3>
+<p>从架构视角分析系统，有三个方法：看约束、看演化、看抽象。</p>
+<p><strong>第一，看约束。</strong> 任何设计都是在特定约束下的取舍。要理解一个决策，先还原它面对的约束：目标场景是什么、性能要求多高、可靠性要求多严、维护成本能不能承受。Redis 的数据在内存中，许多命令的执行时间很短；用单线程执行命令，可以免去并行执行命令时的数据竞争和锁协调，重计算则会用满单核。MySQL 需要主索引支持范围查询和排序；磁盘随机访问又很昂贵，因此使用能批量读取相邻键的 B+ 树，而不是哈希索引。约束变了，同一个选择可能就不再合适。</p>
+<p><strong>第二，看演化。</strong> 架构是需求逼出来的。Redis 从单机到哨兵（Sentinel）再到 Cluster，是因为单机扛不住可用性与可扩展性的双重压力；MySQL 从 MyISAM 到 InnoDB 默认化再到 MGR，是因为业务对事务与高可用的要求不断抬高。Kafka 则是从依赖外部 ZooKeeper 走到内置 KRaft（Kafka Raft，Kafka 自带的共识元数据管理），原因是外部元数据依赖增加了运维负担，元数据管理方式也限制了扩展；KRaft 将这部分职责纳入 Kafka 自身的共识集群。理解“为什么变”，关键是看到约束在变，设计就得跟着变。今天看起来“不合理”的旧设计，往往只是被新约束淘汰了而已。</p>
+<p><strong>第三，看抽象。</strong> 复杂系统对外只暴露少数几个核心原语。Redis 暴露的是数据结构，MySQL 暴露的是关系与 SQL（页与索引是藏在引擎里的实现），Kafka 暴露的是追加写日志。抽象不同，应用组织和操作数据的方式也不同。</p>
+<h3 id="sec-1.3.3">1.3.3 一个贯穿全书的例子</h3>
+<p>一个后端最经典的问题：保存数据怎么保证不丢？</p>
+<p>架构视角需要把这个问题拆成三个层次的追问。 <strong>第一，先刷日志还是先刷数据页？</strong> 采用 WAL 的存储引擎要求：修改过的内存页写回磁盘前，对应日志必须先落盘。日志顺序追加，可以把数据页的分散写回延后；故障后再依据日志恢复尚未落盘的修改。 <strong>第二，日志何时落盘？</strong> 是每条命令落盘、每秒落盘，还是交给操作系统决定何时刷盘？更及时地落盘可以减少尚未持久化的数据，更频繁地刷盘则会增加开销。 <strong>第三，日志记的到底是什么？</strong> 这三个软件在这里分歧最大：记录执行过的命令、数据页上的修改，还是消息本身？</p>
+<p>逻辑日志记录操作，重放时要重新执行或还原这些操作，也要处理重复重放和版本兼容；物理日志记录数据页等存储结构的修改，恢复与具体存储格式联系更紧。三个软件的日志内容和恢复方式各不相同。 <strong>Redis</strong> 的 AOF 是命令日志，即逻辑日志，记的是“执行了什么命令”，重放时重新执行这些命令。 <strong>MySQL</strong> 的 redo log 记录数据页上的修改操作（严格说是物理到页、逻辑到操作的混合日志），恢复时应用这些记录；binlog 则记录语句或行变更，用于复制。redo log 与 binlog 通过内部两阶段提交协调事务状态。 <strong>Kafka</strong> 把数据本身存成日志：消费者从日志里读，副本把日志复制过去。异常退出后，Broker 重启时恢复日志段和索引，必要时处理不完整的日志尾部，不需要把命令重放成另一套业务数据结构。</p>
+<p>三种方案，一条共同主线：<strong>日志为故障恢复提供依据，刷盘与副本确认策略共同影响数据丢失窗口和吞吐。</strong> 这条主线贯穿<a class="xref" href="04-memory-disk.html">第 4 章</a>（内存与磁盘）与<a class="xref" href="09-data-sync.html">第 9 章</a>（数据同步），并在后续多章里以不同的面貌重新出现。</p>
+<h2 id="sec-1.4">1.4 如何读本书</h2>
+<h3 id="sec-1.4.1">1.4.1 谁应该读，前置要求是什么</h3>
+<p>本书面向三类读者。第一类是 2 年以上经验的后端开发者：你已经用过 Redis、MySQL、Kafka 中的至少一种，能把系统跑起来，但想搞清楚“为什么这样设计”。第二类是负责技术选型的架构师：你需要在多种方案之间做权衡，而权衡的前提是理解每种方案的设计取向与代价。第三类是技术负责人：你需要一套可以传授、可以复用的架构认知框架。</p>
+<p>阅读需要基本的数据结构、算法和操作系统常识：对哈希表、树、跳表这些名词不陌生，能大致说清进程与线程、内存层次、I/O 模型（阻塞、非阻塞、I/O 多路复用）。你至少实际用过三者之一，知道客户端怎么连、命令或 SQL 怎么写。建议在阅读过程中充分使用AI工具来帮助你学习和回忆相关知识点。</p>
+<h3 id="sec-1.4.2">1.4.2 本书的组织方式：主题式而非软件式</h3>
+<p>起初我按软件逐个整理，写完发现不行：共性讲不出来，Redis 的持久化和 Kafka 的持久化隔着好几章，对比不是很明显。改成按主题对比之后，三家的差异和背后的共性才同时浮出来。</p>
+<p>所以，本书采用<strong>主题式</strong>的组织：每一章围绕一个架构主题，先分别看 Redis、MySQL、Kafka 在该主题下的实现，再做横向对比，并尝试挖掘架构启示。</p>
+<p>下面这张图给出全书的章节结构。</p>
+<figure class="fig" id="fig-1-3"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 60 960 630" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_1_3_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_1_3_arrow-end" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="380" y="72" width="200" height="56" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.8"/>
+  <text x="480" y="96" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">第 1 章 · 引言</text>
+  <text x="480" y="116" text-anchor="middle" font-size="12" fill="#374151">为什么是这三个软件</text>
+
+  
+  <line x1="480" y1="128" x2="480" y2="190" stroke="#4B5563" stroke-width="1.8" marker-end="url(#fig_1_3_arrow)"/>
+
+  
+  <text x="40" y="182" font-size="13" font-weight="600" fill="#374151">第一组　基础：数据怎么表示、启停怎么保状态、怎么不丢</text>
+
+  
+  <rect x="40" y="194" width="280" height="76" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="56" y="218" font-size="14" font-weight="700" fill="#111827">第 2 章　数据结构与协议</text>
+  <text x="56" y="238" font-size="12" fill="#374151">核心问题：数据在内存/磁盘/网络上长什么样？</text>
+  <text x="56" y="258" font-size="11.5" fill="#6B7280">内部结构 · 编码升级 · 通信协议</text>
+
+  
+  <rect x="340" y="194" width="280" height="76" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="356" y="218" font-size="14" font-weight="700" fill="#111827">第 3 章　生命周期管理</text>
+  <text x="356" y="238" font-size="12" fill="#374151">核心问题：进程怎么优雅地启动与关闭？</text>
+  <text x="356" y="258" font-size="11.5" fill="#6B7280">信号处理 · 初始化顺序 · 优雅停机</text>
+
+  
+  <rect x="640" y="194" width="280" height="76" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="656" y="218" font-size="14" font-weight="700" fill="#111827">第 4 章　内存与磁盘</text>
+  <text x="656" y="238" font-size="12" fill="#374151">核心问题：数据放哪？怎么不丢？</text>
+  <text x="656" y="258" font-size="11.5" fill="#6B7280">缓冲池 · 页缓存 · WAL · 零拷贝</text>
+
+  
+  <line x1="320" y1="232" x2="338" y2="232" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_1_3_arrow)"/>
+  <line x1="620" y1="232" x2="638" y2="232" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_1_3_arrow)"/>
+
+  
+  <line x1="480" y1="270" x2="480" y2="332" stroke="#4B5563" stroke-width="1.8" marker-end="url(#fig_1_3_arrow)"/>
+
+  
+  <text x="40" y="324" font-size="13" font-weight="600" fill="#374151">第二组　结构与治理：怎么切层、谁能进、怎么扩容</text>
+
+  
+  <rect x="40" y="336" width="280" height="76" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="56" y="360" font-size="14" font-weight="700" fill="#111827">第 5 章　分层架构</text>
+  <text x="56" y="380" font-size="12" fill="#374151">核心问题：模块怎么切、层怎么叠？</text>
+  <text x="56" y="400" font-size="11.5" fill="#6B7280">交互层 / 逻辑层 / 存储层的层次划分</text>
+
+  
+  <rect x="340" y="336" width="280" height="76" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="356" y="360" font-size="14" font-weight="700" fill="#111827">第 6 章　安全机制</text>
+  <text x="356" y="380" font-size="12" fill="#374151">核心问题：谁能访问、能做什么？</text>
+  <text x="356" y="400" font-size="11.5" fill="#6B7280">认证 · ACL · 加密 · 审计</text>
+
+  
+  <rect x="640" y="336" width="280" height="76" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="656" y="360" font-size="14" font-weight="700" fill="#111827">第 7 章　集群架构</text>
+  <text x="656" y="380" font-size="12" fill="#374151">核心问题：如何扩容与容错？</text>
+  <text x="656" y="400" font-size="11.5" fill="#6B7280">主从 · 哨兵 · 共识 · 故障转移</text>
+
+  
+  <line x1="320" y1="374" x2="338" y2="374" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_1_3_arrow)"/>
+  <line x1="620" y1="374" x2="638" y2="374" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_1_3_arrow)"/>
+
+  
+  <line x1="480" y1="412" x2="480" y2="474" stroke="#4B5563" stroke-width="1.8" marker-end="url(#fig_1_3_arrow)"/>
+
+  
+  <text x="40" y="466" font-size="13" font-weight="600" fill="#374151">第三组　落盘与搬运：格式与复制</text>
+
+  
+  <rect x="40" y="478" width="280" height="76" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="56" y="502" font-size="14" font-weight="700" fill="#111827">第 8 章　存储格式</text>
+  <text x="56" y="522" font-size="12" fill="#374151">核心问题：数据在磁盘上长什么样？</text>
+  <text x="56" y="542" font-size="11.5" fill="#6B7280">页 · B+ 树 · 日志段 · 压实</text>
+
+  
+  <rect x="340" y="478" width="280" height="76" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="356" y="502" font-size="14" font-weight="700" fill="#111827">第 9 章　数据同步</text>
+  <text x="356" y="522" font-size="12" fill="#374151">核心问题：多副本间数据怎么保持一致？</text>
+  <text x="356" y="542" font-size="11.5" fill="#6B7280">复制 · binlog · ISR · 一致性级别</text>
+
+  
+  <line x1="320" y1="516" x2="338" y2="516" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_1_3_arrow)"/>
+
+  
+  <line x1="480" y1="554" x2="480" y2="592" stroke="#EF4444" stroke-width="2" marker-end="url(#fig_1_3_arrow-end)"/>
+  <text x="492" y="576" font-size="11.5" fill="#EF4444">共性提炼</text>
+
+  
+  <rect x="320" y="594" width="320" height="70" rx="6" fill="#F3F4F6" stroke="#111827" stroke-width="2"/>
+  <text x="480" y="620" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">第 10 章 · 总结</text>
+  <text x="480" y="640" text-anchor="middle" font-size="12" fill="#374151">前九章复盘 · 共性规律 · 权衡框架 · 给实践者的建议</text>
+  <text x="480" y="656" text-anchor="middle" font-size="11.5" font-style="italic" fill="#6B7280">把八章实现提炼成可复用的架构认知</text>
+
+</svg>
+</div><figcaption>图 1-3　全书章节结构</figcaption></figure>
+<p>每一章讨论的是同一个底层问题在不同软件里的不同实现，章与章之间是递进的关系。第 2–4 章讲系统内部的基础问题——数据用什么结构表示、进程启停怎么保住状态、内存与磁盘怎么分工。有了这个底子，第 5–7 章才谈系统的组织：层怎么切、谁能访问、容量怎么扩。第 8–9 章处理落盘与搬运：数据在磁盘上存成什么格式、副本之间怎么同步。</p>
+<h3 id="sec-1.4.3">1.4.3 版本基线与阅读约定</h3>
+<p>凡涉及具体行为、参数或默认值的地方，都以这个版本基线为准：<strong>Redis 7.x、MySQL 8.0.x、Kafka 3.x（分层存储 Tiered Storage 相关讨论以 3.9+ 为准）</strong>。涉及版本差异的地方另作说明。全书信息核对截止 2026 年 9 月；Redis 许可证变更与 Valkey 分叉等新版本差异不在本书展开范围，请读者自行对照。</p>
+<p><strong>版本状态提示（2026 年 9 月）</strong>：MySQL 8.0 已于 2026 年 4 月转入 Oracle Sustaining Support，官方建议升级至 8.4 LTS 或 9.7 LTS；Kafka 从 4.0 起只支持 KRaft，已移除 ZooKeeper 模式；Redis Open Source 的 7.2、7.4 分支仍列在官方支持范围内。本书保留上述分析基线，借 B+ 树、WAL、状态机复制、CAP 等主题讨论架构取舍；具体参数默认值和命令行为，请以所用版本的官方文档为准。</p>
+<p>几处与版本相关的演进包括：Redis 在 6.0 引入了多线程 I/O 和 ACL（访问控制列表），7.x 又带来了 Function（函数）、Sharded Pub/Sub 等改进；MySQL 8.0.x 带来了原子 DDL、新版 redo log、降序索引、直方图，组复制（MGR）也在这一代走向成熟；Kafka 在 3.3 让 KRaft 达到生产可用（新集群自此可不依赖 ZooKeeper 部署），分层存储（Tiered Storage）在 3.9 正式 GA，而生产者幂等与事务早在 0.11 就已引入。</p>
+<p>图表约定如下。图编号统一为 <code>图 N-M</code>（第 N 章第 M 张图），表编号统一为 <code>表 N-M</code>（第 N 章第 M 张表），图与表各自独立连续编号。</p>
+<p>术语约定如下。全书术语统一译法，首次出现时中英对照标注，之后按两档制使用：工程界通行的术语直接用英文，如 redo log、undo log、binlog、WAL、MVCC；中文已充分沉淀的继续用中文，如缓冲池（Buffer Pool）、分区（partition）、副本（replica）、压实（compaction）。遇到未列出的术语，我们会在首次出现时同样标注英文原词。本书出现的 KIP-xxx 是 Kafka 社区改进提案（Kafka Improvement Proposal）的编号，用来标记某特性由哪份提案引入，不关心社区历史的读者可以跳过。</p>
+<h3 id="sec-1.4.4">1.4.4 推荐阅读路径</h3>
+<p>本书提供三条阅读路径，按你的目标选择。</p>
+<p><strong>路径 A：系统通读。</strong> 从<a class="xref" href="#">第 1 章</a>顺序读到<a class="xref" href="10-summary.html">第 10 章</a>。适合想建立完整架构认知的读者。按全书的主题顺序阅读，有助于连贯地理解后端基础设施的设计逻辑。这是最推荐的路径，也是本书写作时假定的阅读顺序。</p>
+<p><strong>路径 B：按需精读。</strong> 先读<a class="xref" href="#">第 1 章</a>和<a class="xref" href="10-summary.html">第 10 章</a>建立全局观，再按工作场景跳读主题章。比如你正在排查持久化问题，直接看<a class="xref" href="04-memory-disk.html">第 4 章</a>；做高可用选型或优化存储成本，则分别对应<a class="xref" href="07-cluster.html">第 7 章</a>和<a class="xref" href="08-storage-format.html">第 8 章</a>。这条路径适合已经有相当经验、只想补某一块认知的读者。</p>
+<p><strong>路径 C：对比驱动。</strong> 每章只重点看横向对比与架构启示（多数章在偏后的小节），再按兴趣回看具体实现。但前提是你对这三个软件已经有基本了解，否则对比看不出门道。</p>
+<p>无论选哪条路径，每一章都可以这样读：先读导读、带着问题进去，读完再看小结收束全章。把每章的“架构启示”作为可参考的设计原则。</p>
+<h3 id="sec-1.4.5">1.4.5 全书脉络</h3>
+<p>我最看重三个章节：<a class="xref" href="02-data-structures-protocols.html">第 2 章</a>的数据结构与协议，是理解后面各章的基础；<a class="xref" href="04-memory-disk.html">第 4 章</a>“内存与磁盘”所处理的“快”与“不丢”这对矛盾，是存储系统的核心命题；<a class="xref" href="09-data-sync.html">第 9 章</a>“数据同步”把前面讨论的副本、日志和一致性联系起来。<a class="xref" href="10-summary.html">第 10 章</a>再回顾这八个主题章，提炼共性规律和取舍方法。</p>
+<h2 id="sec-1.5">1.5 小结</h2>
+<p>这一章讲清了三个问题。为什么选 Redis、MySQL、Kafka 当样本：因为它们处理相近的数据问题，又采用了不同的数据模型和访问方式。它们各自是什么样：<a class="xref" href="#sec-1.2">1.2 节</a>的三段概览交代了各自的出身、抽象与代价。架构视角与使用视角有什么不同：使用视角问“怎么做”，架构视角追问“为什么这么选”。用“数据不丢”这个例子做三层追问（先刷日志还是先刷数据页、落盘粒度多细、日志记录什么内容），就是架构视角的样板。</p><nav class="page-nav"><a href="00-preface.html">← 序言</a><a href="02-data-structures-protocols.html">第 2 章 数据结构与协议 — 为各自的目标而设计 →</a></nav></article>
+</main>
+</div>
+<script>
+(function(){
+  var btn=document.querySelector('.toc-toggle'),nav=document.getElementById('toc'),bd=document.getElementById('bd');
+  if(btn){btn.addEventListener('click',function(){nav.classList.toggle('open');if(bd)bd.classList.toggle('show',nav.classList.contains('open'))});}
+  if(bd){bd.addEventListener('click',function(){nav.classList.remove('open');bd.classList.remove('show');});}
+  // 当前章节高亮
+  var secs=Array.prototype.slice.call(document.querySelectorAll('section.chapter'));
+  var links=Array.prototype.slice.call(document.querySelectorAll('nav.toc a[data-target]'));
+  if('IntersectionObserver' in window && links.length){
+    var map={};links.forEach(function(a){map[a.getAttribute('data-target')]=a;});
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){a.parentElement.classList.remove('active');});
+          var a=map[e.target.id]; if(a)a.parentElement.classList.add('active');
+        }
+      });
+    },{rootMargin:'-10% 0px -75% 0px',threshold:0});
+    secs.forEach(function(s){io.observe(s);});
+  }
+})();
+</script>
+<script>
+(function(){
+  var layout=document.querySelector('.layout'),drag=document.getElementById('tocDrag');
+  var colBtn=document.getElementById('tocCollapse'),expBtn=document.getElementById('tocExpand');
+  var KEY_W='paged.tocW',KEY_C='paged.tocCollapsed';
+  try{
+    var w=localStorage.getItem(KEY_W);
+    if(w&&layout)layout.style.setProperty('--toc-w',w);
+    if(localStorage.getItem(KEY_C)==='1')document.body.classList.add('toc-collapsed');
+  }catch(e){}
+  if(colBtn){colBtn.addEventListener('click',function(){
+    document.body.classList.add('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'1');}catch(e){}
+  });}
+  if(expBtn){expBtn.addEventListener('click',function(){
+    document.body.classList.remove('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'0');}catch(e){}
+  });}
+  if(drag&&layout){
+    drag.addEventListener('pointerdown',function(e){
+      e.preventDefault();
+      document.body.classList.add('toc-dragging');
+      drag.classList.add('active');
+      function mv(ev){
+        var left=layout.getBoundingClientRect().left;
+        var w=Math.min(Math.max(ev.clientX-left,200),520);
+        layout.style.setProperty('--toc-w',Math.round(w)+'px');
+      }
+      function up(){
+        document.body.classList.remove('toc-dragging');
+        drag.classList.remove('active');
+        try{localStorage.setItem(KEY_W,layout.style.getPropertyValue('--toc-w'));}catch(e2){}
+        window.removeEventListener('pointermove',mv);
+        window.removeEventListener('pointerup',up);
+      }
+      window.addEventListener('pointermove',mv);
+      window.addEventListener('pointerup',up);
+    });
+  }
+})();
+</script>
+</body>
+</html>

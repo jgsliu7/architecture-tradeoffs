@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 72 940 574" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="arrowInd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4F46E5"/>
+    </marker>
+  </defs>
+
+  <!-- ===== Left half: Approximate LRU ===== -->
+  <text x="220" y="96" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">近似 LRU（随机采样淘汰）</text>
+
+  <!-- Global key pool -->
+  <rect x="40" y="115" width="380" height="180" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4" stroke-dasharray="5,3"/>
+  <text x="60" y="135" font-size="12" fill="#374151">本例：全部键（哈希表）</text>
+
+  <!-- key boxes -->
+  <g font-size="11" fill="#111827">
+    <rect x="60" y="150" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="83" y="168" text-anchor="middle">k1</text>
+    <rect x="112" y="150" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="135" y="168" text-anchor="middle">k2</text>
+    <rect x="164" y="150" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="187" y="168" text-anchor="middle">k3</text>
+    <rect x="216" y="150" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="239" y="168" text-anchor="middle">k4</text>
+    <rect x="268" y="150" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="291" y="168" text-anchor="middle">k5</text>
+    <rect x="320" y="150" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="343" y="168" text-anchor="middle">k6</text>
+    <rect x="60" y="186" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="83" y="204" text-anchor="middle">k7</text>
+    <rect x="112" y="186" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="135" y="204" text-anchor="middle">k8</text>
+    <rect x="164" y="186" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="187" y="204" text-anchor="middle">k9</text>
+    <rect x="216" y="186" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="239" y="204" text-anchor="middle">k10</text>
+    <rect x="268" y="186" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="291" y="204" text-anchor="middle">k11</text>
+    <rect x="320" y="186" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="343" y="204" text-anchor="middle">k12</text>
+    <rect x="60" y="222" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="83" y="240" text-anchor="middle">k13</text>
+    <rect x="112" y="222" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="135" y="240" text-anchor="middle">k14</text>
+    <rect x="164" y="222" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="187" y="240" text-anchor="middle">k15</text>
+    <rect x="216" y="222" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="239" y="240" text-anchor="middle">k16</text>
+    <rect x="268" y="222" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="291" y="240" text-anchor="middle">...</text>
+    <rect x="320" y="222" width="46" height="28" rx="4" fill="#EEF2FF" stroke="#4F46E5"/><text x="343" y="240" text-anchor="middle">kN</text>
+  </g>
+
+  <!-- 本轮随机样本，仅示意采样过程 -->
+  <rect x="40" y="315" width="380" height="70" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="60" y="338" font-size="13" font-weight="700" fill="#111827">本轮随机样本</text>
+  <g font-size="11" fill="#111827">
+    <rect x="60" y="350" width="46" height="28" rx="4" fill="#FFFFFF" stroke="#D97706"/><text x="83" y="368" text-anchor="middle">k3</text>
+    <rect x="112" y="350" width="46" height="28" rx="4" fill="#FFFFFF" stroke="#D97706"/><text x="135" y="368" text-anchor="middle">k7</text>
+    <rect x="164" y="350" width="46" height="28" rx="4" fill="#FFFFFF" stroke="#D97706"/><text x="187" y="368" text-anchor="middle">k11</text>
+    <rect x="216" y="350" width="46" height="28" rx="4" fill="#FFFFFF" stroke="#D97706"/><text x="239" y="368" text-anchor="middle">k2</text>
+    <rect x="268" y="350" width="46" height="28" rx="4" fill="#FFFFFF" stroke="#D97706"/><text x="291" y="368" text-anchor="middle">k9</text>
+  </g>
+  <path d="M83 295 L83 313" fill="none" stroke="#4F46E5" stroke-width="1.4" stroke-dasharray="3,3" marker-end="url(#arrowInd)"/>
+  <path d="M239 295 L239 313" fill="none" stroke="#4F46E5" stroke-width="1.4" stroke-dasharray="3,3" marker-end="url(#arrowInd)"/>
+  <text x="250" y="309" font-size="11" fill="#374151">随机抽取少量键</text>
+
+  <!-- 样本并入持续维护的候选池；箭头置于说明文字右侧 -->
+  <path d="M400 387 L400 422" fill="none" stroke="#4F46E5" stroke-width="1.6" marker-end="url(#arrowInd)"/>
+  <text x="60" y="407" font-size="11.5" fill="#374151">将样本加入持续维护的淘汰候选池</text>
+  <rect x="40" y="424" width="380" height="82" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.6"/>
+  <text x="60" y="449" font-size="13" font-weight="700" fill="#111827">淘汰候选池</text>
+  <text x="60" y="477" font-size="11.5" fill="#374151">保留本轮样本与此前候选中空闲时间较长的键</text>
+
+  <!-- 从候选池选取结果，k11仅作本例 -->
+  <path d="M400 508 L400 570" fill="none" stroke="#EF4444" stroke-width="1.6" marker-end="url(#arrowRed)"/>
+  <text x="60" y="533" font-size="11.5" fill="#374151">从候选池中选择仍存在、</text>
+  <text x="60" y="551" font-size="11.5" fill="#374151">空闲时间估计值最大的键</text>
+  <rect x="40" y="572" width="380" height="58" rx="6" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.8"/>
+  <text x="60" y="606" font-size="13" fill="#B91C1C" font-weight="700">本例选中 k11 → 删除键并释放内存</text>
+
+  <!-- ===== Right half: LFU probability count and decay ===== -->
+  <text x="720" y="96" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">LFU（概率计数 + 衰减）</text>
+
+  <!-- 每个键只保留紧凑的近似频率状态 -->
+  <rect x="540" y="115" width="380" height="106" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.6"/>
+  <text x="560" y="135" font-size="13" font-weight="700" fill="#111827">键的近似访问频率</text>
+  <line x1="540" y1="144" x2="920" y2="144" stroke="#C7D2FE" stroke-width="1"/>
+
+  <!-- 频率与时间信息共同决定估计值 -->
+  <rect x="560" y="158" width="150" height="48" rx="4" fill="#FFFFFF" stroke="#4F46E5"/>
+  <text x="635" y="178" text-anchor="middle" font-size="12" fill="#111827">概率计数</text>
+  <text x="635" y="196" text-anchor="middle" font-size="11" fill="#374151">估计访问频次</text>
+
+  <rect x="710" y="158" width="150" height="48" rx="4" fill="#FFFFFF" stroke="#4F46E5"/>
+  <text x="785" y="178" text-anchor="middle" font-size="12" fill="#111827">时间信息</text>
+  <text x="785" y="196" text-anchor="middle" font-size="11" fill="#374151">用于衰减旧频次</text>
+
+  <!-- access increment -->
+  <rect x="540" y="247" width="180" height="64" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.6"/>
+  <text x="630" y="270" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">每次访问</text>
+  <text x="630" y="288" text-anchor="middle" font-size="11" fill="#374151">按概率增加估计值</text>
+  <text x="630" y="304" text-anchor="middle" font-size="11" fill="#374151">值越高，递增机会越小</text>
+
+  <!-- decay -->
+  <rect x="740" y="247" width="180" height="64" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.6"/>
+  <text x="830" y="270" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">久未访问</text>
+  <text x="830" y="288" text-anchor="middle" font-size="11" fill="#374151">旧频次会衰减</text>
+  <text x="830" y="304" text-anchor="middle" font-size="11" fill="#374151">避免长期保留旧热点</text>
+
+  <!-- result: hot vs cold -->
+  <rect x="540" y="337" width="180" height="64" rx="6" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.6"/>
+  <text x="630" y="360" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">热数据</text>
+  <text x="630" y="378" text-anchor="middle" font-size="11" fill="#374151">高频访问 → 估计值较大</text>
+  <text x="630" y="394" text-anchor="middle" font-size="11" fill="#374151">相对不易被淘汰</text>
+
+  <rect x="740" y="337" width="180" height="64" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="830" y="360" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">扫描来的冷数据</text>
+  <text x="830" y="378" text-anchor="middle" font-size="11" fill="#374151">访问一次 → 估计值较小</text>
+  <text x="830" y="394" text-anchor="middle" font-size="11" fill="#374151">更可能成为淘汰候选</text>
+</svg>

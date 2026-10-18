@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 65 860 461" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  <!-- ============ 主节点侧 backlog 环形缓冲 ============ -->
+  <text x="430" y="88" text-anchor="middle" font-size="14" font-weight="700" fill="#4F46E5">主节点 Master · 复制积压缓冲区（backlog，默认约 1MB）</text>
+
+  <!-- 环形缓冲：8 格（offset 单调递增；左端=最老存活=将被覆盖，右端=最新写=主 offset） -->
+  <g transform="translate(80,108)">
+    <!-- 8 个格子，环形排列；左端最老，右端最新（cmd D 新写） -->
+    <rect x="0" y="40" width="80" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="40" y="64" text-anchor="middle" font-size="11" fill="#6B7280">cmd</text>
+    <text x="40" y="82" text-anchor="middle" font-size="10" fill="#6B7280">off=280</text>
+
+    <rect x="84" y="40" width="80" height="56" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+    <text x="124" y="64" text-anchor="middle" font-size="11" fill="#374151">cmd B</text>
+    <text x="124" y="82" text-anchor="middle" font-size="10" fill="#6B7280">off=330</text>
+
+    <rect x="168" y="40" width="80" height="56" rx="4" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+    <text x="208" y="64" text-anchor="middle" font-size="11" fill="#374151">cmd C</text>
+    <text x="208" y="82" text-anchor="middle" font-size="10" fill="#6B7280">off=380</text>
+
+    <rect x="252" y="40" width="80" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="292" y="64" text-anchor="middle" font-size="11" fill="#6B7280">cmd</text>
+    <text x="292" y="82" text-anchor="middle" font-size="10" fill="#6B7280">off=420</text>
+
+    <rect x="336" y="40" width="80" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="376" y="64" text-anchor="middle" font-size="11" fill="#6B7280">cmd</text>
+    <text x="376" y="82" text-anchor="middle" font-size="10" fill="#6B7280">off=450</text>
+
+    <rect x="420" y="40" width="80" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="460" y="64" text-anchor="middle" font-size="11" fill="#6B7280">cmd</text>
+    <text x="460" y="82" text-anchor="middle" font-size="10" fill="#6B7280">off=480</text>
+
+    <rect x="504" y="40" width="80" height="56" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="544" y="64" text-anchor="middle" font-size="11" fill="#6B7280">cmd</text>
+    <text x="544" y="82" text-anchor="middle" font-size="10" fill="#6B7280">off=505</text>
+
+    <!-- 最右端：最新写 cmd D，主 master_repl_offset 指向此处 -->
+    <rect x="588" y="40" width="80" height="56" rx="4" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.8"/>
+    <text x="628" y="64" text-anchor="middle" font-size="11" fill="#111827">cmd D（新写）</text>
+    <text x="628" y="82" text-anchor="middle" font-size="10" fill="#6B7280">off=520</text>
+
+    <!-- 环形回绕弧线：写指针越过右端后回绕覆盖最老命令（左端被覆盖） -->
+    <path d="M 670 60 Q 720 60 720 20 Q 720 0 40 0 Q 0 0 0 30" fill="none" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="300" y="20" text-anchor="middle" font-size="10" fill="#6B7280">滑动窗口（回收旧块）</text>
+
+    <!-- 左端：窗口下界=最老存活字节 -->
+    <line x1="40" y1="100" x2="40" y2="120" stroke="#6B7280" stroke-width="1.5"/>
+    <polygon points="34,118 46,118 40,128" fill="#6B7280"/>
+    <text x="40" y="135" text-anchor="middle" font-size="11" fill="#6B7280">窗口左端=280（最老存活）</text>
+
+    <!-- 右端：主 offset 指针 = 最新写 = 窗口上界 -->
+    <line x1="628" y1="100" x2="628" y2="120" stroke="#EF4444" stroke-width="2"/>
+    <polygon points="622,118 634,118 628,128" fill="#EF4444"/>
+    <text x="628" y="135" text-anchor="middle" font-size="12" font-weight="700" fill="#EF4444">主 master_repl_offset=520</text>
+  </g>
+
+  <!-- ============ 从节点侧 offset ============ -->
+  <text x="430" y="278" text-anchor="middle" font-size="14" font-weight="700" fill="#4F46E5">从节点 Replica · 记录自己已同步到的字节进度</text>
+
+  <rect x="180" y="296" width="500" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="430" y="318" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">从节点本地的复制位点</text>
+  <text x="430" y="338" text-anchor="middle" font-size="13" fill="#EF4444" font-weight="700">replica offset = 330（断线前同步到 cmd B）</text>
+
+  <!-- ============ 比对与结论 ============ -->
+  <line x1="430" y1="352" x2="430" y2="380" stroke="#EF4444" stroke-width="1.8" marker-end="url(#arrowRed)"/>
+
+  <rect x="100" y="386" width="660" height="126" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="430" y="410" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">历史匹配后比对：520 − 330 = 190 字节，请求从 331 开始</text>
+
+  <text x="120" y="438" font-size="12.5" fill="#374151">① 请求从 331 续传，所需字节仍在窗口（280–520）中</text>
+  <text x="120" y="458" font-size="12.5" font-weight="700" fill="#059669">     ⇒ 走部分重同步：只补发缺失的命令，主节点不 fork</text>
+
+  <text x="120" y="484" font-size="12.5" fill="#374151">② 请求位置早于 280，或复制历史不匹配 → 无法继续这段复制流</text>
+  <text x="120" y="504" font-size="12.5" font-weight="700" fill="#EF4444">     ⇒ 退回全量同步：子进程生成 RDB + 全量传输</text>
+</svg>

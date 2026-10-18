@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 68 960 594" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+    <marker id="arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  <!-- ===== TOP: read() + write(), with a user buffer ===== -->
+  <rect x="40" y="80" width="880" height="290" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="1.2" stroke-dasharray="6,4"/>
+  <text x="60" y="104" font-size="14" font-weight="700" fill="#D97706">传统 read() + write()：文件内容经过用户缓冲区</text>
+  <text x="60" y="122" font-size="11" fill="#374151">应用先从文件读取数据，再将数据写入 socket</text>
+
+  <!-- 4 buffer columns -->
+  <g font-size="11" fill="#111827">
+    <rect x="70" y="150" width="170" height="44" rx="5" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4"/>
+    <text x="155" y="170" text-anchor="middle" font-weight="700">磁盘 / 日志段</text>
+    <text x="155" y="186" text-anchor="middle" font-size="10" fill="#374151">segment .log</text>
+
+    <rect x="290" y="150" width="170" height="44" rx="5" fill="#ECFDF5" stroke="#059669" stroke-width="1.4"/>
+    <text x="375" y="170" text-anchor="middle" font-weight="700">内核缓冲</text>
+    <text x="375" y="186" text-anchor="middle" font-size="10" fill="#374151">PageCache</text>
+
+    <rect x="510" y="150" width="170" height="44" rx="5" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.4"/>
+    <text x="595" y="170" text-anchor="middle" font-weight="700">用户缓冲</text>
+    <text x="595" y="186" text-anchor="middle" font-size="10" fill="#374151">应用进程内存</text>
+
+    <rect x="730" y="150" width="170" height="44" rx="5" fill="#ECFDF5" stroke="#059669" stroke-width="1.4"/>
+    <text x="815" y="170" text-anchor="middle" font-weight="700">Socket 缓冲</text>
+    <text x="815" y="186" text-anchor="middle" font-size="10" fill="#374151">内核网络缓冲区</text>
+  </g>
+
+  <!-- arrows between -->
+  <line x1="240" y1="172" x2="288" y2="172" stroke="#EF4444" stroke-width="1.6" marker-end="url(#arrowRed)"/>
+  <text x="264" y="165" text-anchor="middle" font-size="10" fill="#EF4444">①读入</text>
+  <line x1="460" y1="172" x2="508" y2="172" stroke="#EF4444" stroke-width="1.6" marker-end="url(#arrowRed)"/>
+  <text x="484" y="165" text-anchor="middle" font-size="10" fill="#EF4444">②复制</text>
+  <line x1="680" y1="172" x2="728" y2="172" stroke="#EF4444" stroke-width="1.6" marker-end="url(#arrowRed)"/>
+  <text x="704" y="165" text-anchor="middle" font-size="10" fill="#EF4444">③复制</text>
+
+  <!-- Network output -->
+  <rect x="730" y="220" width="170" height="40" rx="5" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4"/>
+  <text x="815" y="237" text-anchor="middle" font-weight="700" font-size="11" fill="#111827">网卡</text>
+  <text x="815" y="252" text-anchor="middle" font-size="10" fill="#374151">④发送到网络</text>
+  <line x1="815" y1="194" x2="815" y2="218" stroke="#EF4444" stroke-width="1.6" marker-end="url(#arrowRed)"/>
+
+  <!-- Data path. Disk reads occur only on a PageCache miss. -->
+  <text x="60" y="240" font-size="11" fill="#374151">read()：应用请求读取文件</text>
+  <text x="60" y="258" font-size="11" fill="#374151">　　　PageCache 未命中时，从磁盘读入（①）</text>
+  <text x="60" y="276" font-size="11" fill="#374151">　　　将文件内容复制到用户缓冲区（②）</text>
+  <text x="60" y="294" font-size="11" fill="#374151">write()：将用户缓冲区的内容复制到 Socket 缓冲区（③）</text>
+  <text x="60" y="312" font-size="11" fill="#374151">　　　内核安排网络发送（④）</text>
+
+  <!-- ===== BOTTOM: sendfile(), without a user buffer for file contents ===== -->
+  <rect x="40" y="390" width="880" height="260" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="1.4"/>
+  <text x="60" y="414" font-size="14" font-weight="700" fill="#059669">零拷贝 sendfile()：文件内容不经过用户缓冲区</text>
+  <text x="60" y="432" font-size="11" fill="#374151">Kafka 指定文件范围和目标 socket，由内核组织发送</text>
+
+  <!-- 3 columns: disk -> PageCache -> network output -->
+  <g font-size="11" fill="#111827">
+    <rect x="80" y="460" width="180" height="48" rx="5" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4"/>
+    <text x="170" y="481" text-anchor="middle" font-weight="700">磁盘 / 日志段</text>
+    <text x="170" y="498" text-anchor="middle" font-size="10" fill="#374151">segment .log</text>
+
+    <rect x="380" y="460" width="200" height="48" rx="5" fill="#ECFDF5" stroke="#059669" stroke-width="1.6"/>
+    <text x="480" y="481" text-anchor="middle" font-weight="700">内核 PageCache</text>
+    <text x="480" y="498" text-anchor="middle" font-size="10" fill="#374151">已缓存的文件页</text>
+
+    <rect x="700" y="460" width="180" height="48" rx="5" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4"/>
+    <text x="790" y="481" text-anchor="middle" font-weight="700">Socket / 网卡</text>
+    <text x="790" y="498" text-anchor="middle" font-size="10" fill="#374151">网络 → 消费者</text>
+  </g>
+
+  <!-- arrows -->
+  <line x1="260" y1="484" x2="378" y2="484" stroke="#059669" stroke-width="1.8" marker-end="url(#arrowG)"/>
+  <text x="319" y="476" text-anchor="middle" font-size="10" fill="#059669">①未命中时读入</text>
+  <line x1="580" y1="484" x2="698" y2="484" stroke="#059669" stroke-width="1.8" marker-end="url(#arrowG)"/>
+  <text x="639" y="476" text-anchor="middle" font-size="10" fill="#059669">②内核组织发送</text>
+
+  <!-- Kafka process controls the transfer, without buffering file contents -->
+  <rect x="380" y="530" width="200" height="44" rx="5" fill="#ECFDF5" stroke="#059669" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <text x="480" y="550" text-anchor="middle" font-size="11" font-weight="700" fill="#059669">Kafka 进程</text>
+  <text x="480" y="566" text-anchor="middle" font-size="10" fill="#374151">指定文件范围，不接收文件内容</text>
+
+  <!-- steps -->
+  <text x="60" y="556" font-size="11" fill="#374151">sendfile()：Kafka 指定文件范围和目标 socket</text>
+  <text x="60" y="574" font-size="11" fill="#374151">　　　PageCache 未命中时，先从磁盘读入（①）</text>
+  <text x="60" y="592" font-size="11" fill="#374151">　　　内核组织网络发送（②），文件内容不复制到用户缓冲区</text>
+</svg>

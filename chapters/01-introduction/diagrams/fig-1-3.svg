@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 60 960 630" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrow-end" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  <!-- ============ 起点：第 1 章 引言 ============ -->
+  <rect x="380" y="72" width="200" height="56" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.8"/>
+  <text x="480" y="96" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">第 1 章 · 引言</text>
+  <text x="480" y="116" text-anchor="middle" font-size="12" fill="#374151">为什么是这三个软件</text>
+
+  <!-- 引言 → 主体 起点 -->
+  <line x1="480" y1="128" x2="480" y2="190" stroke="#4B5563" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <!-- ============ 第一组：第 2-4 章（数据结构 / 生命周期 / 内存磁盘） ============ -->
+  <text x="40" y="182" font-size="13" font-weight="600" fill="#374151">第一组　基础：数据怎么表示、启停怎么保状态、怎么不丢</text>
+
+  <!-- 第 2 章 数据结构与协议 -->
+  <rect x="40" y="194" width="280" height="76" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="56" y="218" font-size="14" font-weight="700" fill="#111827">第 2 章　数据结构与协议</text>
+  <text x="56" y="238" font-size="12" fill="#374151">核心问题：数据在内存/磁盘/网络上长什么样？</text>
+  <text x="56" y="258" font-size="11.5" fill="#6B7280">内部结构 · 编码升级 · 通信协议</text>
+
+  <!-- 第 3 章 生命周期 -->
+  <rect x="340" y="194" width="280" height="76" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="356" y="218" font-size="14" font-weight="700" fill="#111827">第 3 章　生命周期管理</text>
+  <text x="356" y="238" font-size="12" fill="#374151">核心问题：进程怎么优雅地启动与关闭？</text>
+  <text x="356" y="258" font-size="11.5" fill="#6B7280">信号处理 · 初始化顺序 · 优雅停机</text>
+
+  <!-- 第 4 章 内存与磁盘 -->
+  <rect x="640" y="194" width="280" height="76" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="656" y="218" font-size="14" font-weight="700" fill="#111827">第 4 章　内存与磁盘</text>
+  <text x="656" y="238" font-size="12" fill="#374151">核心问题：数据放哪？怎么不丢？</text>
+  <text x="656" y="258" font-size="11.5" fill="#6B7280">缓冲池 · 页缓存 · WAL · 零拷贝</text>
+
+  <!-- 横向递进箭头（2 → 3 → 4） -->
+  <line x1="320" y1="232" x2="338" y2="232" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="620" y1="232" x2="638" y2="232" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 第一组 → 第二组 -->
+  <line x1="480" y1="270" x2="480" y2="332" stroke="#4B5563" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <!-- ============ 第二组：第 5-7 章（分层 / 安全 / 集群） ============ -->
+  <text x="40" y="324" font-size="13" font-weight="600" fill="#374151">第二组　结构与治理：怎么切层、谁能进、怎么扩容</text>
+
+  <!-- 第 5 章 分层架构 -->
+  <rect x="40" y="336" width="280" height="76" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="56" y="360" font-size="14" font-weight="700" fill="#111827">第 5 章　分层架构</text>
+  <text x="56" y="380" font-size="12" fill="#374151">核心问题：模块怎么切、层怎么叠？</text>
+  <text x="56" y="400" font-size="11.5" fill="#6B7280">交互层 / 逻辑层 / 存储层的层次划分</text>
+
+  <!-- 第 6 章 安全机制 -->
+  <rect x="340" y="336" width="280" height="76" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="356" y="360" font-size="14" font-weight="700" fill="#111827">第 6 章　安全机制</text>
+  <text x="356" y="380" font-size="12" fill="#374151">核心问题：谁能访问、能做什么？</text>
+  <text x="356" y="400" font-size="11.5" fill="#6B7280">认证 · ACL · 加密 · 审计</text>
+
+  <!-- 第 7 章 集群架构 -->
+  <rect x="640" y="336" width="280" height="76" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="656" y="360" font-size="14" font-weight="700" fill="#111827">第 7 章　集群架构</text>
+  <text x="656" y="380" font-size="12" fill="#374151">核心问题：如何扩容与容错？</text>
+  <text x="656" y="400" font-size="11.5" fill="#6B7280">主从 · 哨兵 · 共识 · 故障转移</text>
+
+  <!-- 横向递进箭头（5 → 6 → 7） -->
+  <line x1="320" y1="374" x2="338" y2="374" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="620" y1="374" x2="638" y2="374" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 第二组 → 第三组 -->
+  <line x1="480" y1="412" x2="480" y2="474" stroke="#4B5563" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <!-- ============ 第三组：第 8-9 章（存储格式 / 数据同步） ============ -->
+  <text x="40" y="466" font-size="13" font-weight="600" fill="#374151">第三组　落盘与搬运：格式与复制</text>
+
+  <!-- 第 8 章 存储格式 -->
+  <rect x="40" y="478" width="280" height="76" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="56" y="502" font-size="14" font-weight="700" fill="#111827">第 8 章　存储格式</text>
+  <text x="56" y="522" font-size="12" fill="#374151">核心问题：数据在磁盘上长什么样？</text>
+  <text x="56" y="542" font-size="11.5" fill="#6B7280">页 · B+ 树 · 日志段 · 压实</text>
+
+  <!-- 第 9 章 数据同步 -->
+  <rect x="340" y="478" width="280" height="76" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.6"/>
+  <text x="356" y="502" font-size="14" font-weight="700" fill="#111827">第 9 章　数据同步</text>
+  <text x="356" y="522" font-size="12" fill="#374151">核心问题：多副本间数据怎么保持一致？</text>
+  <text x="356" y="542" font-size="11.5" fill="#6B7280">复制 · binlog · ISR · 一致性级别</text>
+
+  <!-- 横向递进箭头（8 → 9） -->
+  <line x1="320" y1="516" x2="338" y2="516" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 第 9 章 → 第 10 章 -->
+  <line x1="480" y1="554" x2="480" y2="592" stroke="#EF4444" stroke-width="2" marker-end="url(#arrow-end)"/>
+  <text x="492" y="576" font-size="11.5" fill="#EF4444">共性提炼</text>
+
+  <!-- ============ 终点：第 10 章 总结 ============ -->
+  <rect x="320" y="594" width="320" height="70" rx="6" fill="#F3F4F6" stroke="#111827" stroke-width="2"/>
+  <text x="480" y="620" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">第 10 章 · 总结</text>
+  <text x="480" y="640" text-anchor="middle" font-size="12" fill="#374151">前九章复盘 · 共性规律 · 权衡框架 · 给实践者的建议</text>
+  <text x="480" y="656" text-anchor="middle" font-size="11.5" font-style="italic" fill="#6B7280">把八章实现提炼成可复用的架构认知</text>
+
+</svg>

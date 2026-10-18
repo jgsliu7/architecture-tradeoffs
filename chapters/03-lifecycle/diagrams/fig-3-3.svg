@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 52 880 500" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+  <!-- Trigger box -->
+  <rect x="300" y="64" width="280" height="70" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="440" y="92" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">关闭触发</text>
+  <text x="316" y="116" font-size="12" fill="#374151">SHUTDOWN 命令 · SIGTERM/SIGINT</text>
+
+  <!-- arrow down -->
+  <path d="M440 134 L440 164" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Step 1: 处理后台任务 -->
+  <rect x="300" y="166" width="280" height="76" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="440" y="192" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">① 处理后台任务</text>
+  <text x="316" y="220" font-size="12" fill="#374151">检查并处理后台快照 / AOF 重写</text>
+
+  <!-- arrow down to step 2 -->
+  <path d="M440 242 L440 272" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Step 2: 刷 AOF 缓冲 -->
+  <rect x="300" y="274" width="280" height="60" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="440" y="300" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">② 刷 AOF 缓冲（若 AOF 开启）</text>
+  <text x="316" y="322" font-size="12" fill="#374151">把待写入的数据刷盘</text>
+
+  <!-- branch arrows from step 2：中干下伸 + 左右肘线，落点贴 ③a/③b 顶边中点 -->
+  <path d="M440 334 L440 344" fill="none" stroke="#4B5563" stroke-width="2"/>
+  <path d="M440 344 L288 344 Q280 344 280 352 L280 364" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M440 344 L592 344 Q600 344 600 352 L600 364" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Step 3a / 3b: RDB 落盘与否由用户决定 -->
+  <rect x="160" y="366" width="240" height="86" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="280" y="392" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">③a SHUTDOWN SAVE</text>
+  <text x="176" y="420" font-size="12" fill="#374151">生成本次 RDB 快照</text>
+
+  <rect x="480" y="366" width="240" height="86" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="600" y="392" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">③b SHUTDOWN NOSAVE</text>
+  <text x="496" y="420" font-size="12" fill="#374151">跳过本次 RDB 快照</text>
+
+  <!-- merge arrows into step 4：两肘线汇入中干，单箭头贴 ④ 顶边中点 -->
+  <path d="M280 452 L280 458 Q280 464 286 464 L440 464" fill="none" stroke="#4B5563" stroke-width="2"/>
+  <path d="M600 452 L600 458 Q600 464 594 464 L440 464" fill="none" stroke="#4B5563" stroke-width="2"/>
+  <path d="M440 464 L440 482" fill="none" stroke="#4B5563" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Step 4: 本地收尾 -->
+  <rect x="300" y="484" width="280" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="440" y="510" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">④ 断开连接并退出</text>
+  <text x="316" y="530" font-size="12" fill="#374151">释放本地资源</text>
+</svg>

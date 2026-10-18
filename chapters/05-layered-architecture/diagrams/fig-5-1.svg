@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-16 64 776 556" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+
+  <!-- 三层背景带（左侧标注）：以①框下缘 y=142 为界，交互层只盖①，逻辑层盖②—⑤ -->
+  <rect x="36" y="76" width="4" height="66" rx="2" fill="#4F46E5" opacity="0.55"/>
+  <text x="28" y="100" text-anchor="end" font-size="12" font-weight="600" fill="#4F46E5">交互层</text>
+  <rect x="36" y="152" width="4" height="364" rx="2" fill="#4F46E5"/>
+  <text x="28" y="188" text-anchor="end" font-size="12" font-weight="600" fill="#4F46E5">逻辑层</text>
+  <rect x="36" y="526" width="4" height="60" rx="2" fill="#4F46E5" opacity="0.7"/>
+  <text x="28" y="560" text-anchor="end" font-size="12" font-weight="600" fill="#4F46E5">存储层</text>
+
+  <!-- 步骤 1：RESP 解析 -->
+  <rect x="80" y="86" width="340" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="250" y="110" text-anchor="middle" font-size="14" fill="#111827">① RESP 协议解析</text>
+  <text x="250" y="130" text-anchor="middle" font-size="11" fill="#374151">接收时解析，收齐一条命令后再执行</text>
+
+  <!-- client 结构体（贯穿）-->
+  <rect x="470" y="86" width="220" height="500" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="580" y="108" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">client 结构体</text>
+  <line x1="490" y1="118" x2="670" y2="118" stroke="#9CA3AF" stroke-width="1"/>
+  <text x="580" y="138" text-anchor="middle" font-size="11" fill="#374151">· 查询缓冲区 querybuf</text>
+  <text x="580" y="158" text-anchor="middle" font-size="11" fill="#374151">· 参数 argv / argc</text>
+  <text x="580" y="178" text-anchor="middle" font-size="11" fill="#374151">· 当前命令 cmd 指针</text>
+  <text x="580" y="198" text-anchor="middle" font-size="11" fill="#374151">· 当前数据库 db 指针</text>
+  <text x="580" y="218" text-anchor="middle" font-size="11" fill="#374151">· 输出缓冲区</text>
+  <text x="580" y="238" text-anchor="middle" font-size="11" fill="#374151">· 当前用户 / 认证状态</text>
+
+  <!-- 箭头 1->2 -->
+  <line x1="250" y1="142" x2="250" y2="172" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow4)"/>
+  <line x1="420" y1="114" x2="468" y2="114" stroke="#4B5563" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#arrow4)"/>
+
+  <!-- 步骤 2：命令表查找 -->
+  <rect x="80" y="174" width="340" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="250" y="198" text-anchor="middle" font-size="14" fill="#111827">② 命令表查找</text>
+  <text x="250" y="218" text-anchor="middle" font-size="11" fill="#374151">按命令名查表，得到处理函数与命令元数据</text>
+
+  <line x1="250" y1="230" x2="250" y2="264" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow4)"/>
+
+  <!-- 步骤 3：参数数量校验后检查 ACL -->
+  <rect x="80" y="266" width="340" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="250" y="290" text-anchor="middle" font-size="14" fill="#111827">③ 参数数量校验 → ACL 检查</text>
+  <text x="250" y="310" text-anchor="middle" font-size="11" fill="#374151">先核对参数数量，再检查命令与键访问权限</text>
+
+  <line x1="250" y1="322" x2="250" y2="356" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow4)"/>
+
+  <!-- 步骤 4：执行 -->
+  <rect x="80" y="358" width="340" height="68" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="250" y="384" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">④ 命令执行 c-&gt;cmd-&gt;proc(c)</text>
+  <text x="250" y="405" text-anchor="middle" font-size="11" fill="#374151">主线程串行处理，访问 db 中的内存对象</text>
+
+  <line x1="250" y1="426" x2="250" y2="460" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow4)"/>
+
+  <!-- 步骤 5：执行后统计与传播，各自处理 -->
+  <rect x="80" y="462" width="340" height="48" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="250" y="483" text-anchor="middle" font-size="13" fill="#111827">⑤ 执行后处理</text>
+  <text x="250" y="500" text-anchor="middle" font-size="11" fill="#374151">慢日志 / MONITOR；写命令另行传播</text>
+
+  <!-- 存储职责：④执行期间经左侧支路访问内存，避免误读为⑤之后 -->
+  <rect x="80" y="540" width="340" height="48" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="250" y="561" text-anchor="middle" font-size="13" fill="#111827">④ 执行期间：访问键空间 / robj（内存）</text>
+  <text x="250" y="578" text-anchor="middle" font-size="11" fill="#374151">持久化可选；RDB 快照不在逐命令路径上</text>
+  <path d="M 80 392 L 62 392 L 62 564 L 78 564" fill="none" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow4)"/>
+
+  <line x1="420" y1="200" x2="468" y2="200" stroke="#4B5563" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#arrow4)"/>
+  <line x1="420" y1="392" x2="468" y2="392" stroke="#4B5563" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#arrow4)"/>
+</svg>

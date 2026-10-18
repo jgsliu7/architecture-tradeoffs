@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 5 章 分层架构设计 — 存储层 / 逻辑层 / 交互层</title>
+<style>
+*{box-sizing:border-box}
+:root{--ink:#1f2328;--mute:#57606a;--line:#d8dee4;--accent:#4f46e5;--bg:#fff;--soft:#f6f8fa}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;color:var(--ink);background:#fff;line-height:1.8;font-size:16px}
+.layout{display:grid;grid-template-columns:var(--toc-w,292px) 6px 1fr;max-width:1340px;margin:0 auto;transition:grid-template-columns .2s}
+body.toc-dragging .layout{transition:none}
+nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:24px 16px 24px 8px;font-size:14px;min-width:0}
+main.content{min-width:0}
+.toc-drag{position:sticky;top:0;align-self:start;height:100vh;cursor:col-resize;background:var(--line);transition:background .15s}
+.toc-drag:hover,.toc-drag.active{background:var(--accent)}
+body.toc-dragging{user-select:none;cursor:col-resize}
+.toc-collapse{position:absolute;top:16px;right:8px;border:1px solid var(--line);background:#fff;color:var(--mute);border-radius:6px;width:24px;height:24px;font-size:13px;line-height:1;cursor:pointer;padding:0}
+.toc-collapse:hover{color:var(--accent);border-color:var(--accent)}
+.toc-expand{display:none;position:fixed;left:0;top:120px;z-index:55;border:1px solid var(--line);border-left:none;background:#fff;color:var(--mute);border-radius:0 8px 8px 0;padding:10px 6px;font-size:14px;cursor:pointer;box-shadow:2px 2px 8px rgba(0,0,0,.08)}
+.toc-expand:hover{color:var(--accent)}
+body.toc-collapsed .layout{grid-template-columns:1fr}
+body.toc-collapsed nav.toc,body.toc-collapsed .toc-drag{display:none}
+body.toc-collapsed .toc-expand{display:block}
+.toc-title{font-weight:700;font-size:15px;color:var(--accent);margin:0 0 4px 8px}
+.toc-title a{color:inherit;text-decoration:none}
+.toc-sub{font-size:12px;color:var(--mute);margin:0 0 16px 8px}
+nav.toc ul{list-style:none;padding:0;margin:0}
+nav.toc li>a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.5}
+nav.toc li>a:hover{background:var(--soft)}
+nav.toc li.active>a{background:#eef2ff;color:var(--accent);font-weight:600}
+nav.toc li.nav-sub>a{padding-left:22px;font-size:13px;color:var(--mute)}
+.content{padding:32px 48px 120px;max-width:1000px;overflow-wrap:anywhere}
+.chapter-meta{color:var(--mute);font-size:13px;margin:0 0 18px}
+.page-nav{display:flex;justify-content:space-between;gap:16px;margin:40px 0 0;padding-top:20px;border-top:1px solid var(--line)}
+.page-nav a{display:block;max-width:48%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--ink);background:var(--soft);line-height:1.5}
+.page-nav a:hover{border-color:var(--accent);color:var(--accent)}
+.page-nav .empty{visibility:hidden}
+h1,h2,h3,h4{line-height:1.35;color:var(--ink);font-weight:700}
+h1{font-size:1.9em;margin:0 0 .6em;padding-bottom:.3em}
+h2{font-size:1.42em;margin:1.8em 0 .6em}
+h3{font-size:1.18em;margin:1.5em 0 .5em}
+h4{font-size:1.04em;margin:1.3em 0 .4em;color:#24292f}
+p{margin:0 0 1em}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+strong{font-weight:700;color:#111827}
+em{font-style:normal;color:var(--mute)}
+hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
+code{font-family:"SF Mono",Menlo,Consolas,monospace;background:var(--soft);padding:.12em .4em;border-radius:4px;font-size:.9em;color:#24292f}
+pre{background:#1e1e2e;color:#cdd6f4;padding:16px 18px;border-radius:8px;overflow-x:auto;line-height:1.55}
+pre code{background:none;color:inherit;padding:0;font-size:.86em}
+blockquote{margin:1.2em 0;padding:.6em 1em .6em 1.1em;border-left:4px solid var(--accent);background:#f7f8ff;color:#343a40;border-radius:0 6px 6px 0}
+blockquote strong{color:var(--accent)}
+ul,ol{margin:0 0 1em;padding-left:1.7em}
+li{margin:.25em 0}
+.table-wrap{overflow-x:auto;margin:1.2em 0}
+table{border-collapse:collapse;width:100%;font-size:.94em}
+th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+thead th{background:#eef2ff;color:#3730a3;font-weight:600}
+tbody tr:nth-child(even){background:#fafbfd}
+figure.fig{margin:2em calc((100% - 1000px)/2);text-align:center}
+.svg-wrap,.inline-svg{display:block;width:100%}
+figure.fig svg,.inline-svg svg,.svg-wrap svg,figure.fig img{width:100%;max-width:1000px;height:auto;display:block;margin:0 auto}
+figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
+.toc-toggle{display:none}
+.review-index{display:grid;gap:12px;margin:24px 0 0}
+.review-index a{display:block;padding:14px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;background:#fff}
+.review-index a:hover{border-color:var(--accent);background:#f7f8ff}
+.review-index strong{display:block;color:var(--ink)}
+.review-index span{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+@media(max-width:1200px){figure.fig{margin:2em auto}}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:fixed;left:0;top:0;width:292px;background:#fff;z-index:50;transform:translateX(-100%);transition:transform .2s;box-shadow:2px 0 12px rgba(0,0,0,.08)}
+  nav.toc.open{transform:translateX(0)}
+  body.toc-collapsed nav.toc{display:block}
+  .toc-drag,.toc-collapse,.toc-expand{display:none!important}
+  .content{padding:20px 18px 80px;max-width:100%;min-width:0}
+  .toc-toggle{display:inline-block;position:fixed;right:16px;bottom:16px;z-index:60;background:var(--accent);color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer}
+  .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:40}
+  .backdrop.show{display:block}
+  /* 窄屏宽图改为容器内横向滚动，文字保持可读 */
+  .svg-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  figure.fig svg{min-width:760px}
+}
+@media print{a.xref{color:inherit}}
+</style>
+</head>
+<body>
+<div class="backdrop" id="bd"></div>
+<button class="toc-toggle">目录</button>
+<button class="toc-expand" id="tocExpand" title="展开目录">»</button>
+<div class="layout">
+<nav class="toc" id="toc">
+  <button class="toc-collapse" id="tocCollapse" title="收起目录">«</button>
+  <div class="toc-title"><a href="../index.html">架构取舍之道</a></div>
+  <div class="toc-sub">在线阅读版</div>
+  <ul>
+<li><a href="../index.html">首页目录</a></li>
+<li><a href="00-preface.html">序言</a>
+</li>
+<li><a href="01-introduction.html">第 1 章 引言 — 为什么是这三个软件</a>
+</li>
+<li><a href="02-data-structures-protocols.html">第 2 章 数据结构与协议 — 为各自的目标而设计</a>
+</li>
+<li><a href="03-lifecycle.html">第 3 章 生命周期管理 — 优雅启动与关闭</a>
+</li>
+<li><a href="04-memory-disk.html">第 4 章 内存与磁盘 — 速度与持久化的平衡</a>
+</li>
+<li class="active"><a href="05-layered-architecture.html">第 5 章 分层架构设计 — 存储层 / 逻辑层 / 交互层</a>
+<ul>
+<li class="nav-sub"><a href="#s86">本章导读</a></li>
+<li class="nav-sub"><a href="#sec-5.1">5.1 分层要解决什么问题</a></li>
+<li class="nav-sub"><a href="#sec-5.2">5.2 Redis 的做法</a></li>
+<li class="nav-sub"><a href="#sec-5.3">5.3 MySQL 的做法</a></li>
+<li class="nav-sub"><a href="#sec-5.4">5.4 Kafka 的做法</a></li>
+<li class="nav-sub"><a href="#sec-5.5">5.5 横向对比</a></li>
+<li class="nav-sub"><a href="#sec-5.6">5.6 架构启示</a></li>
+<li class="nav-sub"><a href="#sec-5.7">5.7 小结</a></li>
+</ul>
+</li>
+<li><a href="06-security.html">第 6 章 安全机制 — 权限、加密、审计</a>
+</li>
+<li><a href="07-cluster.html">第 7 章 集群架构 — 从单点到分布式</a>
+</li>
+<li><a href="08-storage-format.html">第 8 章 磁盘存储格式 — 文件结构的设计哲学</a>
+</li>
+<li><a href="09-data-sync.html">第 9 章 数据同步机制 — 集群一致性的实现</a>
+</li>
+<li><a href="10-summary.html">第 10 章 总结：架构设计的共性规律与取舍</a>
+</li>
+<li><a href="10-epilogue.html">后记</a>
+</li>
+<li><a href="11-references.html">附录　参考文献与延伸阅读（按章索引）</a>
+</li>
+</ul>
+</nav>
+<div class="toc-drag" id="tocDrag" title="拖拽调整目录宽度"></div>
+<main class="content">
+<article class="chapter"><h1 id="s85">第 5 章 分层架构设计 — 存储层 / 逻辑层 / 交互层</h1>
+<h2 id="s86">本章导读</h2>
+<p>一个功能的需求变了，哪些已有代码会受到影响？运营后台的订单查询和导出若共用同一套 SQL 拼接逻辑，修改导出时就可能影响订单查询。如果这套逻辑把两种功能各自的需求混在一起，一次改动牵连的范围就会扩大。</p>
+<p>网络交互、请求处理和数据存储之间也有类似的职责边界；一处变化会牵动多少环节，与这些边界怎样划分有关。</p>
+<p>分层也有成本：多一层就多一处边界要维护，请求跨层还会有调用开销。本章从交互层、逻辑层、存储层三个方面，对比 Redis、MySQL、Kafka 的职责划分与层间通信。</p>
+<h2 id="sec-5.1">5.1 分层要解决什么问题</h2>
+<p>一个把所有事情混在一起写的服务是这样的：直接监听 TCP，收到字节后就地解析命令、就地读数据库、就地拼成报文发回去。这种写法能让原型很快做出来。随着功能增多，问题会逐渐显现。一是修改请求处理流程时，常要同时理解协议、SQL 和内存模型，认知负担重；二是换网络库或升级存储格式会牵动多个处理环节，例如协议处理代码里可能还留着针对旧格式的假设；三是可测试性差，业务逻辑难以脱离网络做单元测试。</p>
+<p>以数据读写请求为例，不可信的客户端输入先由交互层解析，再交给相应的逻辑与存储组件处理，结果经交互层返回。请求经过职责边界时，有时需要转换表示，层间调用也有开销；连接和会话状态则可能继续随请求传递。</p>
+<p>这类读写路径在 Redis、MySQL、Kafka 中都能找到，各家要满足的约束不同，分层和调用方式也不同。</p>
+<p>Redis 侧重<strong>常见命令的低延迟</strong>。它尽量让模块在进程内通过共享对象和函数调用衔接，减少额外的数据转换与线程交接。</p>
+<p>MySQL 的约束是<strong>SQL 语义 + 多种存储后端</strong>。它把通用的 SQL 处理与具体存储引擎分开；事务型、内存型、归档型等引擎的能力和访问方式各有差异。为支持这些后端，MySQL 提供一套可插拔接口，让服务层通过统一接口访问不同的引擎实现。</p>
+<p>Kafka 的分层还要适应<strong>分布式部署</strong>。Broker 与 Broker 之间、Producer 与 Broker 之间通过 TCP 通信；一个 Broker 内部的模块则可以用队列或对象方法调用衔接。Kafka 的分层需要兼顾内部职责划分与跨 Broker 协作，服务于水平扩展。</p>
+<p>从功能职责看，三个软件都可以映射到交互层、逻辑层、存储层三段。</p>
+<h2 id="sec-5.2">5.2 Redis 的做法</h2>
+<p>Redis 分出交互、命令处理和存储职责，常见命令通过进程内对象与函数调用衔接，请求路径较短。主线程中的事件循环衔接网络处理与命令执行；命令表负责分派，<code>redisObject</code> 用类型和编码分别表示数据语义与内存形式。</p>
+<h3 id="sec-5.2.1">5.2.1 交互层：RESP 与单线程多路复用</h3>
+<p>Redis 与客户端之间用 RESP（Redis 序列化协议）通信。类型和长度信息使解析器能够<strong>边接收边解析</strong>，收齐一条命令并通过检查后再执行。</p>
+<p>Redis 通过 Reactor 事件循环处理网络事件（Reactor 是事件驱动 I/O 模式的统称）。在 6.0 之前，Redis 的网络 I/O 和命令执行在同一个线程里：主线程用 epoll/kqueue 多路复用监听所有客户端连接，有事件就处理，处理完再回到事件循环。这套设计的关键是：交互层和命令逻辑在同一线程中衔接，不必为每次模块调用增加工作线程交接。数据结构可以保持串行访问，层与层之间主要传递对象和调用函数。</p>
+<p>Redis 6.0 起可以选择启用多线程 I/O：网络收发等工作由多个线程分担，<strong>普通命令仍由主线程串行执行</strong>，键空间更新保留串行路径。</p>
+<p>客户端输出缓冲区（client output buffer）暂存待发送的响应，让命令执行与后续网络发送分开。客户端接收得慢时，响应会在服务端积压，占用更多内存。</p>
+<h3 id="sec-5.2.2">5.2.2 逻辑层：命令表与请求上下文</h3>
+<p>逻辑层用命令表组织命令。<code>redisCommandTable</code> 声明内置命令，将命令名关联到处理函数，并记录参数数量校验规则（arity）、命令是否只读、是否写入、是否可能阻塞等标志，以及键参数的位置规则。Redis 启动时把这些条目加入运行时命令表；收到请求后，再按命令名从中查找对应条目。</p>
+<p><code>client</code> 结构体把交互环节解析出的命令参数和会话状态带入命令处理环节，两个环节共享同一请求上下文。</p>
+<figure class="fig" id="fig-5-1"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="-16 64 776 556" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_5_1_arrow4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="36" y="76" width="4" height="66" rx="2" fill="#4F46E5" opacity="0.55"/>
+  <text x="28" y="100" text-anchor="end" font-size="12" font-weight="600" fill="#4F46E5">交互层</text>
+  <rect x="36" y="152" width="4" height="364" rx="2" fill="#4F46E5"/>
+  <text x="28" y="188" text-anchor="end" font-size="12" font-weight="600" fill="#4F46E5">逻辑层</text>
+  <rect x="36" y="526" width="4" height="60" rx="2" fill="#4F46E5" opacity="0.7"/>
+  <text x="28" y="560" text-anchor="end" font-size="12" font-weight="600" fill="#4F46E5">存储层</text>
+
+  
+  <rect x="80" y="86" width="340" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="250" y="110" text-anchor="middle" font-size="14" fill="#111827">① RESP 协议解析</text>
+  <text x="250" y="130" text-anchor="middle" font-size="11" fill="#374151">接收时解析，收齐一条命令后再执行</text>
+
+  
+  <rect x="470" y="86" width="220" height="500" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="580" y="108" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">client 结构体</text>
+  <line x1="490" y1="118" x2="670" y2="118" stroke="#9CA3AF" stroke-width="1"/>
+  <text x="580" y="138" text-anchor="middle" font-size="11" fill="#374151">· 查询缓冲区 querybuf</text>
+  <text x="580" y="158" text-anchor="middle" font-size="11" fill="#374151">· 参数 argv / argc</text>
+  <text x="580" y="178" text-anchor="middle" font-size="11" fill="#374151">· 当前命令 cmd 指针</text>
+  <text x="580" y="198" text-anchor="middle" font-size="11" fill="#374151">· 当前数据库 db 指针</text>
+  <text x="580" y="218" text-anchor="middle" font-size="11" fill="#374151">· 输出缓冲区</text>
+  <text x="580" y="238" text-anchor="middle" font-size="11" fill="#374151">· 当前用户 / 认证状态</text>
+
+  
+  <line x1="250" y1="142" x2="250" y2="172" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_1_arrow4)"/>
+  <line x1="420" y1="114" x2="468" y2="114" stroke="#4B5563" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#fig_5_1_arrow4)"/>
+
+  
+  <rect x="80" y="174" width="340" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="250" y="198" text-anchor="middle" font-size="14" fill="#111827">② 命令表查找</text>
+  <text x="250" y="218" text-anchor="middle" font-size="11" fill="#374151">按命令名查表，得到处理函数与命令元数据</text>
+
+  <line x1="250" y1="230" x2="250" y2="264" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_1_arrow4)"/>
+
+  
+  <rect x="80" y="266" width="340" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="250" y="290" text-anchor="middle" font-size="14" fill="#111827">③ 参数数量校验 → ACL 检查</text>
+  <text x="250" y="310" text-anchor="middle" font-size="11" fill="#374151">先核对参数数量，再检查命令与键访问权限</text>
+
+  <line x1="250" y1="322" x2="250" y2="356" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_1_arrow4)"/>
+
+  
+  <rect x="80" y="358" width="340" height="68" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="250" y="384" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">④ 命令执行 c-&gt;cmd-&gt;proc(c)</text>
+  <text x="250" y="405" text-anchor="middle" font-size="11" fill="#374151">主线程串行处理，访问 db 中的内存对象</text>
+
+  <line x1="250" y1="426" x2="250" y2="460" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_1_arrow4)"/>
+
+  
+  <rect x="80" y="462" width="340" height="48" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="250" y="483" text-anchor="middle" font-size="13" fill="#111827">⑤ 执行后处理</text>
+  <text x="250" y="500" text-anchor="middle" font-size="11" fill="#374151">慢日志 / MONITOR；写命令另行传播</text>
+
+  
+  <rect x="80" y="540" width="340" height="48" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="250" y="561" text-anchor="middle" font-size="13" fill="#111827">④ 执行期间：访问键空间 / robj（内存）</text>
+  <text x="250" y="578" text-anchor="middle" font-size="11" fill="#374151">持久化可选；RDB 快照不在逐命令路径上</text>
+  <path d="M 80 392 L 62 392 L 62 564 L 78 564" fill="none" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_1_arrow4)"/>
+
+  <line x1="420" y1="200" x2="468" y2="200" stroke="#4B5563" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#fig_5_1_arrow4)"/>
+  <line x1="420" y1="392" x2="468" y2="392" stroke="#4B5563" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#fig_5_1_arrow4)"/>
+</svg>
+</div><figcaption>图 5-1　Redis 命令处理流水线：交互层与逻辑层用 client 结构体衔接，进程内层间传递不重新序列化。</figcaption></figure>
+<p>图中的 <code>client</code> 保存查询缓冲区、命令参数和当前数据库等会话状态。多个处理环节按同一套字段约定使用这份上下文，无须逐层复制全部状态。</p>
+<p>模块命令也可在加载时注册到运行时命令表，接入同一条分派路径。</p>
+<h3 id="sec-5.2.3">5.2.3 存储层：数据对象、内存管理与持久化</h3>
+<p>Redis 围绕内存数据结构组织存储，没有像 MySQL 那样提供可插拔的存储引擎接口。</p>
+<p>Redis 的数据对象由 <code>redisObject</code>（robj）统一表示。它把<strong>类型（type）与编码（encoding）分离</strong>：type 决定语义，表示对象属于字符串、列表、哈希、集合、有序集合等哪种类型，也决定了能对它执行哪些命令；encoding 决定内存表示。同一个 type 可以挂不同的 encoding，比如一个哈希在小数据量时用 listpack（紧凑连续内存），膨胀到阈值后自动升级为 hashtable。</p>
+<figure class="fig" id="fig-5-2"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 62 820 436" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_5_2_arrowL43" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="300" y="74" width="220" height="50" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="410" y="96" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">redisObject（robj）</text>
+  <text x="410" y="114" text-anchor="middle" font-size="11" fill="#374151">type | encoding | refcount | lru | ptr</text>
+
+  
+  <rect x="60" y="150" width="280" height="300" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="200" y="176" text-anchor="middle" font-size="14" font-weight="600" fill="#4F46E5">type（类型 / 语义）</text>
+  <text x="200" y="194" text-anchor="middle" font-size="11" fill="#374151">决定能执行哪些命令</text>
+  <line x1="80" y1="206" x2="320" y2="206" stroke="#C7D2FE" stroke-width="1"/>
+
+  <rect x="84" y="220" width="232" height="32" rx="4" fill="#FFFFFF" stroke="#A5B4FC" stroke-width="1"/>
+  <text x="100" y="240" font-size="13" fill="#111827">OBJ_STRING</text>
+  <text x="312" y="240" text-anchor="end" font-size="11" fill="#6B7280">字符串</text>
+
+  <rect x="84" y="260" width="232" height="32" rx="4" fill="#FFFFFF" stroke="#A5B4FC" stroke-width="1"/>
+  <text x="100" y="280" font-size="13" fill="#111827">OBJ_LIST</text>
+  <text x="312" y="280" text-anchor="end" font-size="11" fill="#6B7280">列表</text>
+
+  <rect x="84" y="300" width="232" height="32" rx="4" fill="#FFFFFF" stroke="#A5B4FC" stroke-width="1"/>
+  <text x="100" y="320" font-size="13" fill="#111827">OBJ_HASH</text>
+  <text x="312" y="320" text-anchor="end" font-size="11" fill="#6B7280">哈希</text>
+
+  <rect x="84" y="340" width="232" height="32" rx="4" fill="#FFFFFF" stroke="#A5B4FC" stroke-width="1"/>
+  <text x="100" y="360" font-size="13" fill="#111827">OBJ_SET</text>
+  <text x="312" y="360" text-anchor="end" font-size="11" fill="#6B7280">集合</text>
+
+  <rect x="84" y="380" width="232" height="32" rx="4" fill="#FFFFFF" stroke="#A5B4FC" stroke-width="1"/>
+  <text x="100" y="400" font-size="13" fill="#111827">OBJ_ZSET</text>
+  <text x="312" y="400" text-anchor="end" font-size="11" fill="#6B7280">有序集合</text>
+
+  <text x="200" y="434" text-anchor="middle" font-size="11" fill="#4F46E5" font-weight="600">标明对象的类型语义</text>
+
+  
+  <rect x="480" y="150" width="280" height="340" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="620" y="176" text-anchor="middle" font-size="14" font-weight="600" fill="#374151">encoding（编码 / 内存表示）</text>
+  <text x="620" y="194" text-anchor="middle" font-size="11" fill="#374151">同一 type 可用多种 encoding</text>
+  <line x1="500" y1="206" x2="740" y2="206" stroke="#D1D5DB" stroke-width="1"/>
+
+  <rect x="504" y="220" width="232" height="28" rx="4" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="520" y="238" font-size="12" fill="#111827">int</text>
+  <text x="724" y="238" text-anchor="end" font-size="10" fill="#6B7280">整数值内嵌</text>
+
+  <rect x="504" y="254" width="232" height="28" rx="4" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="520" y="272" font-size="12" fill="#111827">embstr</text>
+  <text x="724" y="272" text-anchor="end" font-size="10" fill="#6B7280">短串：单次分配</text>
+
+  <rect x="504" y="288" width="232" height="28" rx="4" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="520" y="306" font-size="12" fill="#111827">raw</text>
+  <text x="724" y="306" text-anchor="end" font-size="10" fill="#6B7280">长串：SDS</text>
+
+  <rect x="504" y="322" width="232" height="28" rx="4" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="520" y="340" font-size="12" fill="#111827">listpack</text>
+  <text x="724" y="340" text-anchor="end" font-size="10" fill="#6B7280">小型哈希 / 小型有序集合</text>
+
+  <rect x="504" y="356" width="232" height="28" rx="4" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="520" y="374" font-size="12" fill="#111827">quicklist（节点为 listpack）</text>
+  <text x="724" y="374" text-anchor="end" font-size="10" fill="#6B7280">列表</text>
+
+  <rect x="504" y="390" width="232" height="28" rx="4" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="520" y="408" font-size="12" fill="#111827">hashtable</text>
+  <text x="724" y="408" text-anchor="end" font-size="10" fill="#6B7280">较大哈希 / 较大集合</text>
+
+  <rect x="504" y="424" width="232" height="28" rx="4" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="520" y="442" font-size="12" fill="#111827">skiplist + dict</text>
+  <text x="724" y="442" text-anchor="end" font-size="10" fill="#6B7280">有序集合</text>
+
+  <text x="620" y="476" text-anchor="middle" font-size="11" fill="#374151" font-weight="600">标明对象的内存表示</text>
+
+  
+  <line x1="340" y1="300" x2="478" y2="300" stroke="#EF4444" stroke-width="1.6" marker-end="url(#fig_5_2_arrowL43)"/>
+  <text x="420" y="292" text-anchor="middle" font-size="11" fill="#EF4444" font-weight="600">编码选择</text>
+  <text x="410" y="316" text-anchor="middle" font-size="10" fill="#6B7280">各 type 有相应的 encoding</text>
+</svg>
+</div><figcaption>图 5-2　redisObject 的 type / encoding 解耦：type 标明类型语义，encoding 标明内存表示。</figcaption></figure>
+<p>命令按 type 对外提供语义，例如对列表执行 LPUSH，内部编码变化不改这一语义。</p>
+<p>达到 <code>maxmemory</code> 上限后，Redis 可拒绝会增加内存的写入，也可按策略淘汰已有键。大对象的释放也会影响请求延迟：<code>UNLINK</code> 可把释放工作交给后台线程；默认配置下，普通 <code>DEL</code> 可能在主线程同步释放大对象。</p>
+<p>持久化也是可选的：RDB 保存全量快照，AOF 记录写入；两者都能关闭，此时实例只靠内存保存数据，重启即丢。</p>
+<p>没有存储引擎接口的代价是，不能通过替换引擎，让同一套命令处理逻辑改用以磁盘为主的后端。</p>
+<h3 id="sec-5.2.4">5.2.4 层间通信</h3>
+<p>Redis 这些进程内环节通过函数调用和共享对象衔接，不必为层间交互重新序列化数据。交互层到逻辑层走 <code>client</code> 结构体加直接函数调用；逻辑层到存储层走 <code>robj</code> 指针加直接内存访问。运行时命令表中的条目持有处理函数指针，分派时调用 <code>c-&gt;cmd-&gt;proc(c)</code>。进程内调用降低了常见命令的层间开销。</p>
+<h2 id="sec-5.3">5.3 MySQL 的做法</h2>
+<p>MySQL 用同一套 SQL 服务支持多种存储引擎，因此在服务层与引擎之间设置了标准接口。<code>THD</code>（线程描述符，THread Descriptor）作为共享的会话上下文贯穿三层，服务层把 SQL 处理切成解析、优化、执行三段，存储引擎层用 Handler API 定义行操作契约。</p>
+<h3 id="sec-5.3.1">5.3.1 交互层：连接、认证与线程模型</h3>
+<p>MySQL 的连接层负责客户端接入、协议握手和认证，也建立供后续处理使用的会话状态。服务层接收 SQL 请求时，无须区分底层连接方式。</p>
+<p>常见的线程模型有两种。默认的 thread-per-connection 为每个连接分配独立线程；连接数多时，线程数随之增加，带来更多内存占用和调度开销。采用线程池时，多个连接通过排队和调度共用工作线程，减少每个连接各占一个线程的成本。</p>
+<p>无论用哪种线程模型，MySQL 都有一个贯穿三层的对象：<strong><code>THD</code></strong>。每个连接创建一个 THD，里面存着这条连接在生命周期内需要的所有状态，包括当前库、当前事务、会话变量、权限位图、错误栈、字符集、临时表列表等。THD 会跟着请求穿过连接层、服务层、存储引擎层，每一层都在其中读写各自需要的字段。</p>
+<figure class="fig" id="fig-5-3"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 68 820 401" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_5_3_arr45" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_5_3_arr45r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D97706"/>
+    </marker>
+  </defs>
+
+  
+  
+  <rect x="40" y="80" width="120" height="40" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="100" y="105" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">客户端</text>
+  <line x1="100" y1="120" x2="100" y2="466" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="3 4"/>
+
+  
+  <rect x="220" y="80" width="140" height="40" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="290" y="105" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">连接层</text>
+  <line x1="290" y1="120" x2="290" y2="466" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="3 4"/>
+
+  
+  <rect x="420" y="80" width="140" height="40" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="490" y="105" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">服务层</text>
+  <line x1="490" y1="120" x2="490" y2="466" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="3 4"/>
+
+  
+  <rect x="620" y="80" width="140" height="40" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="690" y="105" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">存储引擎 InnoDB</text>
+  <line x1="690" y1="120" x2="690" y2="466" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="3 4"/>
+
+  
+  <rect x="220" y="140" width="540" height="30" rx="6" fill="#FFFBEB" stroke="#D97706" stroke-width="2"/>
+  <text x="490" y="159" text-anchor="middle" font-size="13" font-weight="700" fill="#D97706">THD（连接/会话上下文 · 当前库 · 事务 · 变量 · 权限 · 错误栈）</text>
+
+  
+  <line x1="100" y1="196" x2="288" y2="196" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_3_arr45)"/>
+  <text x="110" y="190" font-size="11" fill="#111827">1. 建立连接</text>
+
+  
+  <rect x="240" y="210" width="100" height="28" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1"/>
+  <text x="290" y="228" text-anchor="middle" font-size="11" fill="#111827">2. 新建 THD</text>
+  <line x1="290" y1="238" x2="290" y2="262" stroke="#D97706" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#fig_5_3_arr45r)"/>
+  <text x="300" y="254" font-size="10" fill="#D97706">THD 初始化后认证</text>
+
+  
+  <line x1="100" y1="276" x2="288" y2="276" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_3_arr45)"/>
+  <text x="110" y="270" font-size="11" fill="#111827">3. 发送 SQL 报文</text>
+
+  
+  <line x1="290" y1="298" x2="488" y2="298" stroke="#D97706" stroke-width="1.8" marker-end="url(#fig_5_3_arr45r)"/>
+  <text x="305" y="292" font-size="11" fill="#D97706">4. 携 THD 转交服务层</text>
+
+  
+  <rect x="430" y="312" width="120" height="60" rx="4" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1"/>
+  <text x="490" y="332" text-anchor="middle" font-size="11" fill="#111827">5. 解析 / 优化</text>
+  <text x="490" y="348" text-anchor="middle" font-size="10" fill="#6B7280">读写 THD 中的变量</text>
+  <text x="490" y="362" text-anchor="middle" font-size="10" fill="#6B7280">事务状态</text>
+
+  
+  <line x1="490" y1="384" x2="688" y2="384" stroke="#D97706" stroke-width="1.8" marker-end="url(#fig_5_3_arr45r)"/>
+  <text x="505" y="378" font-size="11" fill="#D97706">6. handler 虚函数 + THD</text>
+
+  
+  <rect x="640" y="398" width="100" height="28" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1"/>
+  <text x="690" y="416" text-anchor="middle" font-size="11" fill="#111827">7. 读行 / 加锁</text>
+  <text x="700" y="438" font-size="10" fill="#6B7280">从 THD 取事务上下文</text>
+
+  
+  <line x1="690" y1="456" x2="102" y2="456" stroke="#4B5563" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#fig_5_3_arr45)"/>
+  <text x="395" y="450" text-anchor="middle" font-size="11" fill="#111827">8. 查询结果经服务层、连接层返回客户端</text>
+</svg>
+</div><figcaption>图 5-3　THD 贯穿 MySQL 三层的会话上下文：THD 是跨层共享的可变状态。</figcaption></figure>
+<p>Redis 的 <code>client</code> 与 MySQL 的 THD 都作为共享上下文跨层传递。THD 承载 SQL 执行和存储引擎所需的会话状态，MySQL 的三层因此依赖同一对象的字段约定。</p>
+<h3 id="sec-5.3.2">5.3.2 逻辑层：查询处理的解析、优化与执行</h3>
+<p>MySQL 的逻辑层也称“服务层”（Server 层 / SQL 层）。以常见的查询处理路径为例，可以分成解析、优化、执行三个环节。</p>
+<p><strong>解析器（Parser）</strong> 先把 SQL 文本拆成词，再按语法规则建出解析树。预处理阶段检查表、列和权限，得到后续处理所需的查询表示。这一段还不决定具体怎样执行。</p>
+<p><strong>优化器（Optimizer）</strong> 接收查询表示，选择索引和 JOIN 顺序等策略，形成执行计划。</p>
+<p><strong>执行器（Executor）</strong> 取得执行计划后开始执行查询。以逐行执行路径为例：调用 handler 接口读一行 → 评估 WHERE 条件 → 聚合或返回 → 再读下一行。</p>
+<p>服务层各阶段可通过进程内函数或方法调用衔接，传递结构化的查询表示和执行计划。</p>
+<p><strong>查询缓存（Query Cache）</strong> 曾在服务层按 SQL 文本复用 SELECT 结果。底层表发生修改时，服务层须使相关结果失效；跨服务层与存储层的协调，加上全局互斥锁，在高并发写入下可能抵消复用收益。MySQL 在 8.0 移除了这项功能。InnoDB 的缓冲池缓存的是数据页，与查询结果缓存承担不同工作。</p>
+<h3 id="sec-5.3.3">5.3.3 存储层：Handler API 与可插拔引擎</h3>
+<p>MySQL 的服务层通过统一的 <strong>Handler API</strong> 向存储引擎发起表和行的访问，包括顺序扫描与索引读取。</p>
+<p>实现这套接口的引擎可以接入同一服务层，各自支持的能力不同。InnoDB 是默认引擎，支持事务、行锁和崩溃恢复；MyISAM 不支持事务；MEMORY 把数据放在内存中，重启后表中数据丢失。已安装的引擎可以按表选择。</p>
+<figure class="fig" id="fig-5-4"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 68 840 412" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_5_4_arrow44" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D97706"/>
+    </marker>
+    <marker id="fig_5_4_arrow44g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="120" y="80" width="600" height="180" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="420" y="106" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">服务层（Server / SQL 层）</text>
+
+  <rect x="150" y="120" width="150" height="44" rx="6" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1.5"/>
+  <text x="225" y="140" text-anchor="middle" font-size="12" fill="#111827">解析器 Parser</text>
+  <text x="225" y="156" text-anchor="middle" font-size="10" fill="#6B7280">→ 解析树</text>
+
+  <rect x="345" y="120" width="150" height="44" rx="6" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1.5"/>
+  <text x="420" y="140" text-anchor="middle" font-size="12" fill="#111827">优化器 Optimizer</text>
+  <text x="420" y="156" text-anchor="middle" font-size="10" fill="#6B7280">→ 执行计划</text>
+
+  <rect x="540" y="120" width="150" height="44" rx="6" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1.5"/>
+  <text x="615" y="140" text-anchor="middle" font-size="12" fill="#111827">执行器 Executor</text>
+  <text x="615" y="156" text-anchor="middle" font-size="10" fill="#6B7280">读行→评估→返回</text>
+
+  <line x1="300" y1="142" x2="343" y2="142" stroke="#4B5563" stroke-width="1.4" marker-end="url(#fig_5_4_arrow44g)"/>
+  <line x1="495" y1="142" x2="538" y2="142" stroke="#4B5563" stroke-width="1.4" marker-end="url(#fig_5_4_arrow44g)"/>
+
+  
+  <line x1="615" y1="164" x2="615" y2="200" stroke="#4B5563" stroke-width="1.4" marker-end="url(#fig_5_4_arrow44g)"/>
+
+  
+  <rect x="180" y="206" width="480" height="42" rx="6" fill="#FFFBEB" stroke="#D97706" stroke-width="2.5"/>
+  <text x="420" y="225" text-anchor="middle" font-size="14" font-weight="700" fill="#D97706">Handler API（共同接口）</text>
+  <text x="420" y="241" text-anchor="middle" font-size="11" fill="#374151">open / close · rnd_next · index_read</text>
+
+  
+  <line x1="260" y1="248" x2="260" y2="290" stroke="#D97706" stroke-width="1.6" marker-end="url(#fig_5_4_arrow44)"/>
+  <line x1="490" y1="248" x2="490" y2="290" stroke="#D97706" stroke-width="1.6" marker-end="url(#fig_5_4_arrow44)"/>
+  <line x1="650" y1="248" x2="650" y2="290" stroke="#D97706" stroke-width="1.6" marker-end="url(#fig_5_4_arrow44)"/>
+  <text x="180" y="276" font-size="11" fill="#D97706" font-style="italic">多态调用</text>
+
+  
+  <rect x="120" y="296" width="280" height="168" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="260" y="322" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">InnoDB（默认）</text>
+  <line x1="140" y1="332" x2="380" y2="332" stroke="#FCD34D" stroke-width="1"/>
+  <text x="140" y="354" font-size="12" fill="#374151">· ACID 事务</text>
+  <text x="140" y="390" font-size="12" fill="#374151">· 行锁 + MVCC</text>
+  <text x="140" y="426" font-size="12" fill="#374151">· redo log 支持崩溃恢复</text>
+
+  <rect x="420" y="296" width="140" height="110" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="490" y="322" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">MyISAM</text>
+  <text x="490" y="350" text-anchor="middle" font-size="11" fill="#374151">无事务</text>
+  <text x="490" y="378" text-anchor="middle" font-size="11" fill="#374151">表锁</text>
+
+  <rect x="580" y="296" width="140" height="110" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="650" y="322" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">MEMORY</text>
+  <text x="650" y="346" text-anchor="middle" font-size="11" fill="#374151">内存表</text>
+  <text x="650" y="366" text-anchor="middle" font-size="11" fill="#374151">默认哈希索引</text>
+  <text x="650" y="386" text-anchor="middle" font-size="11" fill="#374151">重启后表数据清空</text>
+
+  <rect x="580" y="416" width="140" height="48" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <text x="650" y="444" text-anchor="middle" font-size="12" font-weight="600" fill="#374151">多种引擎可并存</text>
+
+</svg>
+</div><figcaption>图 5-4　MySQL Handler API 与可插拔存储引擎：服务层通过 handler 虚函数向下调用，引擎可并存、可替换。</figcaption></figure>
+<p>引擎通过接口向服务层报告自身能力和统计信息；数据组织方式和恢复能力则由具体引擎决定。</p>
+<p>即使一个实例只用 InnoDB，Handler API 仍把服务层的 SQL 处理与引擎内部实现隔开。</p>
+<h3 id="sec-5.3.4">5.3.4 层间通信</h3>
+<p>MySQL 的连接层与服务层通过 THD 对象和函数调用衔接；在默认的每连接一线程模型下，请求由连接线程继续处理。以 InnoDB 为例，服务层通过 handler 虚函数调用该引擎的实现。这两处层间调用在同一服务器内完成，无须跨机器通信。</p>
+<h2 id="sec-5.4">5.4 Kafka 的做法</h2>
+<p>Kafka 的 Broker 既要在本机处理请求，也要与其他 Broker 协作。本节因此在交互、逻辑、存储三段之外，单列副本与集群控制的协调职责。</p>
+<h3 id="sec-5.4.1">5.4.1 交互层：SocketServer 与 Reactor 多线程模型</h3>
+<p>Kafka 的请求处理路径包括 Acceptor、Processor、RequestChannel、KafkaRequestHandler 四个主要环节。RequestChannel 是线程间传递请求与响应的通道；KafkaRequestHandler 对应<a class="xref" href="03-lifecycle.html">第 3 章</a>的 Handler 线程池。</p>
+<p>每个监听端点（listener）对应一个 <strong>Acceptor</strong> 线程，主要负责接收新连接。它用 Java NIO 的 Selector 监听服务端 socket，收到连接后按轮询策略交给某个 Processor。</p>
+<p><strong>Processor 线程组</strong>的大小可配置，每个 Processor 线程管理一批连接的网络读写和请求解析。它把客户端发来的字节流按 Kafka 协议解析成 <code>Request</code> 对象，写入 RequestChannel 的请求队列。响应经 RequestChannel 转交给对应 Processor 的独立响应队列，再由该 Processor 写回客户端。</p>
+<p><strong>RequestChannel</strong> 是 Processor 与业务线程之间的交接点，内部的请求队列是一个<strong>有界阻塞队列</strong>。它有界是关键：当业务线程处理不过来、请求队列填满时，Processor 的入队操作会阻塞，进而阻塞该线程的网络 I/O。这是一个天然的背压（backpressure）点，限制请求在这条队列中积压。</p>
+<p><strong>KafkaRequestHandler 线程组</strong>的线程数由 <code>num.io.threads</code> 配置，每个线程从 RequestChannel 里取请求，调用 <code>KafkaApis.handle()</code> 处理。</p>
+<figure class="fig" id="fig-5-5"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 102 880 366" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_5_5_arr46" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_5_5_arr46g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+    <marker id="fig_5_5_arr46r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="30" y="120" width="70" height="30" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2"/>
+  <text x="65" y="139" text-anchor="middle" font-size="11" fill="#111827">生产者</text>
+  <rect x="30" y="160" width="70" height="30" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2"/>
+  <text x="65" y="179" text-anchor="middle" font-size="11" fill="#111827">消费者</text>
+  <rect x="30" y="200" width="70" height="30" rx="4" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.2"/>
+  <text x="65" y="219" text-anchor="middle" font-size="10" fill="#111827">其他 Broker</text>
+  <text x="65" y="252" text-anchor="middle" font-size="10" fill="#6B7280">多个 TCP</text>
+  <text x="65" y="266" text-anchor="middle" font-size="10" fill="#6B7280">连接</text>
+
+  
+  <rect x="140" y="140" width="120" height="76" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="1.8"/>
+  <text x="200" y="166" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">Acceptor</text>
+  <text x="200" y="184" text-anchor="middle" font-size="11" fill="#374151">每个 listener 1 线程</text>
+  <text x="200" y="202" text-anchor="middle" font-size="11" fill="#374151">accept 新连接</text>
+
+  <line x1="100" y1="135" x2="138" y2="157" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_5_arr46)"/>
+  <line x1="100" y1="175" x2="138" y2="175" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_5_arr46)"/>
+  <line x1="100" y1="215" x2="138" y2="197" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_5_arr46)"/>
+
+  
+  <text x="360" y="124" text-anchor="middle" font-size="12" font-weight="600" fill="#059669">Processor 线程组（N 个）</text>
+  <rect x="300" y="132" width="120" height="44" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="360" y="152" text-anchor="middle" font-size="11" fill="#111827">Processor-1</text>
+  <text x="360" y="168" text-anchor="middle" font-size="10" fill="#6B7280">协议编解码</text>
+  <rect x="300" y="180" width="120" height="44" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="360" y="200" text-anchor="middle" font-size="11" fill="#111827">Processor-2</text>
+  <rect x="300" y="228" width="120" height="28" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="360" y="246" text-anchor="middle" font-size="10" fill="#6B7280">…</text>
+
+  
+  <line x1="260" y1="160" x2="298" y2="154" stroke="#059669" stroke-width="1.5" marker-end="url(#fig_5_5_arr46g)"/>
+  <line x1="260" y1="180" x2="298" y2="202" stroke="#059669" stroke-width="1.5" marker-end="url(#fig_5_5_arr46g)"/>
+
+  
+  <rect x="470" y="140" width="140" height="180" rx="8" fill="#FEF2F2" stroke="#EF4444" stroke-width="2"/>
+  <text x="540" y="164" text-anchor="middle" font-size="13" font-weight="700" fill="#EF4444">RequestChannel</text>
+  <text x="540" y="182" text-anchor="middle" font-size="11" fill="#374151">有界队列</text>
+
+  
+  <rect x="490" y="196" width="100" height="20" rx="3" fill="#FFFFFF" stroke="#FCA5A5" stroke-width="1"/>
+  <text x="540" y="210" text-anchor="middle" font-size="10" fill="#111827">req</text>
+  <rect x="490" y="220" width="100" height="20" rx="3" fill="#FFFFFF" stroke="#FCA5A5" stroke-width="1"/>
+  <text x="540" y="234" text-anchor="middle" font-size="10" fill="#111827">req</text>
+  <rect x="490" y="244" width="100" height="20" rx="3" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.2"/>
+  <text x="540" y="258" text-anchor="middle" font-size="10" fill="#EF4444" font-weight="600">req（满→背压）</text>
+  <text x="540" y="292" text-anchor="middle" font-size="10" fill="#6B7280" font-style="italic">背压点</text>
+  <text x="540" y="306" text-anchor="middle" font-size="10" fill="#6B7280" font-style="italic">满则阻塞网络线程</text>
+
+  
+  <line x1="420" y1="154" x2="468" y2="200" stroke="#059669" stroke-width="1.5" marker-end="url(#fig_5_5_arr46g)"/>
+  <line x1="420" y1="202" x2="468" y2="220" stroke="#059669" stroke-width="1.5" marker-end="url(#fig_5_5_arr46g)"/>
+  <text x="445" y="158" text-anchor="middle" font-size="10" fill="#059669">入队</text>
+
+  
+  <text x="700" y="124" text-anchor="middle" font-size="12" font-weight="600" fill="#059669">KafkaRequestHandler（M 个）</text>
+  <rect x="640" y="132" width="130" height="44" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="705" y="152" text-anchor="middle" font-size="11" fill="#111827">业务线程-1</text>
+  <text x="705" y="168" text-anchor="middle" font-size="10" fill="#6B7280">KafkaApis.handle()</text>
+  <rect x="640" y="180" width="130" height="44" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="705" y="200" text-anchor="middle" font-size="11" fill="#111827">业务线程-2</text>
+  <rect x="640" y="228" width="130" height="28" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="705" y="246" text-anchor="middle" font-size="10" fill="#6B7280">…</text>
+
+  
+  <line x1="610" y1="200" x2="638" y2="154" stroke="#059669" stroke-width="1.5" marker-end="url(#fig_5_5_arr46g)"/>
+  <line x1="610" y1="220" x2="638" y2="202" stroke="#059669" stroke-width="1.5" marker-end="url(#fig_5_5_arr46g)"/>
+  <text x="625" y="150" text-anchor="middle" font-size="10" fill="#059669">出队</text>
+
+  
+  <rect x="640" y="320" width="200" height="60" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="740" y="344" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">Log（分区日志）</text>
+  <text x="740" y="362" text-anchor="middle" font-size="11" fill="#374151">ReplicaManager 读写本地日志</text>
+  <line x1="705" y1="258" x2="705" y2="318" stroke="#4B5563" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#fig_5_5_arr46)"/>
+  <text x="716" y="293" font-size="10" fill="#6B7280">对象方法调用</text>
+
+  
+  <rect x="300" y="320" width="140" height="60" rx="6" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.3"/>
+  <text x="370" y="343" text-anchor="middle" font-size="12" font-weight="600" fill="#EF4444">响应队列</text>
+  <text x="370" y="363" text-anchor="middle" font-size="10" fill="#374151">每个 Processor 独立</text>
+  <path d="M 640 246 L 626 246 L 626 350 L 442 350" fill="none" stroke="#EF4444" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#fig_5_5_arr46r)"/>
+  <text x="535" y="342" text-anchor="middle" font-size="10" fill="#EF4444">响应入队</text>
+  <path d="M 300 350 L 280 350 L 280 278 L 360 278 L 360 258" fill="none" stroke="#EF4444" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#fig_5_5_arr46r)"/>
+  <text x="370" y="300" text-anchor="middle" font-size="10" fill="#EF4444">交回所属 Processor</text>
+
+  
+  <rect x="270" y="408" width="500" height="4" rx="2" fill="#059669" opacity="0.4"/>
+  <text x="280" y="432" font-size="11" font-weight="600" fill="#059669">交互层（网络线程 + 队列）</text>
+  <text x="280" y="450" font-size="10" fill="#6B7280">Acceptor / Processor / RequestChannel</text>
+  <text x="520" y="432" font-size="11" font-weight="600" fill="#059669">逻辑层（业务线程）</text>
+  <text x="520" y="450" font-size="10" fill="#6B7280">Handler：鉴权、配额、分派</text>
+</svg>
+</div><figcaption>图 5-5　Kafka Reactor + RequestChannel 线程模型：网络线程与业务线程通过有界队列解耦，队列满时向上游施加背压。</figcaption></figure>
+<p>Redis 即使启用多线程 I/O，普通命令仍由主线程串行执行；Kafka 则由网络线程组负责收发，由业务线程组处理请求。</p>
+<h3 id="sec-5.4.2">5.4.2 逻辑层（API 层）：请求类型分派</h3>
+<p>交互层交给 <code>KafkaApis</code> 的请求按 ApiKeys 区分类型，各类请求有自己的协议版本。<code>KafkaApis.handle()</code> 接收 <code>RequestChannel.Request</code>，分派给相应的处理方法；这一环节还涉及鉴权、配额等请求级工作。</p>
+<p>日志读写、副本管理、消费组协调和集群控制分别由 <code>Log</code>、<code>ReplicaManager</code>、<code>GroupCoordinator</code>、<code>Controller</code> 等组件承担。客户端协议版本与副本机制不必同步演进，分开这些职责可以限制修改范围。</p>
+<h3 id="sec-5.4.3">5.4.3 存储层：Log 抽象 + 零拷贝</h3>
+<p>Kafka 的核心存储抽象是分区日志：每个分区副本有自己的 Log，由多个日志段组成，每段包含消息数据和用于定位消息的索引。</p>
+<p><strong>写入时，Broker 把消息批追加到活跃日志段。</strong>Log 层组织日志文件与索引，日志刷盘把页缓存中的数据同步到存储设备。</p>
+<p><strong>读取路径</strong>先按偏移量找到对应日志段，再用段内的稀疏索引找到邻近的文件位置，继续查找目标消息批。找到目标消息批后，Broker 确定本次响应对应的文件区间，交给发送路径。如果所需数据已经在页缓存里，就无须再从存储设备读取。</p>
+<p>以明文连接发送本地日志，且发送前无须改写文件数据时，Kafka 可以用 Linux 的 <code>sendfile</code> 系统调用，让文件数据从页缓存进入 socket 的发送路径，省去经用户态缓冲区的往返拷贝。</p>
+<p>消费者和 Follower 都通过 FETCH 请求读取分区日志。</p>
+<figure class="fig" id="fig-5-6"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 65 860 358" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_5_6_arr47" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="fig_5_6_arr47r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  
+  <text x="180" y="88" text-anchor="middle" font-size="14" font-weight="700" fill="#059669">场景 A：消费者按 offset 拉取</text>
+
+  <rect x="60" y="100" width="120" height="38" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.3"/>
+  <text x="120" y="124" text-anchor="middle" font-size="12" fill="#111827">Consumer</text>
+
+  <line x1="120" y1="138" x2="120" y2="166" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_6_arr47)"/>
+  <text x="130" y="156" font-size="11" fill="#111827">FETCH 请求</text>
+
+  <rect x="60" y="170" width="240" height="36" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.3"/>
+  <text x="180" y="192" text-anchor="middle" font-size="12" fill="#111827">KafkaApis 分派请求</text>
+
+  <line x1="180" y1="206" x2="180" y2="234" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_6_arr47)"/>
+
+  <rect x="60" y="238" width="240" height="44" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="180" y="258" text-anchor="middle" font-size="12" fill="#111827">ReplicaManager 读消息</text>
+  <text x="180" y="274" text-anchor="middle" font-size="11" fill="#6B7280">消费读：受可见性边界限制</text>
+
+  <line x1="180" y1="282" x2="180" y2="310" stroke="#EF4444" stroke-width="1.8" marker-end="url(#fig_5_6_arr47r)"/>
+  <text x="190" y="300" font-size="11" fill="#EF4444" font-weight="600">共享日志读取</text>
+
+  
+  <text x="680" y="88" text-anchor="middle" font-size="14" font-weight="700" fill="#059669">场景 B：Follower 同步 Leader 日志</text>
+
+  <rect x="560" y="100" width="120" height="38" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.3"/>
+  <text x="620" y="124" text-anchor="middle" font-size="12" fill="#111827">Follower 副本</text>
+
+  <line x1="620" y1="138" x2="620" y2="166" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_6_arr47)"/>
+  <text x="630" y="156" font-size="11" fill="#111827">FETCH 请求</text>
+
+  <rect x="560" y="170" width="240" height="36" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.3"/>
+  <text x="680" y="192" text-anchor="middle" font-size="12" fill="#111827">KafkaApis 分派请求</text>
+
+  <line x1="680" y1="206" x2="680" y2="234" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_6_arr47)"/>
+
+  <rect x="560" y="238" width="240" height="44" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="680" y="258" text-anchor="middle" font-size="12" fill="#111827">ReplicaManager 读消息</text>
+  <text x="680" y="274" text-anchor="middle" font-size="11" fill="#6B7280">复制读：按副本位点追赶</text>
+
+  <line x1="620" y1="282" x2="620" y2="310" stroke="#EF4444" stroke-width="1.8" marker-end="url(#fig_5_6_arr47r)"/>
+  <text x="630" y="300" font-size="11" fill="#EF4444" font-weight="600">共享日志读取</text>
+
+  
+  <rect x="60" y="314" width="740" height="92" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="430" y="338" text-anchor="middle" font-size="14" font-weight="700" fill="#059669">Leader Log（存储层 · 共享）</text>
+
+  <rect x="150" y="352" width="230" height="44" rx="6" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1.3"/>
+  <text x="265" y="372" text-anchor="middle" font-size="12" fill="#111827">按 offset 定位日志段</text>
+  <text x="265" y="388" text-anchor="middle" font-size="10" fill="#6B7280">日志段 + 稀疏索引</text>
+
+  <rect x="480" y="352" width="230" height="44" rx="6" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1.3"/>
+  <text x="595" y="372" text-anchor="middle" font-size="12" fill="#111827">确定文件中的消息区间</text>
+  <text x="595" y="388" text-anchor="middle" font-size="10" fill="#6B7280">读取边界随请求角色而异</text>
+
+  <line x1="380" y1="374" x2="476" y2="374" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_5_6_arr47)"/>
+
+</svg>
+</div><figcaption>图 5-6　Kafka Log 复用：消费与副本同步共享底层日志读取，两类请求的状态与读取边界不同。</figcaption></figure>
+<p>底层日志读取路径可以复用，索引、缓存和文件读取的优化能同时惠及消费与副本同步；副本进度、任期和截断由复制逻辑处理。</p>
+<p><strong>Kafka 用追加日志作为基础存储抽象，日志存储组件负责索引与压实，副本协调则由上层组件负责</strong>。它没有提供 MySQL 式的引擎插件接口，系统各层都依赖“Log 是顺序追加、按偏移量寻址”这一核心抽象。</p>
+<p>Tiered Storage 可以把已完成的日志段放到对象存储等远程后端，存储从本地扩展为本地和远程两级。客户端仍通过 Kafka 按偏移量读取日志，Broker 内部则增加了远程日志管理与读取处理，远程存储后端通过 RemoteStorageManager 接口接入。</p>
+<h3 id="sec-5.4.4">5.4.4 副本与集群控制的协调职责</h3>
+<p>Kafka 还要管理分区的 Leader、ISR（同步副本集合）和集群元数据。Broker 内的 <code>ReplicaManager</code> 管理副本，<code>Partition</code> 表示分区；<code>Controller</code> 负责集群控制，在 KRaft 模式下可以独立于 Broker 进程部署。这些协调职责与请求分派和日志读写不同。</p>
+<h3 id="sec-5.4.5">5.4.5 层间通信</h3>
+<p>Kafka 的通信方式取决于线程和进程边界。在同一 Broker 内，交互层到 API 层经 RequestChannel 队列跨线程交接；API 层处理请求时，通过对象方法调用本 Broker 的 Log、ReplicaManager 或 Partition 等组件，无须网络传输。Broker 之间、独立部署的 Controller 与 Broker 之间则通过网络协议通信。例如 ReplicaManager 管理的 Follower 副本拉取线程从另一台 Broker 的 Leader 拉数据。</p>
+<h2 id="sec-5.5">5.5 横向对比</h2>
+<p>三个软件都分层，职责划分和跨边界调用的方式不同。</p>
+<figure class="fig" id="fig-5-7"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 58 880 413" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="fig_5_7_arrowDown" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+
+  
+  <rect x="40" y="92" width="120" height="56" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="100" y="118" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">交互层</text>
+  <text x="100" y="138" text-anchor="middle" font-size="11" fill="#374151">协议 / 连接</text>
+
+  <rect x="40" y="200" width="120" height="56" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="100" y="226" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">逻辑层</text>
+  <text x="100" y="246" text-anchor="middle" font-size="11" fill="#374151">命令 / 查询处理</text>
+
+  <rect x="40" y="308" width="120" height="56" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+  <text x="100" y="334" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">存储层</text>
+  <text x="100" y="354" text-anchor="middle" font-size="11" fill="#374151">数据组织</text>
+
+  
+  <line x1="100" y1="148" x2="100" y2="196" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_7_arrowDown)"/>
+  <line x1="100" y1="256" x2="100" y2="304" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_7_arrowDown)"/>
+
+  
+  <text x="300" y="82" text-anchor="middle" font-size="15" font-weight="700" fill="#4F46E5">Redis</text>
+  <rect x="210" y="92" width="180" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="300" y="116" text-anchor="middle" font-size="13" fill="#111827">RESP 解析</text>
+  <text x="300" y="136" text-anchor="middle" font-size="11" fill="#374151">单线程多路复用 / 多线程 I/O</text>
+
+  <rect x="210" y="200" width="180" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="300" y="224" text-anchor="middle" font-size="13" fill="#111827">命令表 redisCommandTable</text>
+  <text x="300" y="244" text-anchor="middle" font-size="11" fill="#374151">按命令名查表分派</text>
+
+  <rect x="210" y="308" width="180" height="56" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="300" y="332" text-anchor="middle" font-size="13" fill="#111827">键空间 / robj 数据对象</text>
+  <text x="300" y="352" text-anchor="middle" font-size="11" fill="#374151">内存为主；RDB/AOF 可选</text>
+
+  
+  <line x1="300" y1="148" x2="300" y2="196" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_7_arrowDown)"/>
+  <line x1="300" y1="256" x2="300" y2="304" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_7_arrowDown)"/>
+  <text x="320" y="176" font-size="11" fill="#374151">函数调用</text>
+  <text x="320" y="284" font-size="11" fill="#374151">对象指针</text>
+
+  
+  <text x="560" y="82" text-anchor="middle" font-size="15" font-weight="700" fill="#D97706">MySQL</text>
+  <rect x="470" y="92" width="180" height="56" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="560" y="116" text-anchor="middle" font-size="13" fill="#111827">连接 / 认证</text>
+  <text x="560" y="136" text-anchor="middle" font-size="10" fill="#374151">thread-per-connection / 线程池</text>
+
+  <rect x="470" y="200" width="180" height="56" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="560" y="224" text-anchor="middle" font-size="13" fill="#111827">解析 → 优化 → 执行</text>
+  <text x="560" y="244" text-anchor="middle" font-size="11" fill="#374151">服务层（含子层）</text>
+
+  <rect x="470" y="308" width="180" height="56" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="560" y="332" text-anchor="middle" font-size="13" fill="#111827">Handler API 可插拔引擎</text>
+  <text x="560" y="352" text-anchor="middle" font-size="11" fill="#374151">InnoDB / MyISAM / MEMORY…</text>
+
+  <line x1="560" y1="148" x2="560" y2="196" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_7_arrowDown)"/>
+  <line x1="560" y1="256" x2="560" y2="304" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_7_arrowDown)"/>
+  <text x="580" y="176" font-size="11" fill="#374151">THD 对象</text>
+  <text x="580" y="284" font-size="11" fill="#374151">handler 虚函数</text>
+
+  
+  <text x="795" y="82" text-anchor="middle" font-size="15" font-weight="700" fill="#059669">Kafka</text>
+  <rect x="730" y="92" width="130" height="56" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="795" y="116" text-anchor="middle" font-size="13" fill="#111827">SocketServer</text>
+  <text x="795" y="136" text-anchor="middle" font-size="11" fill="#374151">Reactor 多线程</text>
+
+  <rect x="730" y="200" width="130" height="56" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="795" y="224" text-anchor="middle" font-size="13" fill="#111827">KafkaApis</text>
+  <text x="795" y="244" text-anchor="middle" font-size="11" fill="#374151">请求分派 / 鉴权配额</text>
+
+  <rect x="730" y="308" width="130" height="56" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="795" y="332" text-anchor="middle" font-size="13" fill="#111827">Log 日志</text>
+  <text x="795" y="352" text-anchor="middle" font-size="11" fill="#374151">追加写 + 按偏移量读</text>
+
+  <line x1="795" y1="148" x2="795" y2="196" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_7_arrowDown)"/>
+  <line x1="795" y1="256" x2="795" y2="304" stroke="#4B5563" stroke-width="1.5" marker-end="url(#fig_5_7_arrowDown)"/>
+  <text x="700" y="176" text-anchor="end" font-size="11" fill="#374151">队列</text>
+  <text x="716" y="284" text-anchor="end" font-size="11" fill="#374151">对象方法</text>
+
+  
+  <rect x="670" y="396" width="190" height="50" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.3"/>
+  <text x="765" y="416" text-anchor="middle" font-size="11" font-weight="600" fill="#111827">副本与集群控制</text>
+  <text x="765" y="434" text-anchor="middle" font-size="10" fill="#374151">ReplicaManager / Controller</text>
+</svg>
+</div><figcaption>图 5-7　三个软件的交互、逻辑、存储职责对照；Kafka 的协调职责另列。</figcaption></figure>
+<p>两处边界最能说明三者分层形态的差异。</p>
+<p><strong>第一，存储引擎的能力差异影响可插拔接口的取舍。</strong> Redis 以内存数据结构为核心，没有提供 MySQL 那样的可插拔引擎接口。MySQL 要支持事务型、内存型、归档型等引擎，因此用统一接口隔离不同引擎的实现。Kafka 的存储围绕追加日志组织，消费与副本同步复用同一底层日志读取路径。它没有提供 MySQL 那样的通用引擎替换接口。</p>
+<p><strong>第二，通信机制受部署边界影响。</strong> Redis 的模块间、MySQL 同一实例内的服务层与引擎间通过进程内调用衔接；Kafka 在同一 Broker 内有线程间队列交接和对象方法调用，跨 Broker 则使用网络协议。边界从进程内扩展到跨机器，需要承担协议与传输开销。</p>
+<h2 id="sec-5.6">5.6 架构启示</h2>
+<h3 id="s106">启示一：边界的收益与调用成本要一起衡量</h3>
+<p>职责边界不必同时成为线程或进程边界。Redis 用命令表把分派逻辑与具体命令实现分开，新增普通命令无须改写分派逻辑，分派后通过函数指针在进程内调用处理函数。若在这条命令处理路径上增设线程间交接或进程间通信，额外开销会随命令执行次数累积。</p>
+<h3 id="s107">启示二：稳定接口约定支持内部演进</h3>
+<p>Redis 的 type/encoding 分离让内部编码可以变化，而命令语义保持不变。Kafka 的消费与副本同步共用按偏移量读取分区日志的底层约定；在保持这一约定的前提下，底层索引、缓存和文件读取的优化可以同时惠及两者。若约定改变，两者都需要适配。</p>
+<h3 id="s108">启示三：替换需求决定可插拔设计</h3>
+<p>不是每一层都要可插拔。MySQL 要让不同存储引擎共用服务层，便通过 Handler API 规定行操作；引擎各自组织数据，支持的恢复能力也不同。服务层的通用 SQL 处理流程可以复用，具体的优化和执行仍受引擎能力约束。</p>
+<p>是否提供可替换接口，要看实现是否真需要替换，以及维护这份契约是否值得。</p>
+<h3 id="s109">启示四：分层需要独立职责与单向依赖</h3>
+<p>第一类问题是<strong>没有独立职责的透传层</strong>。如果 Service、Manager、Dao、Mapper 连续几层都把参数原样传下去，就只是增加认知负担和调用链长度。统一入口、路由、隔离后端、鉴权、限流或转换都可以构成独立职责。</p>
+<p>第二类问题是<strong>循环依赖</strong>：A 层依赖 B 层，B 层又依赖 A 层。修改 A 层时需要同时考虑 B 层，反过来也一样，两个层的修改被耦合在一起，难以通过分层把变化限制在局部。</p>
+<h2 id="sec-5.7">5.7 小结</h2>
+<p>Redis 的分层控制请求路径的开销，MySQL 为真实的替换需求保留接口，Kafka 则按功能职责、线程交接和跨机器通信分别划定边界。</p>
+<p>下一章沿请求链路和存储路径讨论认证、授权、加密与审计，<a class="xref" href="07-cluster.html">第 7 章</a>再展开 Kafka 的副本与集群控制、Redis Cluster 的槽路由和 MySQL MGR 的多数派。</p><nav class="page-nav"><a href="04-memory-disk.html">← 第 4 章 内存与磁盘 — 速度与持久化的平衡</a><a href="06-security.html">第 6 章 安全机制 — 权限、加密、审计 →</a></nav></article>
+</main>
+</div>
+<script>
+(function(){
+  var btn=document.querySelector('.toc-toggle'),nav=document.getElementById('toc'),bd=document.getElementById('bd');
+  if(btn){btn.addEventListener('click',function(){nav.classList.toggle('open');if(bd)bd.classList.toggle('show',nav.classList.contains('open'))});}
+  if(bd){bd.addEventListener('click',function(){nav.classList.remove('open');bd.classList.remove('show');});}
+  // 当前章节高亮
+  var secs=Array.prototype.slice.call(document.querySelectorAll('section.chapter'));
+  var links=Array.prototype.slice.call(document.querySelectorAll('nav.toc a[data-target]'));
+  if('IntersectionObserver' in window && links.length){
+    var map={};links.forEach(function(a){map[a.getAttribute('data-target')]=a;});
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){a.parentElement.classList.remove('active');});
+          var a=map[e.target.id]; if(a)a.parentElement.classList.add('active');
+        }
+      });
+    },{rootMargin:'-10% 0px -75% 0px',threshold:0});
+    secs.forEach(function(s){io.observe(s);});
+  }
+})();
+</script>
+<script>
+(function(){
+  var layout=document.querySelector('.layout'),drag=document.getElementById('tocDrag');
+  var colBtn=document.getElementById('tocCollapse'),expBtn=document.getElementById('tocExpand');
+  var KEY_W='paged.tocW',KEY_C='paged.tocCollapsed';
+  try{
+    var w=localStorage.getItem(KEY_W);
+    if(w&&layout)layout.style.setProperty('--toc-w',w);
+    if(localStorage.getItem(KEY_C)==='1')document.body.classList.add('toc-collapsed');
+  }catch(e){}
+  if(colBtn){colBtn.addEventListener('click',function(){
+    document.body.classList.add('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'1');}catch(e){}
+  });}
+  if(expBtn){expBtn.addEventListener('click',function(){
+    document.body.classList.remove('toc-collapsed');
+    try{localStorage.setItem(KEY_C,'0');}catch(e){}
+  });}
+  if(drag&&layout){
+    drag.addEventListener('pointerdown',function(e){
+      e.preventDefault();
+      document.body.classList.add('toc-dragging');
+      drag.classList.add('active');
+      function mv(ev){
+        var left=layout.getBoundingClientRect().left;
+        var w=Math.min(Math.max(ev.clientX-left,200),520);
+        layout.style.setProperty('--toc-w',Math.round(w)+'px');
+      }
+      function up(){
+        document.body.classList.remove('toc-dragging');
+        drag.classList.remove('active');
+        try{localStorage.setItem(KEY_W,layout.style.getPropertyValue('--toc-w'));}catch(e2){}
+        window.removeEventListener('pointermove',mv);
+        window.removeEventListener('pointerup',up);
+      }
+      window.addEventListener('pointermove',mv);
+      window.addEventListener('pointerup',up);
+    });
+  }
+})();
+</script>
+</body>
+</html>

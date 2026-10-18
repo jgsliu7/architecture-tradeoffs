@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 58 940 485" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  <!-- ===== Column headers ===== -->
+  <rect x="40"  y="70" width="280" height="34" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="180" y="92" text-anchor="middle" font-size="14" font-weight="700" fill="#4F46E5">Redis · Gossip + epoch 投票</text>
+
+  <rect x="330" y="70" width="280" height="34" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="470" y="92" text-anchor="middle" font-size="14" font-weight="700" fill="#D97706">MySQL · XCom/Paxos View Change</text>
+
+  <rect x="620" y="70" width="280" height="34" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="1.5"/>
+  <text x="760" y="92" text-anchor="middle" font-size="14" font-weight="700" fill="#059669">Kafka · Controller + ISR</text>
+
+  <!-- ===== Redis flow ===== -->
+  <rect x="55" y="120" width="250" height="48" rx="6" fill="#EEF2FF" stroke="#4F46E5"/>
+  <text x="180" y="142" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">主节点超时无响应</text>
+  <text x="180" y="160" text-anchor="middle" font-size="11" fill="#374151">（cluster-node-timeout）</text>
+
+  <line x1="180" y1="168" x2="180" y2="186" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+
+  <rect x="55" y="186" width="250" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5"/>
+  <text x="180" y="205" text-anchor="middle" font-size="12" fill="#374151">节点标记 PFAIL（疑似故障）</text>
+  <text x="180" y="221" text-anchor="middle" font-size="11" fill="#6B7280">Gossip PING/PONG 携带标记</text>
+
+  <line x1="180" y1="230" x2="180" y2="248" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+
+  <rect x="55" y="248" width="250" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5"/>
+  <text x="180" y="267" text-anchor="middle" font-size="12" fill="#374151">过半主节点确认 → FAIL</text>
+  <text x="180" y="283" text-anchor="middle" font-size="11" fill="#6B7280">（客观下线，广播 FAIL）</text>
+
+  <line x1="180" y1="292" x2="180" y2="310" stroke="#EF4444" stroke-width="1.8" marker-end="url(#arrow-red)"/>
+
+  <rect x="55" y="310" width="250" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5"/>
+  <text x="180" y="329" text-anchor="middle" font-size="12" fill="#374151">票数不足：不能提升新主</text>
+  <text x="180" y="345" text-anchor="middle" font-size="10.5" fill="#EF4444">默认配置缺槽时：集群进入 FAIL 并拒绝请求</text>
+
+<!-- 获得多数派票时绕过受限分支，继续故障转移 -->
+  <path d="M305 270 H325 V394 H307" fill="none" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+
+  <rect x="55" y="372" width="250" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5"/>
+  <text x="180" y="391" text-anchor="middle" font-size="12" fill="#374151">获多数派主节点票 → 当选</text>
+  <text x="180" y="407" text-anchor="middle" font-size="11" fill="#6B7280">（epoch 防过期投票）</text>
+
+  <line x1="180" y1="416" x2="180" y2="434" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+
+  <rect x="55" y="434" width="250" height="44" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="180" y="453" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">提升为新主 + Gossip 广播新拓扑</text>
+  <text x="180" y="469" text-anchor="middle" font-size="11" fill="#374151">传播新槽归属 · 客户端更新路由</text>
+
+  <!-- ===== MySQL flow ===== -->
+  <rect x="345" y="120" width="250" height="48" rx="6" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="470" y="142" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">成员故障 / 失联</text>
+  <text x="470" y="160" text-anchor="middle" font-size="11" fill="#374151">（组内 XCom 心跳超时）</text>
+
+  <line x1="470" y1="168" x2="470" y2="186" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+
+  <rect x="345" y="186" width="250" height="44" rx="6" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="470" y="205" text-anchor="middle" font-size="12" fill="#374151">存活成员发起 View Change</text>
+  <text x="470" y="221" text-anchor="middle" font-size="11" fill="#6B7280">提议剔除故障成员的新视图</text>
+
+  <line x1="470" y1="230" x2="470" y2="248" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+
+  <rect x="345" y="248" width="250" height="44" rx="6" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="470" y="267" text-anchor="middle" font-size="12" fill="#374151">XCom（Paxos）对视图投票</text>
+  <text x="470" y="283" text-anchor="middle" font-size="11" fill="#6B7280">需多数派成员同意</text>
+
+  <line x1="470" y1="292" x2="470" y2="310" stroke="#EF4444" stroke-width="1.8" marker-end="url(#arrow-red)"/>
+
+  <rect x="345" y="310" width="250" height="44" rx="6" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="470" y="329" text-anchor="middle" font-size="12" fill="#374151">无多数派：组内写入无法继续</text>
+
+<!-- 多数派达成时绕过受限分支，进入新视图 -->
+  <path d="M595 270 H615 V394 H597" fill="none" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+
+  <rect x="345" y="372" width="250" height="44" rx="6" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="470" y="391" text-anchor="middle" font-size="12" fill="#374151">多数派同意 → 新视图生效</text>
+  <text x="470" y="407" text-anchor="middle" font-size="11" fill="#6B7280">单主模式下按需选新 Primary</text>
+
+  <line x1="470" y1="416" x2="470" y2="434" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+
+  <rect x="345" y="434" width="250" height="44" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="470" y="453" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">新 Primary 提供读写服务</text>
+  <text x="470" y="469" text-anchor="middle" font-size="11" fill="#374151">组内排序与认证 · 应用等待可配置</text>
+
+  <!-- ===== Kafka flow ===== -->
+  <rect x="635" y="120" width="250" height="48" rx="6" fill="#ECFDF5" stroke="#059669"/>
+  <text x="760" y="142" text-anchor="middle" font-size="12" font-weight="600" fill="#111827">Partition Leader 故障</text>
+  <text x="760" y="160" text-anchor="middle" font-size="11" fill="#374151">（ZK session 失效 / KRaft 心跳超时）</text>
+
+  <line x1="760" y1="168" x2="760" y2="186" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+
+  <rect x="635" y="186" width="250" height="44" rx="6" fill="#ECFDF5" stroke="#059669"/>
+  <text x="760" y="205" text-anchor="middle" font-size="12" fill="#374151">Controller 监听到 Broker 下线</text>
+  <text x="760" y="221" text-anchor="middle" font-size="11" fill="#6B7280">（活跃 Controller 统一决策）</text>
+
+  <line x1="760" y1="230" x2="760" y2="248" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+
+  <rect x="635" y="248" width="250" height="44" rx="6" fill="#ECFDF5" stroke="#059669"/>
+  <text x="760" y="267" text-anchor="middle" font-size="12" fill="#374151">读取该分区当前 ISR 列表</text>
+  <text x="760" y="283" text-anchor="middle" font-size="11" fill="#6B7280">（同步副本集合，成员动态调整）</text>
+
+  <line x1="760" y1="292" x2="760" y2="310" stroke="#EF4444" stroke-width="1.8" marker-end="url(#arrow-red)"/>
+
+  <rect x="635" y="310" width="250" height="44" rx="6" fill="#ECFDF5" stroke="#059669"/>
+  <text x="760" y="329" text-anchor="middle" font-size="12" fill="#374151">无可用 ISR：默认等待恢复</text>
+  <text x="760" y="345" text-anchor="middle" font-size="11" fill="#EF4444">（可配置 unclean 选举，有丢失风险）</text>
+
+<!-- 有可用 ISR 时绕过等待分支，进入分区 Leader 选举 -->
+  <path d="M885 270 H910 V394 H887" fill="none" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+
+  <rect x="635" y="372" width="250" height="44" rx="6" fill="#ECFDF5" stroke="#059669"/>
+  <text x="760" y="398" text-anchor="middle" font-size="12" fill="#374151">默认从可用 ISR 副本中选新 Leader</text>
+
+  <line x1="760" y1="416" x2="760" y2="434" stroke="#4B5563" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+
+  <rect x="635" y="434" width="250" height="44" rx="6" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="760" y="453" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">更新元数据，客户端刷新路由</text>
+
+  <!-- ===== Bottom summary ===== -->
+  <line x1="40" y1="500" x2="900" y2="500" stroke="#E5E7EB" stroke-width="1"/>
+  <text x="470" y="525" text-anchor="middle" font-size="12" font-style="italic" fill="#6B7280">
+    红色箭头标注故障转移或继续写入受限的条件
+  </text>
+</svg>

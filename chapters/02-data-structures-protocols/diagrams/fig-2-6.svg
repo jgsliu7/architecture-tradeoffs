@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 63 900 508" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2563EB"/>
+    </marker>
+    <marker id="arrow-lblue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#60A5FA"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  <!-- ===== ROOT LEVEL ===== -->
+  <rect x="340" y="75" width="220" height="70" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="2"/>
+  <text x="450" y="98" text-anchor="middle" font-size="13" font-weight="700" fill="#1E40AF">根节点（Root）</text>
+  <text x="450" y="118" text-anchor="middle" font-size="10" fill="#4B5563">只存键 + 子节点指针</text>
+  <text x="450" y="136" text-anchor="middle" font-size="10" fill="#6B7280">例：[30] → 2 个子节点指针</text>
+
+  <!-- 16KB page label on root -->
+  <rect x="565" y="75" width="70" height="70" rx="4" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="600" y="105" text-anchor="middle" font-size="10.5" font-weight="600" fill="#92400E">1 页</text>
+  <text x="600" y="120" text-anchor="middle" font-size="10.5" fill="#92400E">16KB</text>
+  <text x="600" y="135" text-anchor="middle" font-size="10.5" fill="#92400E">键与指针</text>
+
+  <!-- Arrows from root to internal nodes -->
+  <line x1="390" y1="145" x2="230" y2="195" stroke="#2563EB" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <text x="272" y="160" text-anchor="middle" font-size="10.5" fill="#2563EB">键值 &lt; 30</text>
+
+  <line x1="510" y1="145" x2="670" y2="195" stroke="#2563EB" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <text x="645" y="160" text-anchor="middle" font-size="10.5" fill="#2563EB">键值 ≥ 30</text>
+
+  <!-- ===== INTERNAL LEVEL ===== -->
+  <!-- Internal node 1 -->
+  <rect x="70" y="200" width="320" height="70" rx="8" fill="#EFF6FF" stroke="#60A5FA" stroke-width="2"/>
+  <text x="230" y="223" text-anchor="middle" font-size="13" font-weight="700" fill="#1E40AF">内部节点（Internal）</text>
+  <text x="230" y="243" text-anchor="middle" font-size="10" fill="#4B5563">只存键 + 子节点指针（不存行数据）</text>
+  <text x="230" y="261" text-anchor="middle" font-size="10" fill="#6B7280">例：[10] → 子节点指针 × 2</text>
+
+  <!-- Internal node 3 -->
+  <rect x="510" y="200" width="320" height="70" rx="8" fill="#EFF6FF" stroke="#60A5FA" stroke-width="2"/>
+  <text x="670" y="223" text-anchor="middle" font-size="13" font-weight="700" fill="#1E40AF">内部节点（Internal）</text>
+  <text x="670" y="243" text-anchor="middle" font-size="10" fill="#4B5563">只存键 + 子节点指针（不存行数据）</text>
+  <text x="670" y="261" text-anchor="middle" font-size="10" fill="#6B7280">例：[40 | 80] → 子节点指针 × 3</text>
+
+  <!-- 16KB label on internal：贴本层最右节点 -->
+  <rect x="838" y="222" width="50" height="26" rx="4" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="863" y="239" text-anchor="middle" font-size="10.5" font-weight="600" fill="#92400E">16KB 页</text>
+
+  <!-- Arrows from internal to leaf：箭杆箭头同为浅蓝，落点对齐叶子中线 -->
+  <line x1="160" y1="270" x2="126" y2="340" stroke="#60A5FA" stroke-width="1.5" marker-end="url(#arrow-lblue)"/>
+  <line x1="300" y1="270" x2="274" y2="340" stroke="#60A5FA" stroke-width="1.5" marker-end="url(#arrow-lblue)"/>
+
+  <line x1="570" y1="270" x2="430" y2="340" stroke="#60A5FA" stroke-width="1.5" marker-end="url(#arrow-lblue)"/>
+  <line x1="670" y1="270" x2="583" y2="340" stroke="#60A5FA" stroke-width="1.5" marker-end="url(#arrow-lblue)"/>
+  <line x1="770" y1="270" x2="730" y2="340" stroke="#60A5FA" stroke-width="1.5" marker-end="url(#arrow-lblue)"/>
+
+  <!-- ===== LEAF LEVEL =====：叶宽 127、缝 26，给双向链表箭头留位 -->
+  <!-- Leaf 1 -->
+  <rect x="60" y="345" width="127" height="80" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="123.5" y="370" text-anchor="middle" font-size="12" font-weight="700" fill="#065F46">叶子节点</text>
+  <text x="123.5" y="390" text-anchor="middle" font-size="10.5" fill="#4B5563">[5] [8]</text>
+  <text x="123.5" y="405" text-anchor="middle" font-size="10.5" fill="#4B5563">+ 完整行数据</text>
+  <text x="123.5" y="420" text-anchor="middle" font-size="10.5" fill="#6B7280">→ 下一页</text>
+
+  <!-- Leaf 2 -->
+  <rect x="213" y="345" width="127" height="80" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="276.5" y="370" text-anchor="middle" font-size="12" font-weight="700" fill="#065F46">叶子节点</text>
+  <text x="276.5" y="390" text-anchor="middle" font-size="10.5" fill="#4B5563">[12] [18]</text>
+  <text x="276.5" y="405" text-anchor="middle" font-size="10.5" fill="#4B5563">+ 完整行数据</text>
+  <text x="276.5" y="420" text-anchor="middle" font-size="10.5" fill="#6B7280">→ 下一页</text>
+
+  <!-- Leaf 3 -->
+  <rect x="366" y="345" width="127" height="80" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="429.5" y="370" text-anchor="middle" font-size="12" font-weight="700" fill="#065F46">叶子节点</text>
+  <text x="429.5" y="390" text-anchor="middle" font-size="10.5" fill="#4B5563">[35] [38]</text>
+  <text x="429.5" y="405" text-anchor="middle" font-size="10.5" fill="#4B5563">+ 完整行数据</text>
+  <text x="429.5" y="420" text-anchor="middle" font-size="10.5" fill="#6B7280">→ 下一页</text>
+
+  <!-- Leaf 4 -->
+  <rect x="519" y="345" width="127" height="80" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="582.5" y="370" text-anchor="middle" font-size="12" font-weight="700" fill="#065F46">叶子节点</text>
+  <text x="582.5" y="390" text-anchor="middle" font-size="10.5" fill="#4B5563">[72] [78]</text>
+  <text x="582.5" y="405" text-anchor="middle" font-size="10.5" fill="#4B5563">+ 完整行数据</text>
+  <text x="582.5" y="420" text-anchor="middle" font-size="10.5" fill="#6B7280">→ 下一页</text>
+
+  <!-- Leaf 5 -->
+  <rect x="672" y="345" width="127" height="80" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="2"/>
+  <text x="735.5" y="370" text-anchor="middle" font-size="12" font-weight="700" fill="#065F46">叶子节点</text>
+  <text x="735.5" y="390" text-anchor="middle" font-size="10.5" fill="#4B5563">[90] [98]</text>
+  <text x="735.5" y="405" text-anchor="middle" font-size="10.5" fill="#4B5563">+ 完整行数据</text>
+  <text x="735.5" y="420" text-anchor="middle" font-size="10.5" fill="#6B7280">→ 下一页</text>
+
+  <!-- 16KB label on leaf：贴本层最右节点 -->
+  <rect x="807" y="372" width="58" height="26" rx="4" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="836" y="389" text-anchor="middle" font-size="10.5" font-weight="600" fill="#92400E">16KB 页</text>
+
+  <!-- Bidirectional arrows between leaf nodes：每缝一条双头线，竖直居中 -->
+  <line x1="189" y1="385" x2="211" y2="385" stroke="#059669" stroke-width="2" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)"/>
+  <line x1="342" y1="385" x2="364" y2="385" stroke="#059669" stroke-width="2" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)"/>
+  <line x1="495" y1="385" x2="517" y2="385" stroke="#059669" stroke-width="2" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)"/>
+  <line x1="648" y1="385" x2="670" y2="385" stroke="#059669" stroke-width="2" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)"/>
+
+  <!-- ===== LEGEND ===== -->
+  <rect x="50" y="500" width="800" height="55" rx="6" fill="#F9FAFB" stroke="#E5E7EB" stroke-width="1"/>
+  <text x="70" y="522" font-size="11" font-weight="700" fill="#111827">图例</text>
+
+  <rect x="70" y="532" width="14" height="14" rx="3" fill="#DBEAFE" stroke="#2563EB" stroke-width="1"/>
+  <text x="90" y="544" font-size="10" fill="#4B5563">根/内部节点（只存键+指针）</text>
+
+  <rect x="240" y="532" width="14" height="14" rx="3" fill="#ECFDF5" stroke="#059669" stroke-width="1"/>
+  <text x="260" y="544" font-size="10" fill="#4B5563">叶子节点（存键+完整行数据+链表指针）</text>
+
+  <rect x="440" y="532" width="14" height="14" rx="3" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="460" y="544" font-size="10" fill="#4B5563">每个节点 = 1 个 16KB 磁盘页</text>
+
+  <line x1="620" y1="539" x2="640" y2="539" stroke="#059669" stroke-width="2" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)"/>
+  <text x="652" y="544" font-size="10" fill="#4B5563">双向链表方向</text>
+</svg>

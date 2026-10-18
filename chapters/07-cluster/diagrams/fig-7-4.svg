@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 370" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4B5563"/>
+    </marker>
+  </defs>
+  <text x="30" y="28" font-size="16" font-weight="700" fill="#111827">图 7-4　MySQL 复制拓扑与故障接管责任</text>
+  <text x="40" y="61" font-size="13" font-weight="700" fill="#D97706">正常运行</text>
+  <rect x="45" y="112" width="150" height="60" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4"/>
+  <text x="120" y="137" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">客户端</text>
+  <text x="120" y="158" text-anchor="middle" font-size="11" fill="#374151">写入请求</text>
+  <line x1="195" y1="142" x2="303" y2="142" stroke="#4B5563" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <rect x="305" y="92" width="220" height="100" rx="8" fill="#FEF3C7" stroke="#D97706" stroke-width="1.7"/>
+  <text x="415" y="119" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">source</text>
+  <text x="415" y="145" text-anchor="middle" font-size="12" fill="#374151">处理写入 · 记录 binlog</text>
+  <text x="415" y="171" text-anchor="middle" font-size="11" fill="#374151">本地提交后即可返回</text>
+  <line x1="525" y1="142" x2="592" y2="142" stroke="#4B5563" stroke-width="1.6"/>
+  <line x1="595" y1="99" x2="595" y2="187" stroke="#4B5563" stroke-width="1.6"/>
+  <line x1="595" y1="99" x2="646" y2="99" stroke="#4B5563" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <line x1="595" y1="187" x2="646" y2="187" stroke="#4B5563" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="580" y="217" text-anchor="middle" font-size="11" fill="#374151">默认异步复制</text>
+  <rect x="650" y="65" width="190" height="68" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.4"/>
+  <text x="745" y="91" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">replica A</text>
+  <text x="745" y="114" text-anchor="middle" font-size="11" fill="#374151">保存全量数据</text>
+  <rect x="650" y="153" width="190" height="68" rx="6" fill="#FEF3C7" stroke="#D97706" stroke-width="1.4"/>
+  <text x="745" y="179" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">replica B</text>
+  <text x="745" y="202" text-anchor="middle" font-size="11" fill="#374151">保存全量数据</text>
+
+  <text x="40" y="267" font-size="13" font-weight="700" fill="#374151">source 故障后的接管</text>
+  <rect x="50" y="287" width="210" height="65" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="155" y="313" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">检查副本进度</text>
+  <text x="155" y="337" text-anchor="middle" font-size="10.5" fill="#374151">比较 replica 进度，评估缺失风险</text>
+  <line x1="260" y1="319" x2="332" y2="319" stroke="#4B5563" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+  <rect x="335" y="287" width="210" height="65" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="440" y="313" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">提升候选 replica</text>
+  <text x="440" y="337" text-anchor="middle" font-size="10.5" fill="#374151">候选副本可能缺少已确认事务</text>
+  <line x1="545" y1="319" x2="617" y2="319" stroke="#4B5563" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+  <rect x="620" y="287" width="210" height="65" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="725" y="313" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">客户端改连</text>
+  <text x="725" y="337" text-anchor="middle" font-size="10.5" fill="#374151">切到新的写入口</text>
+</svg>
