@@ -255,7 +255,7 @@ def load_chapters():
             "body": body,
             "heads": heads,
             "blurb": CARD_BLURBS.get(rel, title),
-            "minutes": max(1, round(len(plain) / 400)),
+            "minutes": max(1, round(len(plain) / 350)),
         })
     return items, registry
 
