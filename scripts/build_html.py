@@ -321,8 +321,8 @@ def validate_site(pages, out_json=None, label='', stats=None):
     for name, h in pages:
         base = os.path.dirname(name)
         for href in re.findall(r'\bhref="([^"]+)"', h):
-            if href.startswith(('http://', 'https://', 'mailto:')):
-                continue  # 外链，允许
+            if href.startswith(('http://', 'https://', 'mailto:', 'data:')):
+                continue  # 外链与 data URI 资源，允许
             if href.startswith('#'):
                 frag_page, frag = name, href[1:]
             else:

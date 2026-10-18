@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>第 2 章 数据结构与协议 — 为各自的目标而设计</title>
+<meta name="description" content="数据结构与协议：按访问方式设计，也为它付代价。《架构取舍之道》从 Redis、MySQL、Kafka 的设计取舍理解系统设计。">
+<meta name="theme-color" content="#4f46e5">
+<meta property="og:type" content="article">
+<meta property="og:title" content="第 2 章 数据结构与协议 — 为各自的目标而设计">
+<meta property="og:description" content="数据结构与协议：按访问方式设计，也为它付代价。《架构取舍之道》从 Redis、MySQL、Kafka 的设计取舍理解系统设计。">
+<meta property="og:site_name" content="架构取舍之道">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%234f46e5'/%3E%3Ctext%20x='32'%20y='45'%20font-family='system-ui,sans-serif'%20font-size='36'%20font-weight='700'%20text-anchor='middle'%20fill='white'%3EA%3C/text%3E%3C/svg%3E">
 <style>
 *{box-sizing:border-box}
 :root{--ink:#1f2328;--mute:#57606a;--line:#d8dee4;--accent:#4f46e5;--bg:#fff;--soft:#f6f8fa}
@@ -70,6 +79,15 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 .review-index a:hover{border-color:var(--accent);background:#f7f8ff}
 .review-index strong{display:block;color:var(--ink)}
 .review-index span{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+.book-lead{font-size:17px;line-height:1.75;color:#343a40;margin:0 0 10px;max-width:800px}
+.book-byline{color:var(--mute);font-size:14px;margin:0 0 18px}
+.start-here{background:#f7f8ff;border:1px solid #e0e7ff;border-radius:10px;padding:14px 18px;margin:0 0 8px;max-width:900px}
+.start-here strong{display:block;color:var(--accent);font-size:14px;margin-bottom:4px}
+.start-here span{font-size:14.5px;line-height:1.8;color:#343a40}
+.book-foot{color:var(--mute);font-size:13px;margin:24px 0 0}
+.book-footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);color:var(--mute);font-size:13px;line-height:1.8}
+.book-footer p{margin:0 0 4px}
+@media(max-width:900px){.book-lead{font-size:16px}.start-here{padding:12px 14px}}
 @media(max-width:1200px){figure.fig{margin:2em auto}}
 @media(max-width:900px){
   .layout{grid-template-columns:1fr}
@@ -836,6 +854,10 @@ $5\r\nvalue\r\n</code></pre>
 <p>MySQL 在握手时协商连接能力，Kafka 为每类 API 单独设版本，RESP 3 则用 <code>HELLO</code> 增加版本入口。为了兼容尚未升级的客户端，服务端往往需要同时支持新旧格式。按 API 分版本能缩小一次改动牵连的接口范围，也要求服务端维护更多兼容分支。</p>
 <h2 id="sec-2.6">2.6 小结</h2>
 <p>三个软件的结构和协议，都围绕常见访问方式组织。Redis 为不同操作选择不同的内存结构，InnoDB 用页式 B+ 树兼顾点查和有序访问，Kafka 用批组织追加与传输。</p><nav class="page-nav"><a href="01-introduction.html">← 第 1 章 引言 — 为什么是这三个软件</a><a href="03-lifecycle.html">第 3 章 生命周期管理 — 优雅启动与关闭 →</a></nav></article>
+<footer class="book-footer">
+  <p>《架构取舍之道》 · <a href="https://github.com/jgsliu7/architecture-tradeoffs">GitHub 仓库</a> · <a href="https://github.com/jgsliu7/architecture-tradeoffs/issues">提交勘误</a> · <a href="10-epilogue.html">关于作者与许可</a></p>
+  <p>正文与插图 CC BY-NC-ND 4.0；构建脚本 MIT。</p>
+</footer>
 </main>
 </div>
 <script>

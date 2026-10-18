@@ -4,6 +4,13 @@
 
 **在线阅读：** <https://jgsliu7.github.io/architecture-tradeoffs/>
 
+## 读者速览
+
+- **作者**：软件架构师，做过 IoT、电商订单和 SaaS 系统，从一线开发做到首席架构师。书里的判断来自这些年的踩坑、复盘和选型评审。
+- **与 DDIA 的分工**：DDIA 讲分布式系统的一般模型；本书把模型落到 Redis、MySQL、Kafka 的参数和失败模式上，回答“同样是复制，三家为什么这样确认、这样接管”。
+- **从哪开始**：想先判断这本书值不值得读，从[第 2 章](chapters/02-data-structures-protocols/chapter.md)的排行榜例子进入；想了解写作缘起，读[序言](chapters/00-preface.md)；只关心结论，读[第 10 章](chapters/10-summary/chapter.md)。
+- **许可**：正文与插图 [CC BY-NC-ND 4.0](LICENSE)，构建脚本 [MIT](LICENSE-CODE)。可免费阅读、原样转载；不得商用或分发改编作品。
+
 ## 关于本书
 
 多年来，我们一直在用 Redis、MySQL、Kafka 这三款软件。大多数资料教的是用法、配置、调优，却很少有人从架构的视角去寻找它们的共性。

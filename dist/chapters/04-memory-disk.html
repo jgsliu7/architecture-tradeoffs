@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>第 4 章 内存与磁盘 — 速度与持久化的平衡</title>
+<meta name="description" content="内存与磁盘：快和不丢之间，数据放在哪里。《架构取舍之道》从 Redis、MySQL、Kafka 的设计取舍理解系统设计。">
+<meta name="theme-color" content="#4f46e5">
+<meta property="og:type" content="article">
+<meta property="og:title" content="第 4 章 内存与磁盘 — 速度与持久化的平衡">
+<meta property="og:description" content="内存与磁盘：快和不丢之间，数据放在哪里。《架构取舍之道》从 Redis、MySQL、Kafka 的设计取舍理解系统设计。">
+<meta property="og:site_name" content="架构取舍之道">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%234f46e5'/%3E%3Ctext%20x='32'%20y='45'%20font-family='system-ui,sans-serif'%20font-size='36'%20font-weight='700'%20text-anchor='middle'%20fill='white'%3EA%3C/text%3E%3C/svg%3E">
 <style>
 *{box-sizing:border-box}
 :root{--ink:#1f2328;--mute:#57606a;--line:#d8dee4;--accent:#4f46e5;--bg:#fff;--soft:#f6f8fa}
@@ -70,6 +79,15 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 .review-index a:hover{border-color:var(--accent);background:#f7f8ff}
 .review-index strong{display:block;color:var(--ink)}
 .review-index span{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+.book-lead{font-size:17px;line-height:1.75;color:#343a40;margin:0 0 10px;max-width:800px}
+.book-byline{color:var(--mute);font-size:14px;margin:0 0 18px}
+.start-here{background:#f7f8ff;border:1px solid #e0e7ff;border-radius:10px;padding:14px 18px;margin:0 0 8px;max-width:900px}
+.start-here strong{display:block;color:var(--accent);font-size:14px;margin-bottom:4px}
+.start-here span{font-size:14.5px;line-height:1.8;color:#343a40}
+.book-foot{color:var(--mute);font-size:13px;margin:24px 0 0}
+.book-footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);color:var(--mute);font-size:13px;line-height:1.8}
+.book-footer p{margin:0 0 4px}
+@media(max-width:900px){.book-lead{font-size:16px}.start-here{padding:12px 14px}}
 @media(max-width:1200px){figure.fig{margin:2em auto}}
 @media(max-width:900px){
   .layout{grid-template-columns:1fr}
@@ -793,6 +811,10 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 <p>Redis 的 AOF 重写需要根据内存状态生成新日志，重启时按配置加载或重放持久化数据；MySQL 要把脏页写回各自的位置；Kafka 要管理日志段，并在异常退出后检查日志、恢复索引等状态。评估高吞吐写入方案，需要把这些后台与恢复工作一并算在内。</p>
 <h2 id="sec-4.7">4.7 小结</h2>
 <p>选择存储方式时，先按访问方式与容量确定数据放在哪里，再按可接受的故障损失确定刷盘和副本确认条件。缓存命中能减少读取等待，不能代替持久化；顺序日志能摊薄写入开销，但按偏移量定位不能替代按业务 key 的随机点查。</p><nav class="page-nav"><a href="03-lifecycle.html">← 第 3 章 生命周期管理 — 优雅启动与关闭</a><a href="05-layered-architecture.html">第 5 章 分层架构设计 — 存储层 / 逻辑层 / 交互层 →</a></nav></article>
+<footer class="book-footer">
+  <p>《架构取舍之道》 · <a href="https://github.com/jgsliu7/architecture-tradeoffs">GitHub 仓库</a> · <a href="https://github.com/jgsliu7/architecture-tradeoffs/issues">提交勘误</a> · <a href="10-epilogue.html">关于作者与许可</a></p>
+  <p>正文与插图 CC BY-NC-ND 4.0；构建脚本 MIT。</p>
+</footer>
 </main>
 </div>
 <script>

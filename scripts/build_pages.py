@@ -10,6 +10,7 @@ Markdown and SVG remain the source of truth. SVG diagrams are inlined so each
 chapter page is self-contained and images display without copying assets.
 """
 import os
+import re
 import shutil
 import sys
 
@@ -24,6 +25,34 @@ PUBLIC_EDITION = os.environ.get("BOOK_EDITION", "").strip().lower() == "public"
 BOOK_TITLE = "架构取舍之道：从 Redis、MySQL、Kafka 理解系统设计"
 EDITION_LABEL = "在线阅读版" if PUBLIC_EDITION else "分页审阅版"
 PAGE_TITLE = BOOK_TITLE if PUBLIC_EDITION else BOOK_TITLE + "（分页审阅版）"
+
+HOME_DESCRIPTION = (
+    "《架构取舍之道：从 Redis、MySQL、Kafka 理解系统设计》在线阅读版。"
+    "一个架构师对三个软件设计共性的十年观察笔记：不比较功能，比较它们面对同一组约束时如何取舍。"
+)
+
+# 公开版首页卡片的一句话钩子；内部审阅版仍显示源文件路径。
+CARD_BLURBS = {
+    "chapters/00-preface.md": "为什么写这本书：三个软件，一种观察方法",
+    "chapters/01-introduction/chapter.md": "为什么是这三家：版本基线与三条阅读路径",
+    "chapters/02-data-structures-protocols/chapter.md": "数据结构与协议：按访问方式设计，也为它付代价",
+    "chapters/03-lifecycle/chapter.md": "启动与关闭：进程退出前后，哪些工作必须完成",
+    "chapters/04-memory-disk/chapter.md": "内存与磁盘：快和不丢之间，数据放在哪里",
+    "chapters/05-layered-architecture/chapter.md": "分层：存储、逻辑、交互三层各自隔离什么",
+    "chapters/06-security/chapter.md": "安全：认证、授权、加密、审计四道检查",
+    "chapters/07-cluster/chapter.md": "集群：分片、复制与故障接管的三家做法",
+    "chapters/08-storage-format/chapter.md": "磁盘格式：字节怎么排，决定怎么读、怎么恢复",
+    "chapters/09-data-sync/chapter.md": "数据同步：副本怎样追上，断线后从哪里续",
+    "chapters/10-summary/chapter.md": "五条共性规律：把三家的取舍用到自己系统",
+    "chapters/10-epilogue.md": "这本书怎么来的，以及下一步可以做什么",
+}
+
+FAVICON = (
+    "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E"
+    "%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%234f46e5'/%3E"
+    "%3Ctext%20x='32'%20y='45'%20font-family='system-ui,sans-serif'%20font-size='36'"
+    "%20font-weight='700'%20text-anchor='middle'%20fill='white'%3EA%3C/text%3E%3C/svg%3E"
+)
 
 
 PAGE_CSS = """
@@ -92,6 +121,15 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 .review-index a:hover{border-color:var(--accent);background:#f7f8ff}
 .review-index strong{display:block;color:var(--ink)}
 .review-index span{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+.book-lead{font-size:17px;line-height:1.75;color:#343a40;margin:0 0 10px;max-width:800px}
+.book-byline{color:var(--mute);font-size:14px;margin:0 0 18px}
+.start-here{background:#f7f8ff;border:1px solid #e0e7ff;border-radius:10px;padding:14px 18px;margin:0 0 8px;max-width:900px}
+.start-here strong{display:block;color:var(--accent);font-size:14px;margin-bottom:4px}
+.start-here span{font-size:14.5px;line-height:1.8;color:#343a40}
+.book-foot{color:var(--mute);font-size:13px;margin:24px 0 0}
+.book-footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);color:var(--mute);font-size:13px;line-height:1.8}
+.book-footer p{margin:0 0 4px}
+@media(max-width:900px){.book-lead{font-size:16px}.start-here{padding:12px 14px}}
 @media(max-width:1200px){figure.fig{margin:2em auto}}
 @media(max-width:900px){
   .layout{grid-template-columns:1fr}
@@ -159,6 +197,24 @@ def html_escape(text):
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+def html_attr(text):
+    return html_escape(text).replace('"', "&quot;")
+
+
+def page_meta(title, description, og_type):
+    return """<meta name="description" content="%s">
+<meta name="theme-color" content="#4f46e5">
+<meta property="og:type" content="%s">
+<meta property="og:title" content="%s">
+<meta property="og:description" content="%s">
+<meta property="og:site_name" content="架构取舍之道">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="%s">""" % (
+        html_attr(description), html_attr(og_type), html_attr(title),
+        html_attr(description), FAVICON)
+
+
 def slug_for(index, rel):
     if rel.endswith("00-preface.md"):
         return "00-preface.html"
@@ -189,6 +245,8 @@ def load_chapters():
                     gptmap['diagrams/' + fn] = '../../' + diag + '/' + fn
         body, heads = convert(md, svgmap, gptmap, counter, ('../../' + diag) if diag else '', chidx=idx, registry=registry)
         title = next((t for (lvl, t, _hid) in heads if lvl == 1), os.path.basename(rel))
+        plain = re.sub(r'!\[[^\]]*\]\([^)]*\)', '', md)
+        plain = re.sub(r'\s+', '', plain)
         items.append({
             "index": idx,
             "rel": rel,
@@ -196,6 +254,8 @@ def load_chapters():
             "title": title,
             "body": body,
             "heads": heads,
+            "blurb": CARD_BLURBS.get(rel, title),
+            "minutes": max(1, round(len(plain) / 400)),
         })
     return items, registry
 
@@ -220,13 +280,21 @@ def nav_html(items, current_file=None, depth="chapter"):
     return "\n".join(out)
 
 
-def page_shell(title, nav, main, depth="chapter"):
+def page_shell(title, nav, main, depth="chapter", description="", og_type="article"):
+    footer = ""
+    if PUBLIC_EDITION:
+        epilogue = "chapters/10-epilogue.html" if depth == "root" else "10-epilogue.html"
+        footer = """<footer class="book-footer">
+  <p>《架构取舍之道》 · <a href="https://github.com/jgsliu7/architecture-tradeoffs">GitHub 仓库</a> · <a href="https://github.com/jgsliu7/architecture-tradeoffs/issues">提交勘误</a> · <a href="%s">关于作者与许可</a></p>
+  <p>正文与插图 CC BY-NC-ND 4.0；构建脚本 MIT。</p>
+</footer>""" % epilogue
     return """<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>%s</title>
+%s
 <style>%s</style>
 </head>
 <body>
@@ -243,32 +311,54 @@ def page_shell(title, nav, main, depth="chapter"):
 <div class="toc-drag" id="tocDrag" title="拖拽调整目录宽度"></div>
 <main class="content">
 %s
+%s
 </main>
 </div>
 <script>%s</script>
 <script>%s</script>
 </body>
-</html>""" % (html_escape(title), PAGE_CSS, "" if depth == "root" else "../", EDITION_LABEL, nav, main, JS, PAGES_JS)
+</html>""" % (html_escape(title), page_meta(title, description, og_type), PAGE_CSS,
+              "" if depth == "root" else "../", EDITION_LABEL, nav, main, footer, JS, PAGES_JS)
 
 
 def build_index(items):
+    svg_count = sum(item["body"].count("<svg") for item in items)
+    total_minutes = sum(item["minutes"] for item in items)
+    hours = max(0.5, round(total_minutes / 30) / 2)
     cards = []
-    for item in items:
-        cards.append(
-            '<a href="chapters/%s"><strong>%s</strong><span>%s</span></a>'
-            % (item["file"], html_escape(item["title"]), html_escape(item["rel"]))
-        )
-    intro = ("全书正文与插图。每章页面已内联 SVG 图示，可直接浏览。"
-             if PUBLIC_EDITION else
-             "源稿来自 Markdown；本目录用于逐章审阅和单独优化。每章页面已内联 SVG 图示，可直接浏览图片。")
+    if PUBLIC_EDITION:
+        for item in items:
+            cards.append(
+                '<a href="chapters/%s"><strong>%s</strong><span>%s · 约 %d 分钟</span></a>'
+                % (item["file"], html_escape(item["title"]), html_escape(item["blurb"]), item["minutes"])
+            )
+        intro = """
+<p class="book-lead">一个架构师对 Redis、MySQL、Kafka 设计共性的十年观察笔记。不比较功能清单，比较它们面对同一组约束时，各自选了什么、放弃了什么。</p>
+<p class="book-byline">作者：软件架构师，做过 IoT、电商订单和 SaaS 系统，从一线开发做到首席架构师。</p>
+<div class="start-here">
+  <strong>第一次来，从这里开始</strong>
+  <span>想先判断这本书值不值得读，从<a href="chapters/02-data-structures-protocols.html">第 2 章的排行榜例子</a>进入；想了解写作缘起，读<a href="chapters/00-preface.html">序言</a>；只关心结论，读<a href="chapters/10-summary.html">第 10 章</a>。</span>
+</div>"""
+        foot = ('<p class="book-foot">全书 10 章 + 序言 + 后记 · %d 幅插图 · 约 %g 小时。'
+                '每章标注的是估算阅读时间。</p>') % (svg_count, hours)
+    else:
+        for item in items:
+            cards.append(
+                '<a href="chapters/%s"><strong>%s</strong><span>%s</span></a>'
+                % (item["file"], html_escape(item["title"]), html_escape(item["rel"]))
+            )
+        intro = '<p class="chapter-meta">源稿来自 Markdown；本目录用于逐章审阅和单独优化。每章页面已内联 SVG 图示，可直接浏览图片。</p>'
+        foot = ""
     main = """
 <h1>%s</h1>
-<p class="chapter-meta">%s</p>
+%s
 <div class="review-index">
 %s
 </div>
-""" % (PAGE_TITLE, intro, "\n".join(cards))
-    return page_shell(PAGE_TITLE, nav_html(items, depth="root"), main, depth="root")
+%s
+""" % (PAGE_TITLE, intro, "\n".join(cards), foot)
+    return page_shell(PAGE_TITLE, nav_html(items, depth="root"), main, depth="root",
+                      description=HOME_DESCRIPTION, og_type="website")
 
 
 def prev_next(items, idx):
@@ -282,7 +372,9 @@ def prev_next(items, idx):
 def build_chapter_page(items, idx):
     item = items[idx]
     main = '<article class="chapter">%s%s</article>' % (item["body"], prev_next(items, idx))
-    return page_shell(item["title"], nav_html(items, current_file=item["file"], depth="chapter"), main, depth="chapter")
+    description = "%s。《架构取舍之道》从 Redis、MySQL、Kafka 的设计取舍理解系统设计。" % item["blurb"]
+    return page_shell(item["title"], nav_html(items, current_file=item["file"], depth="chapter"),
+                      main, depth="chapter", description=description, og_type="article")
 
 
 def main():

@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>第 8 章 磁盘存储格式 — 文件结构的设计哲学</title>
+<meta name="description" content="磁盘格式：字节怎么排，决定怎么读、怎么恢复。《架构取舍之道》从 Redis、MySQL、Kafka 的设计取舍理解系统设计。">
+<meta name="theme-color" content="#4f46e5">
+<meta property="og:type" content="article">
+<meta property="og:title" content="第 8 章 磁盘存储格式 — 文件结构的设计哲学">
+<meta property="og:description" content="磁盘格式：字节怎么排，决定怎么读、怎么恢复。《架构取舍之道》从 Redis、MySQL、Kafka 的设计取舍理解系统设计。">
+<meta property="og:site_name" content="架构取舍之道">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%234f46e5'/%3E%3Ctext%20x='32'%20y='45'%20font-family='system-ui,sans-serif'%20font-size='36'%20font-weight='700'%20text-anchor='middle'%20fill='white'%3EA%3C/text%3E%3C/svg%3E">
 <style>
 *{box-sizing:border-box}
 :root{--ink:#1f2328;--mute:#57606a;--line:#d8dee4;--accent:#4f46e5;--bg:#fff;--soft:#f6f8fa}
@@ -70,6 +79,15 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 .review-index a:hover{border-color:var(--accent);background:#f7f8ff}
 .review-index strong{display:block;color:var(--ink)}
 .review-index span{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+.book-lead{font-size:17px;line-height:1.75;color:#343a40;margin:0 0 10px;max-width:800px}
+.book-byline{color:var(--mute);font-size:14px;margin:0 0 18px}
+.start-here{background:#f7f8ff;border:1px solid #e0e7ff;border-radius:10px;padding:14px 18px;margin:0 0 8px;max-width:900px}
+.start-here strong{display:block;color:var(--accent);font-size:14px;margin-bottom:4px}
+.start-here span{font-size:14.5px;line-height:1.8;color:#343a40}
+.book-foot{color:var(--mute);font-size:13px;margin:24px 0 0}
+.book-footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);color:var(--mute);font-size:13px;line-height:1.8}
+.book-footer p{margin:0 0 4px}
+@media(max-width:900px){.book-lead{font-size:16px}.start-here{padding:12px 14px}}
 @media(max-width:1200px){figure.fig{margin:2em auto}}
 @media(max-width:900px){
   .layout{grid-template-columns:1fr}
@@ -900,6 +918,10 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 </div><figcaption>图 8-8　本章三个样本的文件职责与访问路径。</figcaption></figure>
 <h2 id="sec-8.7">8.7 小结</h2>
 <p>存储格式限定了记录怎样定位和更新，也影响重启时的数据重建与运行中的旧数据清理。<a class="xref" href="09-data-sync.html">第 9 章</a>接着讨论数据同步：当增量无法继续衔接时，系统从哪里重新取得完整状态。</p><nav class="page-nav"><a href="07-cluster.html">← 第 7 章 集群架构 — 从单点到分布式</a><a href="09-data-sync.html">第 9 章 数据同步机制 — 集群一致性的实现 →</a></nav></article>
+<footer class="book-footer">
+  <p>《架构取舍之道》 · <a href="https://github.com/jgsliu7/architecture-tradeoffs">GitHub 仓库</a> · <a href="https://github.com/jgsliu7/architecture-tradeoffs/issues">提交勘误</a> · <a href="10-epilogue.html">关于作者与许可</a></p>
+  <p>正文与插图 CC BY-NC-ND 4.0；构建脚本 MIT。</p>
+</footer>
 </main>
 </div>
 <script>
