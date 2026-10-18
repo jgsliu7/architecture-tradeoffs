@@ -728,7 +728,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 <p>需要同时扩容和容错时，Redis Cluster 与 Kafka 已经把分片、副本和故障接管组合在软件内部；MySQL 将副本组与数据分片分开，使用者需要组合分片路由、数据迁移，以及每个分片的复制与故障接管方案。内置的组合也带有业务约束：Redis Cluster 的多键操作要求相关 key 落在同一个槽，Kafka 的顺序保证落在单个分区内。</p>
 <p>选择集群方案时，要把软件已经提供的路由、迁移和接管能力，与业务能否接受相应的操作限制一起考虑。</p>
 <h2 id="sec-7.7">7.7 小结</h2>
-<p>在开头的库存场景中，自动故障转移仍可能丢失已确认的扣减。集群能否承担某项业务，取决于容量与吞吐怎样分摊，也取决于故障后已确认的数据能否保留、请求何时恢复。</p>
+<p>在开头的库存场景中，自动故障转移仍可能丢失已确认的扣减。集群承担某项业务时，容量与吞吐的分摊、故障后已确认数据的保留，以及请求恢复的时间，都要满足这项业务的要求。</p>
 <p><a class="xref" href="08-storage-format.html">第 8 章</a>看数据在磁盘上的组织方式，<a class="xref" href="09-data-sync.html">第 9 章</a>看节点间怎样同步以及如何确认进度。</p><nav class="page-nav"><a href="06-security.html">← 第 6 章 安全机制 — 权限、加密、审计</a><a href="08-storage-format.html">第 8 章 磁盘存储格式 — 文件结构的设计哲学 →</a></nav></article>
 <footer class="book-footer">
   <p>《架构取舍之道》 · <a href="https://github.com/jgsliu7/architecture-tradeoffs">GitHub 仓库</a> · <a href="https://github.com/jgsliu7/architecture-tradeoffs/issues">提交勘误</a> · <a href="10-epilogue.html">关于作者与许可</a></p>

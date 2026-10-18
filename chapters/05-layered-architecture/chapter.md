@@ -174,7 +174,7 @@ Kafka 还要管理分区的 Leader、ISR（同步副本集合）和集群元数�
 
 ### 5.4.5 层间通信
 
-Kafka 的通信方式取决于线程和进程边界。在同一 Broker 内，交互层到 API 层经 RequestChannel 队列跨线程交接；API 层处理请求时，通过对象方法调用本 Broker 的 Log、ReplicaManager 或 Partition 等组件，无须网络传输。Broker 之间、独立部署的 Controller 与 Broker 之间则通过网络协议通信。例如 ReplicaManager 管理的 Follower 副本拉取线程从另一台 Broker 的 Leader 拉数据。
+在同一 Kafka Broker 内，交互层到 API 层经 RequestChannel 队列跨线程交接；API 层处理请求时，通过对象方法调用本 Broker 的 Log、ReplicaManager 或 Partition 等组件，无须网络传输。Broker 之间、独立部署的 Controller 与 Broker 之间则通过网络协议通信。例如 ReplicaManager 管理的 Follower 副本拉取线程从另一台 Broker 的 Leader 拉数据。
 
 ## 5.5 横向对比
 

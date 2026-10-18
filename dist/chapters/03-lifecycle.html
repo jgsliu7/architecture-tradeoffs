@@ -153,7 +153,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 <article class="chapter"><h1 id="s40">第 3 章 生命周期管理 — 优雅启动与关闭</h1>
 <h2 id="s41">本章导读</h2>
 <p>发版时用 <code>kill -9</code> 结束进程，再重新启动，进程就没有机会完成清理和持久化收尾。启动时要恢复数据、确认事务状态、准备对外服务；关闭时要处理在途请求、保存必要的数据、交接集群职责。忽略其中一步，重启就可能变成一次事故。</p>
-<p>同样是 <code>kill -9</code>，Redis 可能丢失尚未持久化的数据（丢多少取决于持久化配置，详见<a class="xref" href="04-memory-disk.html">第 4 章</a>），MySQL 重新启动时进入 InnoDB 的崩溃恢复（crash recovery）流程，Kafka 则可能触发分区的 Leader 重选、让上游业务短暂抖动。影响范围还取决于部署方式：单机实例需要恢复本地状态，Redis、MySQL 的复制或集群部署也可能触发故障转移，Kafka Broker 下线则会影响它承载的分区。</p>
+<p>同样是 <code>kill -9</code>，Redis 可能丢失尚未持久化的数据，持久化配置会影响丢失量（详见<a class="xref" href="04-memory-disk.html">第 4 章</a>）；MySQL 重新启动时进入 InnoDB 的崩溃恢复（crash recovery）流程；Kafka 则可能触发分区的 Leader 重选、让上游业务短暂抖动。单机实例需要恢复本地状态；Redis、MySQL 的复制或集群部署也可能触发故障转移；Kafka Broker 下线则会影响它承载的分区。</p>
 <h2 id="sec-3.1">3.1 问题的本质</h2>
 <p>对有状态软件，启动的门槛不是进程存在，而是已恢复到能够处理请求的状态。Redis 要重建内存键空间，MySQL 要确定事务状态，Kafka 要恢复分区日志和节点职责。</p>
 <p>关闭时则要确定：哪些数据必须保存，哪些工作可以留到以后处理，哪些职责要在退出前交接。<a class="xref" href="#fig-3-1">图 3-1</a> 概括了启动与关闭各自处理的状态变化；崩溃或强制退出跳过正常收尾，可能造成数据损失或把工作留到下次启动。</p>
@@ -346,7 +346,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 <p>MySQL 用 <code>innodb_fast_shutdown</code> 的 0、1、2 三档决定把多少清理工作放在关机前，多少留到下次启动或运行期。<a class="xref" href="#table-3-1">表 3-1</a> 比较的是工作时机，不是一致性等级；三档都以保留已提交事务为前提。</p>
 <p class="tab-label"><strong>表 3-1　innodb_fast_shutdown 三档对比</strong></p>
 <div class="table-wrap"><table id="table-3-1"><thead><tr><th>维度</th><th>0 = 完全关闭</th><th>1 = 快速关闭（默认）</th><th>2 = 模拟崩溃</th></tr></thead><tbody><tr><td>关闭时完成</td><td>刷脏页，并完成 purge、修改缓冲合并等清理</td><td>刷脏页，跳过完整 purge 与修改缓冲合并</td><td>刷 redo，不刷数据页</td></tr><tr><td>留给之后</td><td>下次启动需要处理的清理较少</td><td>运行期继续完成未做完的清理</td><td>下次启动执行崩溃恢复</td></tr></tbody></table></div>
-<p>默认档位 1 保留了脏页刷盘，把完整清理留到运行期，避免日常重启等待这部分工作。关闭时间还取决于脏页和长事务等遗留工作量，不能仅由档位预测。</p>
+<p>默认档位 1 保留了脏页刷盘，把完整清理留到运行期，避免日常重启等待这部分工作。估计关闭时间时，除了档位，还要计入脏页和长事务等遗留工作量。</p>
 <h2 id="sec-3.4">3.4 Kafka 的做法</h2>
 <p>Kafka 的消息保存在分区日志中。启动时，Broker 既要检查本地日志，也要取得集群元数据；关闭时，除了本地收尾，还可能需要交出分区 Leader 职责。</p>
 <h3 id="sec-3.4.1">3.4.1 启动链路：服务就绪前的依赖</h3>
@@ -453,12 +453,12 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 <p class="tab-label"><strong>表 3-2　三个软件的启动与关闭</strong></p>
 <div class="table-wrap"><table id="table-3-2"><thead><tr><th>维度</th><th>Redis</th><th>MySQL</th><th>Kafka</th></tr></thead><tbody><tr><td>开始处理请求的门槛</td><td>按配置恢复内存键空间</td><td>完成必要的 redo 恢复；未完成的回滚可在后台继续</td><td>分区日志、元数据与授权等准备就绪</td></tr><tr><td>退出前的本地数据收尾</td><td>已开启的 AOF 刷盘；是否生成本次 RDB 可选</td><td>按档位刷数据页或 redo</td><td>日志刷盘与本地收尾</td></tr><tr><td>可以省略或留到之后的工作</td><td>NOSAVE 省略本次 RDB 快照</td><td>完整清理可后移；档位 2 留待下次崩溃恢复</td><td>普通关闭把 Leader 重选留到退出后</td></tr><tr><td>退出时的集群职责</td><td>可等待落后副本追平；接管取决于部署方式</td><td>角色接管取决于复制或集群方案，不由关闭档位决定</td><td>受控关闭先协调 Leader 交接</td></tr></tbody></table></div>
 <h2 id="sec-3.6">3.6 架构启示</h2>
-<h3 id="s56">启示一：就绪条件取决于请求需要的状态</h3>
+<h3 id="s56">启示一：接受请求前，哪些状态必须就绪</h3>
 <p>进程已启动、端口已监听，都不足以说明请求能得到正确结果。反过来，要求所有后台清理完成后才接受请求，会无谓延长停服。划定就绪门槛的依据，是未完成的工作是否影响新请求的正确性。InnoDB 的必要 redo 恢复要在接受请求前完成；未完成的回滚可以留在后台，回滚事务持有的锁可能增加新请求的延迟。</p>
 <h3 id="s57">启示二：退出要有可确认的完成条件</h3>
 <p>退出方案需要分别定义数据保存、在途请求处理和职责交接的完成条件，并约定等待超时后如何退出。Kafka 的受控关闭在具备可接替副本、交接按时完成时，能减少计划下线时的分区抖动；否则转入普通关闭。</p>
 <h3 id="s58">启示三：快速关闭改变后续工作的安排</h3>
-<p>Redis 可以省略本次快照，MySQL 可以把清理留到运行期，Kafka 则可以把选主留到 Broker 退出后。它们缩短的是同一个关闭阶段，改变的保证和后续负担却不同。快速关闭的代价，取决于被省去的工作是否需要补做、由谁完成，以及它会延长哪个阶段。</p>
+<p>Redis 可以省略本次快照，MySQL 可以把清理留到运行期，Kafka 则可以把选主留到 Broker 退出后。它们缩短的是同一个关闭阶段，改变的保证和后续负担却不同。评估快速关闭的代价，需要明确省去的工作是否还要补做、由谁完成，以及会延长哪个阶段。</p>
 <p>退出后能保住哪些数据，取决于持久化配置与退出流程。</p>
 <h2 id="sec-3.7">3.7 小结</h2>
 <p>启动的门槛是必要状态已恢复。关闭时要确认必要的收尾工作已完成，并说明进程退出后，哪些集群职责还需要其他节点接手。把工作移到运行期、下次启动或其他节点，可以缩短本次关闭前的等待；方案也要说明后续工作由谁完成，以及超时会带来什么后果。</p><nav class="page-nav"><a href="02-data-structures-protocols.html">← 第 2 章 数据结构与协议 — 为各自的目标而设计</a><a href="04-memory-disk.html">第 4 章 内存与磁盘 — 速度与持久化的平衡 →</a></nav></article>

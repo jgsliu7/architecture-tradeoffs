@@ -346,7 +346,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 <p>Redis 用 RDB 和 AOF 在磁盘上保留可恢复的状态。</p>
 <p><strong>RDB（快照文件）</strong> 保存某一时刻的全量数据。后台保存时，Redis <code>fork</code> 子进程写快照，父进程继续处理请求；写时复制（COW）保留快照时的内存视图。fork 要复制页表，会短暂停住主线程；之后若大量页面被修改，COW 还会增加内存与复制开销。实例越大，这两项成本越值得关注。</p>
 <p><strong>AOF（仅追加文件）</strong> 通常把写命令追加到日志末尾，恢复时顺序重放命令，重建内存状态。参数 <code>appendfsync</code> 决定日志什么时候刷到磁盘：</p>
-<ul><li><code>always</code>：每条命令的回复要等待 AOF 刷盘完成，多个命令可以共用一次刷盘。</li><li><code>everysec</code>：每秒 <code>fsync</code> 一次，默认值。崩溃时约丢最近 1 秒量级的数据（取决于后台 fsync 周期与崩溃时点）；后台刷盘受阻时，实际丢失窗口可能更长。</li><li><code>no</code>：把刷盘时机交给操作系统。Redis 不主动 <code>fsync</code>，由 OS 决定什么时候把 PageCache 写回磁盘；崩溃时可能丢失较多数据。</li></ul>
+<ul><li><code>always</code>：每条命令的回复要等待 AOF 刷盘完成，多个命令可以共用一次刷盘。</li><li><code>everysec</code>：每秒 <code>fsync</code> 一次，默认值。崩溃时约丢最近 1 秒量级的数据，具体丢失窗口随后台 fsync 周期和崩溃时点变化；后台刷盘受阻时，这个窗口可能更长。</li><li><code>no</code>：把刷盘时机交给操作系统。Redis 不主动 <code>fsync</code>，由 OS 决定什么时候把 PageCache 写回磁盘；崩溃时可能丢失较多数据。</li></ul>
 <p>Redis 7.x 默认不开启 AOF；开启后，默认使用 <code>everysec</code>。</p>
 <p>AOF 持续追加会让文件增长。<strong>AOF 重写</strong>按当前内存状态生成更短的日志，并把重写期间的新写入接到新日志之后。</p>
 <p><strong>混合持久化</strong>是 AOF 的一种形式：重写时用 RDB 格式保存全量基底，新增写命令以 AOF 增量记录；恢复时先加载基底，再重放增量。</p>
@@ -800,7 +800,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 <h3 id="s81">启示二：数据组织影响缓存管理方式</h3>
 <p>Redis 直接在内存中操作键值对象；InnoDB 要区分页的冷热与脏状态，因而自己管理缓冲池；Kafka 的消息已组织为文件日志，可以利用 PageCache。进程内缓存便于控制淘汰和写回，也增加维护工作。把缓存交给 PageCache 后，调节与诊断也转向操作系统的预读、脏页回写和磁盘 I/O。</p>
 <h3 id="s82">启示三：故障范围决定写入确认条件</h3>
-<p>刷盘等待数据进入持久介质，副本确认等待数据传播到其他节点。二者防的故障不同：进程退出、整机故障和多个副本同时不可用，要求的保证也不同。写入确认要等待什么，取决于需要防范的故障范围。</p>
+<p>刷盘等待数据进入持久介质，副本确认等待数据传播到其他节点。二者防的故障不同：进程退出、整机故障和多个副本同时不可用，要求的保证也不同。</p>
 <h3 id="s83">启示四：顺序写的成本包括后台维护与恢复</h3>
 <p>Redis 的 AOF 重写需要根据内存状态生成新日志，重启时按配置加载或重放持久化数据；MySQL 要把脏页写回各自的位置；Kafka 要管理日志段，并在异常退出后检查日志、恢复索引等状态。评估高吞吐写入方案，需要把这些后台与恢复工作一并算在内。</p>
 <h2 id="sec-4.7">4.7 小结</h2>

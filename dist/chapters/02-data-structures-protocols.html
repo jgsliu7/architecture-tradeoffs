@@ -767,7 +767,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 
 </svg>
 </div><figcaption>图 2-7　RecordBatch V2 字段分组：按功能分组，不表示磁盘字节顺序。整批消息共享 61 字节头部中的元数据，记录中的偏移量和时间戳使用相对差值。</figcaption></figure>
-<p>同一批中的消息共享元数据和 CRC；需要压缩时，也以批为单位。新旧格式能否共存，取决于读写双方支持的版本；<code>magic</code> 用来辨认批格式版本。Kafka 重点服务追加写和按 offset 定位后的连续读取，不提供按业务 key 的点查。</p>
+<p>同一批中的消息共享元数据和 CRC；需要压缩时，也以批为单位。读写双方需要支持相应版本，新旧格式才能共存；<code>magic</code> 用来辨认批格式版本。Kafka 重点服务追加写和按 offset 定位后的连续读取，不提供按业务 key 的点查。</p>
 <h2 id="sec-2.3">2.3 通信协议：客户端和服务端怎么对话</h2>
 <h3 id="sec-2.3.1">2.3.1 Redis RESP：能被人眼读懂的极简协议</h3>
 <p>Redis 的协议叫 RESP（REdis Serialization Protocol）。它的设计目标包括实现简单、解析快速、便于人工调试，以及能表达所有 Redis 命令和返回值。文本参数可以直接辨读，也能用 <code>nc</code> 手工发送简单命令。</p>

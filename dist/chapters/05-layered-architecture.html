@@ -695,7 +695,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 <h3 id="sec-5.4.4">5.4.4 副本与集群控制的协调职责</h3>
 <p>Kafka 还要管理分区的 Leader、ISR（同步副本集合）和集群元数据。Broker 内的 <code>ReplicaManager</code> 管理副本，<code>Partition</code> 表示分区；<code>Controller</code> 负责集群控制，在 KRaft 模式下可以独立于 Broker 进程部署。这些协调职责与请求分派和日志读写不同。</p>
 <h3 id="sec-5.4.5">5.4.5 层间通信</h3>
-<p>Kafka 的通信方式取决于线程和进程边界。在同一 Broker 内，交互层到 API 层经 RequestChannel 队列跨线程交接；API 层处理请求时，通过对象方法调用本 Broker 的 Log、ReplicaManager 或 Partition 等组件，无须网络传输。Broker 之间、独立部署的 Controller 与 Broker 之间则通过网络协议通信。例如 ReplicaManager 管理的 Follower 副本拉取线程从另一台 Broker 的 Leader 拉数据。</p>
+<p>在同一 Kafka Broker 内，交互层到 API 层经 RequestChannel 队列跨线程交接；API 层处理请求时，通过对象方法调用本 Broker 的 Log、ReplicaManager 或 Partition 等组件，无须网络传输。Broker 之间、独立部署的 Controller 与 Broker 之间则通过网络协议通信。例如 ReplicaManager 管理的 Follower 副本拉取线程从另一台 Broker 的 Leader 拉数据。</p>
 <h2 id="sec-5.5">5.5 横向对比</h2>
 <p>三个软件都分层，职责划分和跨边界调用的方式不同。</p>
 <figure class="fig" id="fig-5-7"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 58 880 413" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">

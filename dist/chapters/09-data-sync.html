@@ -397,7 +397,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 <p><strong>复制偏移量（replication offset）</strong>：主节点用 <code>master_repl_offset</code> 记录复制流推进到的字节位置；副本用自己的已处理偏移量记录执行进度，<code>INFO replication</code> 中对应 <code>slave_repl_offset</code>。位点按复制流的字节计数，需要与复制 ID 一起解释。</p>
 <p><strong>复制积压缓冲区（backlog）</strong>：主节点为断线续传保留最近一段复制流，规模由 <code>repl-backlog-size</code> 控制，默认约 1MB。</p>
 <p>副本断线重连时，通过 <code>PSYNC &lt;replid&gt; &lt;offset&gt;</code> 发送已知的复制 ID 和希望接收的下一个字节位置。主节点先验证复制历史是否匹配，再检查所需字节是否仍在 backlog 中。</p>
-<ul><li>条件满足 → <strong>部分重同步（partial resync）</strong>：从请求的位置继续发送保留的复制流，追赶时间取决于落后量和净处理速率。</li><li>历史不匹配或所需字节已不可得 → 退回全量同步。</li></ul>
+<ul><li>条件满足 → <strong>部分重同步（partial resync）</strong>：从请求的位置继续发送保留的复制流。</li><li>历史不匹配或所需字节已不可得 → 退回全量同步。</li></ul>
 <figure class="fig" id="fig-9-4"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 65 860 461" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
   <defs>
     <marker id="fig_9_4_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
