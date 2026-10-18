@@ -45,7 +45,7 @@ Redis 6.0 起可以选择启用多线程 I/O：网络收发等工作由多个线
 `client` 结构体把交互环节解析出的命令参数和会话状态带入命令处理环节，两个环节共享同一请求上下文。
 
 ![图 5-1 Redis 命令处理流水线](diagrams/fig-5-1.svg)
-图 5-1　Redis 命令处理流水线：交互层与逻辑层用 client 结构体衔接，进程内层间传递不重新序列化。
+图 5-1　Redis 命令处理流水线
 
 图中的 `client` 保存查询缓冲区、命令参数和当前数据库等会话状态。多个处理环节按同一套字段约定使用这份上下文，无须逐层复制全部状态。
 
@@ -57,8 +57,8 @@ Redis 围绕内存数据结构组织存储，没有像 MySQL 那样提供可插�
 
 Redis 的数据对象由 `redisObject`（robj）统一表示。它把**类型（type）与编码（encoding）分离**：type 决定语义，表示对象属于字符串、列表、哈希、集合、有序集合等哪种类型，也决定了能对它执行哪些命令；encoding 决定内存表示。同一个 type 可以挂不同的 encoding，比如一个哈希在小数据量时用 listpack（紧凑连续内存），膨胀到阈值后自动升级为 hashtable。
 
-![图 5-2 redisObject 的 type/encoding 解耦](diagrams/fig-5-2.svg)
-图 5-2　redisObject 的 type / encoding 解耦：type 标明类型语义，encoding 标明内存表示。
+![图 5-2 redisObject 的 type 与 encoding 解耦](diagrams/fig-5-2.svg)
+图 5-2　redisObject 的 type 与 encoding 解耦
 
 命令按 type 对外提供语义，例如对列表执行 LPUSH，内部编码变化不改这一语义。
 
@@ -84,8 +84,8 @@ MySQL 的连接层负责客户端接入、协议握手和认证，也建立供�
 
 无论用哪种线程模型，MySQL 都有一个贯穿三层的对象：**`THD`**。每个连接创建一个 THD，里面存着这条连接在生命周期内需要的所有状态，包括当前库、当前事务、会话变量、权限位图、错误栈、字符集、临时表列表等。THD 会跟着请求穿过连接层、服务层、存储引擎层，每一层都在其中读写各自需要的字段。
 
-![图 5-3 THD 贯穿 MySQL 三层的会话上下文](diagrams/fig-5-3.svg)
-图 5-3　THD 贯穿 MySQL 三层的会话上下文：THD 是跨层共享的可变状态。
+![图 5-3 MySQL 的 THD 会话上下文](diagrams/fig-5-3.svg)
+图 5-3　MySQL 的 THD 会话上下文
 
 Redis 的 `client` 与 MySQL 的 THD 都作为共享上下文跨层传递。THD 承载 SQL 执行和存储引擎所需的会话状态，MySQL 的三层因此依赖同一对象的字段约定。
 
@@ -110,7 +110,7 @@ MySQL 的服务层通过统一的 **Handler API** 向存储引擎发起表和行
 实现这套接口的引擎可以接入同一服务层，各自支持的能力不同。InnoDB 是默认引擎，支持事务、行锁和崩溃恢复；MyISAM 不支持事务；MEMORY 把数据放在内存中，重启后表中数据丢失。已安装的引擎可以按表选择。
 
 ![图 5-4 MySQL Handler API 与可插拔存储引擎](diagrams/fig-5-4.svg)
-图 5-4　MySQL Handler API 与可插拔存储引擎：服务层通过 handler 虚函数向下调用，引擎可并存、可替换。
+图 5-4　MySQL Handler API 与可插拔存储引擎
 
 引擎通过接口向服务层报告自身能力和统计信息；数据组织方式和恢复能力则由具体引擎决定。
 
@@ -136,8 +136,8 @@ Kafka 的请求处理路径包括 Acceptor、Processor、RequestChannel、KafkaR
 
 **KafkaRequestHandler 线程组**的线程数由 `num.io.threads` 配置，每个线程从 RequestChannel 里取请求，调用 `KafkaApis.handle()` 处理。
 
-![图 5-5 Kafka Reactor + RequestChannel 线程模型](diagrams/fig-5-5.svg)
-图 5-5　Kafka Reactor + RequestChannel 线程模型：网络线程与业务线程通过有界队列解耦，队列满时向上游施加背压。
+![图 5-5 Kafka 请求处理线程模型](diagrams/fig-5-5.svg)
+图 5-5　Kafka 请求处理线程模型
 
 Redis 即使启用多线程 I/O，普通命令仍由主线程串行执行；Kafka 则由网络线程组负责收发，由业务线程组处理请求。
 
@@ -159,8 +159,8 @@ Kafka 的核心存储抽象是分区日志：每个分区副本有自己的 Log�
 
 消费者和 Follower 都通过 FETCH 请求读取分区日志。
 
-![图 5-6 Kafka Log 复用：消费与副本同步共享日志读取](diagrams/fig-5-6.svg)
-图 5-6　Kafka Log 复用：消费与副本同步共享底层日志读取，两类请求的状态与读取边界不同。
+![图 5-6 Kafka 消费与复制的日志读取复用](diagrams/fig-5-6.svg)
+图 5-6　Kafka 消费与复制的日志读取复用
 
 底层日志读取路径可以复用，索引、缓存和文件读取的优化能同时惠及消费与副本同步；副本进度、任期和截断由复制逻辑处理。
 
@@ -180,8 +180,8 @@ Kafka 还要管理分区的 Leader、ISR（同步副本集合）和集群元数�
 
 三个软件都分层，职责划分和跨边界调用的方式不同。
 
-![图 5-7 三层统一视角对照](diagrams/fig-5-7.svg)
-图 5-7　三个软件的交互、逻辑、存储职责对照；Kafka 的协调职责另列。
+![图 5-7 三个软件的分层职责对照](diagrams/fig-5-7.svg)
+图 5-7　三个软件的分层职责对照
 
 两处边界最能说明三者分层形态的差异。
 

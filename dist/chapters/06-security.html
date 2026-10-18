@@ -216,7 +216,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <line x1="760" y1="288" x2="845" y2="288" stroke="#D97706" stroke-width="1"/>
   <text x="802.5" y="316" text-anchor="middle" font-size="11" fill="#92400E">供事后追查</text>
 </svg>
-</div><figcaption>图 6-1　认证确认身份，授权检查操作权限，加密保护传输与落盘数据，审计可记录关键事件。</figcaption></figure>
+</div><figcaption>图 6-1　安全控制点示意</figcaption></figure>
 <p>这类系统常用长连接处理频繁的小操作。如果每次操作都重新完成认证握手，开销会反复产生，因此通常在建连时认证，再按操作检查权限。共享实例承载多个应用时，授权还要区分各自可访问的键、表或主题。复制与协调连接则要确认节点身份，不能只保护客户端入口。</p>
 <h2 id="sec-6.2">6.2 认证</h2>
 <h3 id="sec-6.2.1">6.2.1 Redis：从全局密码到 ACL 用户</h3>
@@ -334,7 +334,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <line x1="590" y1="185" x2="660" y2="207" stroke="#059669" stroke-width="1.6" marker-end="url(#fig_6_2_arrow-green)"/>
   <path d="M590 355 H626 V233 H660" fill="none" stroke="#D97706" stroke-width="1.6" marker-end="url(#fig_6_2_arrow-orange)"/>
 </svg>
-</div><figcaption>图 6-2　内部、外部和控制面连接分别接入监听器，按网络域配置保护措施。</figcaption></figure>
+</div><figcaption>图 6-2　Kafka 多监听器配置</figcaption></figure>
 <p>多个监听器分别使用各自的协议和端口，启用 TLS 的路径还要管理相应证书。Broker 对外地址、控制面端点需要与实际连接路径对应，多监听器也因此增加了配置维护与核对的工作。</p>
 <p>SASL 支持 PLAIN、SCRAM、Kerberos 和 OAuth 2.0 等认证机制。Broker 和客户端通过 JAAS（Java Authentication and Authorization Service）配置所选机制。这样可以接入不同身份系统，而不用为每种方式另起一套认证协议。</p>
 <h2 id="sec-6.3">6.3 授权</h2>
@@ -420,7 +420,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="440" y="468" text-anchor="middle" font-size="12" fill="#111827">⑥ 返回 NOPERM（无权限）</text>
 
 </svg>
-</div><figcaption>图 6-3　会话级认证一次，每条命令检查命令权限；带键参数时还检查键模式。</figcaption></figure>
+</div><figcaption>图 6-3　Redis ACL 认证与授权时序</figcaption></figure>
 <p>Redis 6.2 起，ACL 可把 Pub/Sub 通道的发布、订阅权限与键空间读写权限分开配置。</p>
 <h3 id="sec-6.3.2">6.3.2 MySQL：多层级权限表加 8.0 RBAC</h3>
 <p>MySQL 的权限覆盖全局、数据库、表、列和存储程序几种作用域。检查表或列的访问权限时，先看全局授权，再看数据库、表和列等范围的授权；存储程序权限对应另一类对象。</p>
@@ -517,7 +517,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <line x1="620" y1="323" x2="620" y2="333" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_6_4_arrow-sm)"/>
 
 </svg>
-</div><figcaption>图 6-4　表列访问先看较大范围的授权，不足时合并更具体作用域的授权；存储程序权限另行检查。</figcaption></figure>
+</div><figcaption>图 6-4　MySQL 表列权限检查路径</figcaption></figure>
 <p>权限检查随语句执行反复发生。MySQL 在启动时把授权表载入内存，后续检查使用内存中的授权信息，省去逐次查询授权表的开销。</p>
 <p>MySQL 8.0 引入角色系统，支持 <code>CREATE ROLE</code>、<code>GRANT role TO user</code> 和会话级 <code>SET ROLE</code>。角色把一组权限交给多个账号复用；可以按默认设置在登录时激活，也可以在会话内切换。</p>
 <h3 id="sec-6.3.3">6.3.3 Kafka：ACL 关联主体、操作与资源</h3>

@@ -211,7 +211,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="660" y="289" text-anchor="middle" font-size="11" fill="#6B7280">重新全量同步</text>
 
 </svg>
-</div><figcaption>图 9-1　数据同步的四个子问题：传播什么、怎么传播、到什么程度、断了怎么办。</figcaption></figure>
+</div><figcaption>图 9-1　数据同步的四个子问题</figcaption></figure>
 <p>副本状态怎样对齐，可以借助<strong>状态机复制</strong>来理解：从相同的初始状态出发，按相同顺序执行相同输入，并且执行是确定性的，副本就会得到相同状态。Kleppmann《Designing Data-Intensive Applications》在“一致性与共识”一章对此已有展开。三个软件都用日志或命令序列记录变化：Redis 的副本执行命令流，MySQL 的副本回放 binlog event，Kafka 的副本按偏移量复制分区日志。</p>
 <figure class="fig" id="fig-9-2"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 68 880 448" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
   <defs>
@@ -303,7 +303,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="440" y="472" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">各系统内的副本按相同历史追赶</text>
   <text x="440" y="489" text-anchor="middle" font-size="11" fill="#374151">相同初态 + 相同输入顺序 + 确定性执行</text>
 </svg>
-</div><figcaption>图 9-2　状态机复制模型：以三个软件为例，对照输入载体与副本处理方式；各系统内的副本按相同历史追赶。</figcaption></figure>
+</div><figcaption>图 9-2　状态机复制模型</figcaption></figure>
 <p>同一个“随机选一个成员”，两台机器可能选出不同结果。复制时要传播已经选中的成员，而不是让副本再随机一次。Redis 的命令改写，解决的就是这类问题。</p>
 <p>读取副本时，还要考虑复制延迟。主节点写入新订单后，从节点还没同步到，查询若恰好落在从节点上，就可能查不到这笔订单。“数据已写入”和“用户能看到”之间有一个时间窗口。对写后立即读取的请求，可以优先路由到主节点，减少副本延迟的影响。</p>
 <h2 id="sec-9.2">9.2 Redis 的做法</h2>
@@ -391,7 +391,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <rect x="330" y="538" width="220" height="40" rx="6" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
   <text x="440" y="563" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">从节点 offset 追平，恢复增量同步</text>
 </svg>
-</div><figcaption>图 9-3　PSYNC2 同时核对复制历史与续传位置：复制 ID 有效且所需字节仍在 backlog 中，才能部分重同步，否则退回全量。</figcaption></figure>
+</div><figcaption>图 9-3　Redis PSYNC2 重同步流程</figcaption></figure>
 <h3 id="sec-9.2.4">9.2.4 增量同步：PSYNC2 与复制积压缓冲区</h3>
 <p>PSYNC2 解决的是“断线重连能不能不从头同步”。它需要复制 ID、偏移量和保留的复制流一起配合：ID 核对历史，偏移量标明进度，backlog 提供可补发的数据。</p>
 <p><strong>复制偏移量（replication offset）</strong>：主节点用 <code>master_repl_offset</code> 记录复制流推进到的字节位置；副本用自己的已处理偏移量记录执行进度，<code>INFO replication</code> 中对应 <code>slave_repl_offset</code>。位点按复制流的字节计数，需要与复制 ID 一起解释。</p>
@@ -481,7 +481,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="120" y="484" font-size="12.5" fill="#374151">② 请求位置早于 280，或复制历史不匹配 → 无法继续这段复制流</text>
   <text x="120" y="504" font-size="12.5" font-weight="700" fill="#EF4444">     ⇒ 退回全量同步：子进程生成 RDB + 全量传输</text>
 </svg>
-</div><figcaption>图 9-4　backlog 滑动窗口：复制历史匹配且请求范围落在保留窗口内时，可增量补差；否则需要全量同步。</figcaption></figure>
+</div><figcaption>图 9-4　Redis 复制积压缓冲区与 offset</figcaption></figure>
 <p>确定 backlog 大小时，需要在断线容忍时间与内存占用之间取舍：写入速率相同时，窗口越大，能覆盖越长的网络抖动或副本停顿，也要占用更多内存。可以根据写入字节速率和常见断线时长估算所需规模。</p>
 <p>副本重连后，既要补断线期间的积压，也要继续处理主节点的新写入。设落后量为 B 字节，副本的有效处理速率为 C，主节点同期的写入速率为 W。只有 C 大于 W，副本才有净追赶能力；速率恒定时，追赶时间约为 <code>B/(C-W)</code>。</p>
 <p>故障转移后，新主会生成新的 replid，把老 replid 保存为 <code>replid2</code>，并记录旧复制历史的有效偏移上限。副本拿老 ID 续传时，既要满足这个上限，也要满足 backlog 仍保留所需字节，才能走部分重同步。这放宽了更换主节点后续传的限制。</p>
@@ -611,7 +611,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="225" y="631" text-anchor="middle" font-size="11" fill="#374151">主节点按副本的 GTID 集合补发所缺事务</text>
 
 </svg>
-</div><figcaption>图 9-5　异步 / 半同步 / GTID：异步复制完成本地提交后返回；半同步默认采用 AFTER_SYNC，在 binlog 刷盘后、引擎提交前等待副本 ACK，AFTER_COMMIT 则在引擎提交后等待。副本确认不等待事务应用完成，GTID 以事务标识辅助定位复制进度。</figcaption></figure>
+</div><figcaption>图 9-5　MySQL 异步、半同步复制与 GTID</figcaption></figure>
 <h3 id="sec-9.3.3">9.3.3 异步复制：本地提交不等待副本</h3>
 <p>默认配置下，MySQL 复制是异步的：主节点完成本地事务提交后就给客户端返回 OK，不等待副本确认。如果主节点此时发生故障，接替它的副本可能还没有收到这些已提交的事务。</p>
 <h3 id="sec-9.3.4">9.3.4 半同步复制：可降级的副本确认</h3>
@@ -744,7 +744,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="500" y="516" font-size="12" fill="#374151">代价：读写事务提交前需要组内通信和认证</text>
   <text x="500" y="544" font-size="12" font-weight="600" fill="#EF4444">要点：多数派维持进展，应用等待条件可调</text>
 </svg>
-</div><figcaption>图 9-6　并行回放与 MGR：从节点按依赖标记调度回放，MGR 通过组通信建立事务顺序，再进行认证和提交。</figcaption></figure>
+</div><figcaption>图 9-6　MySQL 并行复制与组复制</figcaption></figure>
 <h3 id="sec-9.3.7">9.3.7 组复制（MGR）：在复制中加入事务协调</h3>
 <p>MGR（MySQL Group Replication）在复制链路中加入组内事务协调。读写事务准备提交时，节点广播行变更及对应写集。基于 Paxos 的 XCom 提供组通信，为消息确定统一的顺序；各成员都按这个顺序进行冲突认证，通过认证的事务才能提交。</p>
 <p>组通信需要多数派才能继续作出决定，因此少数成员故障时，只要剩余成员仍能形成多数派，组就能继续运行。事务通过认证后，发起节点提交本地事务，其他成员应用这笔远端事务。</p>
@@ -862,7 +862,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="140" y="636" font-size="12" fill="#374151">A 报告旧任期与待拉取位置；B 返回共同历史边界 off=3</text>
   <text x="140" y="656" font-size="12" font-weight="700" fill="#059669">A 截断 off≥3 的旧尾部 m3 m4，再从 off=3 开始拉取 B 的日志</text>
 </svg>
-</div><figcaption>图 9-7　HW 与 leader epoch：Leader 根据副本反馈的进度推进 HW；leader epoch 标识任期边界，帮助恢复中的副本定位并截断不一致尾部。</figcaption></figure>
+</div><figcaption>图 9-7　Kafka 复制进度与 leader epoch</figcaption></figure>
 <h3 id="sec-9.4.4">9.4.4 leader epoch：定位旧 Leader 日志中的分叉</h3>
 <p>旧 Leader 恢复后，可能带回与新 Leader 不一致的日志尾部。场景是这样的：Leader A 在任期 1 写了几条消息后失联，集群选出 Leader B 进入任期 2，B 又写了几条；此时 A 恢复，仍保存着任期 1 的本地日志，需要先与当前 Leader 对齐。</p>
 <p>Kafka 用 <strong>leader epoch</strong>（单调递增的任期号）标识日志的任期边界，并记录各任期的起始偏移量。旧副本重新追随时，当前 Leader 根据任期和偏移量判断两边的历史是否分叉；如果分叉，副本先定位共同日志的边界，截断不一致尾部，再继续拉取。</p>

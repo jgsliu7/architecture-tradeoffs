@@ -235,7 +235,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 
 
 </svg>
-</div><figcaption>图 10-1　存储层次的对照：左侧为处理器与存储介质，右侧为三个软件使用内存与磁盘的方式。</figcaption></figure>
+</div><figcaption>图 10-1　硬件存储层次与三个软件的数据放置</figcaption></figure>
 <h3 id="sec-10.2.2">10.2.2 规律二：分层隔离实现变化</h3>
 <blockquote><strong>稳定的契约留在层间，多变的实现隔离在层内——这是一个比“高内聚低耦合”更可操作的判据。</strong></blockquote>
 <p>分层要隔离具体的变化。Redis 区分数据类型与底层编码，让内部表示可以改变，而命令语义保持稳定；MySQL 用 Handler 接口分开 SQL 处理与存储引擎；Kafka 在增加远程存储后，客户端仍按分区和 offset 读取日志。它们保留的是对外约定，把需要调整的实现放在内部。</p>

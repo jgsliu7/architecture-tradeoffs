@@ -248,7 +248,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <line x1="774" y1="317" x2="759" y2="317" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_7_1_arrow)"/>
   <text x="765" y="374" text-anchor="middle" font-size="11" fill="#374151">Follower 从对应 Leader 拉取</text>
 </svg>
-</div><figcaption>图 7-1　Redis、MySQL、Kafka 的集群能力与责任边界。</figcaption></figure>
+</div><figcaption>图 7-1　三个软件的集群能力与责任边界</figcaption></figure>
 <h2 id="sec-7.2">7.2 Redis 的做法</h2>
 <h3 id="sec-7.2.1">7.2.1 主从复制：高可用的基础</h3>
 <p>Redis 最基础的复制拓扑是一个主节点带若干从节点。在从节点执行 <code>REPLICAOF host port</code>，即可指定上游。首次同步先取得快照，再补上期间的写入；短暂断线后，条件满足时可以只补差量。</p>
@@ -344,7 +344,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="600" y="501" text-anchor="middle" font-size="10.5" fill="#374151">通知其他从节点改连新主；客户端经 Sentinel 获取新主地址</text>
 
 </svg>
-</div><figcaption>图 7-2　Sentinel 故障转移机制：心跳超时后，Sentinel 先将主节点标记为主观下线；故障判断达到 quorum 时，再标记为客观下线，随后选出获多数派授权的 Leader 哨兵主持转移。</figcaption></figure>
+</div><figcaption>图 7-2　Sentinel 故障转移机制</figcaption></figure>
 <p>达到 quorum 的下线判断与 Leader 的多数派授权是两道门槛，约束的是故障判断和转移决策。节点宕机或网络分区都可能触发转移。主从数据采用异步复制，新主未必保留原主刚确认的写入。</p>
 <p>Sentinel 要求客户端从它那里获取当前主节点地址。Redis Cluster 则把分片与自动故障转移结合起来。</p>
 <h3 id="sec-7.2.3">7.2.3 Redis Cluster：分片加自动容错，去中心化元数据</h3>
@@ -424,7 +424,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="525" y="540" font-size="12" fill="#374151">③ 客户端向 A 发送 ASKING，再重发本次请求</text>
   <text x="525" y="560" font-size="12" font-style="italic" fill="#059669">语义：一次性重定向 · 不更新本地表</text>
 </svg>
-</div><figcaption>图 7-3　Redis Cluster 16384 槽分布与 MOVED/ASK 路由：槽是 key 到节点的中间抽象，迁移只移动部分槽，大部分 key 不动。</figcaption></figure>
+</div><figcaption>图 7-3　Redis Cluster 槽分布与路由</figcaption></figure>
 <p>客户端可以缓存槽到节点的映射，让绝大多数请求直接到达目标节点。扩容、缩容或故障转移改变了槽归属时，节点可以返回 MOVED 重定向，客户端据此更新本地映射，后续请求使用新地址。</p>
 <p>槽正在迁移时，节点也可能返回 ASK 重定向，让这一次请求先到临时目标执行。客户端先向目标节点发送 <code>ASKING</code>，再发送本次请求，暂不更新槽映射；后续请求仍先访问原节点，迁移完成后的新归属由 MOVED 通知。</p>
 <p><strong>元数据分散维护，用 Gossip 传播状态。</strong> Redis Cluster 没有集中的协调者，节点通过集群总线交换槽归属、成员和故障信息。各节点视图在传播过程中可能暂时不同，客户端也可能暂时持有过期映射。</p>
@@ -473,7 +473,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="725" y="313" text-anchor="middle" font-size="13" font-weight="600" fill="#111827">客户端改连</text>
   <text x="725" y="337" text-anchor="middle" font-size="10.5" fill="#374151">切到新的写入口</text>
 </svg>
-</div><figcaption>图 7-4　MySQL 复制拓扑与故障接管责任。</figcaption></figure>
+</div><figcaption>图 7-4　MySQL 复制拓扑与故障接管责任</figcaption></figure>
 <h3 id="sec-7.3.1">7.3.1 异步复制与换源：GTID 简化进度对齐</h3>
 <p>启用全局事务标识（GTID，Global Transaction Identifier）后，每笔事务都有可识别的标识。从节点切换复制源时，可以用 GTID 集合对齐新旧复制源的事务进度，减少人工对齐日志文件和位置的工作。</p>
 <p>从节点接收日志后，还要在本地回放，接收进度与回放进度可能不同。回放落后时，读取可能看到旧数据，故障转移也不能只凭日志接收进度判断候选新主的状态。</p>
@@ -556,7 +556,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <rect x="540" y="372" width="180" height="44" rx="6" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2"/>
   <text x="630" y="399" text-anchor="middle" font-size="13" font-weight="700" fill="#1E40AF">Leader · Broker 3</text>
 </svg>
-</div><figcaption>图 7-5　Kafka 分区与副本拓扑：Partition 是并行单位，每个分区一个 Leader 加若干 Follower，Leader 分散在各 Broker。</figcaption></figure>
+</div><figcaption>图 7-5　Kafka 分区与副本拓扑</figcaption></figure>
 <h3 id="sec-7.4.1">7.4.1 Partition：分区即并行单位</h3>
 <p>一个主题（topic）被切成 N 个分区，每个分区是一份有序的、只能追加（append-only）的日志。分区同时决定并行度和顺序范围。Kafka 自身只保证单个分区内的顺序；若要由 Kafka 保证主题内的全局顺序，就只能使用一个分区，也就无法通过增加分区提高并行度。</p>
 <p>生产者未显式指定分区时，有 key 的默认路由是对序列化后的 key 做哈希，再按 N 取模；N 和序列化方式不变时，同一个 key 落到同一个分区。热点集中在某个分区时，它的 Leader 所在 Broker 可能成为瓶颈。没有 key 时，默认采用粘性策略：先向一个分区积累一批消息，再切换目标。这样比逐条分散发送更容易形成较大的批。</p>

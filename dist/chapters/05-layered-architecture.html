@@ -242,7 +242,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <line x1="420" y1="200" x2="468" y2="200" stroke="#4B5563" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#fig_5_1_arrow4)"/>
   <line x1="420" y1="392" x2="468" y2="392" stroke="#4B5563" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#fig_5_1_arrow4)"/>
 </svg>
-</div><figcaption>图 5-1　Redis 命令处理流水线：交互层与逻辑层用 client 结构体衔接，进程内层间传递不重新序列化。</figcaption></figure>
+</div><figcaption>图 5-1　Redis 命令处理流水线</figcaption></figure>
 <p>图中的 <code>client</code> 保存查询缓冲区、命令参数和当前数据库等会话状态。多个处理环节按同一套字段约定使用这份上下文，无须逐层复制全部状态。</p>
 <p>模块命令也可在加载时注册到运行时命令表，接入同一条分派路径。</p>
 <h3 id="sec-5.2.3">5.2.3 存储层：数据对象、内存管理与持久化</h3>
@@ -329,7 +329,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="420" y="292" text-anchor="middle" font-size="11" fill="#EF4444" font-weight="600">编码选择</text>
   <text x="410" y="316" text-anchor="middle" font-size="10" fill="#6B7280">各 type 有相应的 encoding</text>
 </svg>
-</div><figcaption>图 5-2　redisObject 的 type / encoding 解耦：type 标明类型语义，encoding 标明内存表示。</figcaption></figure>
+</div><figcaption>图 5-2　redisObject 的 type 与 encoding 解耦</figcaption></figure>
 <p>命令按 type 对外提供语义，例如对列表执行 LPUSH，内部编码变化不改这一语义。</p>
 <p>达到 <code>maxmemory</code> 上限后，Redis 可拒绝会增加内存的写入，也可按策略淘汰已有键。大对象的释放也会影响请求延迟：<code>UNLINK</code> 可把释放工作交给后台线程；默认配置下，普通 <code>DEL</code> 可能在主线程同步释放大对象。</p>
 <p>持久化也是可选的：RDB 保存全量快照，AOF 记录写入；两者都能关闭，此时实例只靠内存保存数据，重启即丢。</p>
@@ -414,7 +414,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <line x1="690" y1="456" x2="102" y2="456" stroke="#4B5563" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#fig_5_3_arr45)"/>
   <text x="395" y="450" text-anchor="middle" font-size="11" fill="#111827">8. 查询结果经服务层、连接层返回客户端</text>
 </svg>
-</div><figcaption>图 5-3　THD 贯穿 MySQL 三层的会话上下文：THD 是跨层共享的可变状态。</figcaption></figure>
+</div><figcaption>图 5-3　MySQL 的 THD 会话上下文</figcaption></figure>
 <p>Redis 的 <code>client</code> 与 MySQL 的 THD 都作为共享上下文跨层传递。THD 承载 SQL 执行和存储引擎所需的会话状态，MySQL 的三层因此依赖同一对象的字段约定。</p>
 <h3 id="sec-5.3.2">5.3.2 逻辑层：查询处理的解析、优化与执行</h3>
 <p>MySQL 的逻辑层也称“服务层”（Server 层 / SQL 层）。以常见的查询处理路径为例，可以分成解析、优化、执行三个环节。</p>
@@ -492,7 +492,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="650" y="444" text-anchor="middle" font-size="12" font-weight="600" fill="#374151">多种引擎可并存</text>
 
 </svg>
-</div><figcaption>图 5-4　MySQL Handler API 与可插拔存储引擎：服务层通过 handler 虚函数向下调用，引擎可并存、可替换。</figcaption></figure>
+</div><figcaption>图 5-4　MySQL Handler API 与可插拔存储引擎</figcaption></figure>
 <p>引擎通过接口向服务层报告自身能力和统计信息；数据组织方式和恢复能力则由具体引擎决定。</p>
 <p>即使一个实例只用 InnoDB，Handler API 仍把服务层的 SQL 处理与引擎内部实现隔开。</p>
 <h3 id="sec-5.3.4">5.3.4 层间通信</h3>
@@ -610,7 +610,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="520" y="432" font-size="11" font-weight="600" fill="#059669">逻辑层（业务线程）</text>
   <text x="520" y="450" font-size="10" fill="#6B7280">Handler：鉴权、配额、分派</text>
 </svg>
-</div><figcaption>图 5-5　Kafka Reactor + RequestChannel 线程模型：网络线程与业务线程通过有界队列解耦，队列满时向上游施加背压。</figcaption></figure>
+</div><figcaption>图 5-5　Kafka 请求处理线程模型</figcaption></figure>
 <p>Redis 即使启用多线程 I/O，普通命令仍由主线程串行执行；Kafka 则由网络线程组负责收发，由业务线程组处理请求。</p>
 <h3 id="sec-5.4.2">5.4.2 逻辑层（API 层）：请求类型分派</h3>
 <p>交互层交给 <code>KafkaApis</code> 的请求按 ApiKeys 区分类型，各类请求有自己的协议版本。<code>KafkaApis.handle()</code> 接收 <code>RequestChannel.Request</code>，分派给相应的处理方法；这一环节还涉及鉴权、配额等请求级工作。</p>
@@ -688,7 +688,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <line x1="380" y1="374" x2="476" y2="374" stroke="#4B5563" stroke-width="1.3" marker-end="url(#fig_5_6_arr47)"/>
 
 </svg>
-</div><figcaption>图 5-6　Kafka Log 复用：消费与副本同步共享底层日志读取，两类请求的状态与读取边界不同。</figcaption></figure>
+</div><figcaption>图 5-6　Kafka 消费与复制的日志读取复用</figcaption></figure>
 <p>底层日志读取路径可以复用，索引、缓存和文件读取的优化能同时惠及消费与副本同步；副本进度、任期和截断由复制逻辑处理。</p>
 <p><strong>Kafka 用追加日志作为基础存储抽象，日志存储组件负责索引与压实，副本协调则由上层组件负责</strong>。它没有提供 MySQL 式的引擎插件接口，系统各层都依赖“Log 是顺序追加、按偏移量寻址”这一核心抽象。</p>
 <p>Tiered Storage 可以把已完成的日志段放到对象存储等远程后端，存储从本地扩展为本地和远程两级。客户端仍通过 Kafka 按偏移量读取日志，Broker 内部则增加了远程日志管理与读取处理，远程存储后端通过 RemoteStorageManager 接口接入。</p>
@@ -785,7 +785,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="765" y="416" text-anchor="middle" font-size="11" font-weight="600" fill="#111827">副本与集群控制</text>
   <text x="765" y="434" text-anchor="middle" font-size="10" fill="#374151">ReplicaManager / Controller</text>
 </svg>
-</div><figcaption>图 5-7　三个软件的交互、逻辑、存储职责对照；Kafka 的协调职责另列。</figcaption></figure>
+</div><figcaption>图 5-7　三个软件的分层职责对照</figcaption></figure>
 <p>两处边界最能说明三者分层形态的差异。</p>
 <p><strong>第一，存储引擎的能力差异影响可插拔接口的取舍。</strong> Redis 以内存数据结构为核心，没有提供 MySQL 那样的可插拔引擎接口。MySQL 要支持事务型、内存型、归档型等引擎，因此用统一接口隔离不同引擎的实现。Kafka 的存储围绕追加日志组织，消费与副本同步复用同一底层日志读取路径。它没有提供 MySQL 那样的通用引擎替换接口。</p>
 <p><strong>第二，通信机制受部署边界影响。</strong> Redis 的模块间、MySQL 同一实例内的服务层与引擎间通过进程内调用衔接；Kafka 在同一 Broker 内有线程间队列交接和对象方法调用，跨 Broker 则使用网络协议。边界从进程内扩展到跨机器，需要承担协议与传输开销。</p>

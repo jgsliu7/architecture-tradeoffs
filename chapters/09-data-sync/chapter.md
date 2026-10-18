@@ -24,13 +24,13 @@ Redis 用命令流、MySQL 用 binlog event、Kafka 用分区日志消息传播�
 
 **第四，传播断了或乱了怎么办。** 网络中断、副本重启或主节点更换后，能不能不从头再来，从哪里接着传？系统需要记录同步位点，并能在重启时用它对齐。
 
-![图 9-1 数据同步的四个子问题框架](diagrams/fig-9-1.svg)
-图 9-1　数据同步的四个子问题：传播什么、怎么传播、到什么程度、断了怎么办。
+![图 9-1 数据同步的四个子问题](diagrams/fig-9-1.svg)
+图 9-1　数据同步的四个子问题
 
 副本状态怎样对齐，可以借助**状态机复制**来理解：从相同的初始状态出发，按相同顺序执行相同输入，并且执行是确定性的，副本就会得到相同状态。Kleppmann《Designing Data-Intensive Applications》在“一致性与共识”一章对此已有展开。三个软件都用日志或命令序列记录变化：Redis 的副本执行命令流，MySQL 的副本回放 binlog event，Kafka 的副本按偏移量复制分区日志。
 
 ![图 9-2 状态机复制模型](diagrams/fig-9-2.svg)
-图 9-2　状态机复制模型：以三个软件为例，对照输入载体与副本处理方式；各系统内的副本按相同历史追赶。
+图 9-2　状态机复制模型
 
 同一个“随机选一个成员”，两台机器可能选出不同结果。复制时要传播已经选中的成员，而不是让副本再随机一次。Redis 的命令改写，解决的就是这类问题。
 
@@ -65,8 +65,8 @@ Redis 复制是**单向异步**的。主节点通常在本地执行写命令后�
 
 全量同步还会带来几项代价：fork 要复制页表，可能造成短暂停顿；子进程运行期间，父进程修改内存页会触发写时复制（COW），额外内存占用随被修改的页数增加。RDB 的网络传输还会消耗主节点出口带宽。部分重同步可以减少反复全量同步带来的这些开销。断线重连时的部分重同步与全量回退见图 9-3。
 
-![图 9-3 Redis PSYNC2 全量 + 部分重同步流程](diagrams/fig-9-3.svg)
-图 9-3　PSYNC2 同时核对复制历史与续传位置：复制 ID 有效且所需字节仍在 backlog 中，才能部分重同步，否则退回全量。
+![图 9-3 Redis PSYNC2 重同步流程](diagrams/fig-9-3.svg)
+图 9-3　Redis PSYNC2 重同步流程
 
 ### 9.2.4 增量同步：PSYNC2 与复制积压缓冲区
 
@@ -81,8 +81,8 @@ PSYNC2 解决的是“断线重连能不能不从头同步”。它需要复制 
 - 条件满足 → **部分重同步（partial resync）**：从请求的位置继续发送保留的复制流。
 - 历史不匹配或所需字节已不可得 → 退回全量同步。
 
-![图 9-4 Redis 复制积压缓冲区与 replication offset](diagrams/fig-9-4.svg)
-图 9-4　backlog 滑动窗口：复制历史匹配且请求范围落在保留窗口内时，可增量补差；否则需要全量同步。
+![图 9-4 Redis 复制积压缓冲区与 offset](diagrams/fig-9-4.svg)
+图 9-4　Redis 复制积压缓冲区与 offset
 
 确定 backlog 大小时，需要在断线容忍时间与内存占用之间取舍：写入速率相同时，窗口越大，能覆盖越长的网络抖动或副本停顿，也要占用更多内存。可以根据写入字节速率和常见断线时长估算所需规模。
 
@@ -129,8 +129,8 @@ MySQL 的传统异步复制分为**接收和回放两段**。先以单线程回�
 
 接收和回放分开后，I/O 线程可以先把事件写入 relay log，SQL 线程按本地引擎的速度执行。relay log 用缓冲空间吸收两者的速度差。
 
-![图 9-5 MySQL 异步 / 半同步复制与 GTID 链路](diagrams/fig-9-5.svg)
-图 9-5　异步 / 半同步 / GTID：异步复制完成本地提交后返回；半同步默认采用 AFTER_SYNC，在 binlog 刷盘后、引擎提交前等待副本 ACK，AFTER_COMMIT 则在引擎提交后等待。副本确认不等待事务应用完成，GTID 以事务标识辅助定位复制进度。
+![图 9-5 MySQL 异步、半同步复制与 GTID](diagrams/fig-9-5.svg)
+图 9-5　MySQL 异步、半同步复制与 GTID
 
 ### 9.3.3 异步复制：本地提交不等待副本
 
@@ -162,8 +162,8 @@ GTID（Global Transaction Identifier，全局事务标识）用 `source_id:trans
 
 并行回放的能力受源端并发、事务依赖、worker 数量和回放资源限制。并行复制与 MGR 共识的关系见图 9-6。
 
-![图 9-6 MySQL 多线程并行复制与组复制（MGR）共识](diagrams/fig-9-6.svg)
-图 9-6　并行回放与 MGR：从节点按依赖标记调度回放，MGR 通过组通信建立事务顺序，再进行认证和提交。
+![图 9-6 MySQL 并行复制与组复制](diagrams/fig-9-6.svg)
+图 9-6　MySQL 并行复制与组复制
 
 ### 9.3.7 组复制（MGR）：在复制中加入事务协调
 
@@ -201,8 +201,8 @@ Kafka 用 LEO（Log End Offset，日志末端偏移量）和 HW（High Watermark
 
 LEO 表示日志下一条消息的追加位置，HW 表示已经完成复制提交的边界。例如 Leader 的 LEO 是 105、HW 是 103，那么 offset 103 和 104 已写入日志，还没有完成复制提交。Leader 根据 FETCH 中获知的副本进度和 ISR 状态推进 HW。ISR 稳定且满足最小副本数要求时，较慢副本的已知进度会限制 HW 的推进。副本长时间未追上 Leader，超过 `replica.lag.time.max.ms` 后会被移出 ISR，Leader 随后按调整后的集合推进 HW。Leader、Follower、ISR 与 HW 的时间关系见图 9-7。
 
-![图 9-7 Kafka Follower FETCH + LEO/HW + leader epoch](diagrams/fig-9-7.svg)
-图 9-7　HW 与 leader epoch：Leader 根据副本反馈的进度推进 HW；leader epoch 标识任期边界，帮助恢复中的副本定位并截断不一致尾部。
+![图 9-7 Kafka 复制进度与 leader epoch](diagrams/fig-9-7.svg)
+图 9-7　Kafka 复制进度与 leader epoch
 
 ### 9.4.4 leader epoch：定位旧 Leader 日志中的分叉
 

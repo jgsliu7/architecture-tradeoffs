@@ -224,7 +224,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="129" y="339" text-anchor="middle" font-size="11.5" font-weight="700" fill="#111827">随机访问延迟</text>
   <text x="129" y="356" text-anchor="middle" font-size="11.5" font-weight="700" fill="#EF4444">机械盘延迟约为内存的 10⁵ 倍</text>
 </svg>
-</div><figcaption>图 4-1　存储层次访问延迟的数量级（对数轴）：内存到机械盘横跨五个数量级。</figcaption></figure>
+</div><figcaption>图 4-1　存储层次访问延迟的数量级</figcaption></figure>
 <p>机械盘的顺序读写能避开反复寻道；SSD 没有机械寻道，小块随机 I/O 仍可能受 IOPS 约束。数据放在哪里与写入何时落盘，是两项需要分别决定的事。</p>
 <h2 id="sec-4.2">4.2 Redis 的做法</h2>
 <p>Redis 把运行数据保存在内存中，访问时不必读取磁盘页。会话缓存、排行榜、限流计数器等高频小数据适合这种做法。内存满了需要决定是否淘汰已有键；断电后能恢复多少，则取决于磁盘上的持久化数据。</p>
@@ -341,7 +341,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="830" y="378" text-anchor="middle" font-size="11" fill="#374151">访问一次 → 估计值较小</text>
   <text x="830" y="394" text-anchor="middle" font-size="11" fill="#374151">更可能成为淘汰候选</text>
 </svg>
-</div><figcaption>图 4-2　Redis 近似 LRU 采样淘汰与 LFU 计数器衰减机制：两种策略共用采样与比较机制，但比较依据不同。近似 LRU 比较最近访问时间，LFU 比较带衰减的对数频次。</figcaption></figure>
+</div><figcaption>图 4-2　Redis 近似 LRU 与 LFU 淘汰机制</figcaption></figure>
 <h3 id="sec-4.2.2">4.2.2 持久化的两种方式</h3>
 <p>Redis 用 RDB 和 AOF 在磁盘上保留可恢复的状态。</p>
 <p><strong>RDB（快照文件）</strong> 保存某一时刻的全量数据。后台保存时，Redis <code>fork</code> 子进程写快照，父进程继续处理请求；写时复制（COW）保留快照时的内存视图。fork 要复制页表，会短暂停住主线程；之后若大量页面被修改，COW 还会增加内存与复制开销。实例越大，这两项成本越值得关注。</p>
@@ -434,7 +434,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
     <text x="320" y="14" font-size="11" fill="#374151">Redis 相关</text>
   </g>
 </svg>
-</div><figcaption>图 4-3　Redis 持久化数据流（RDB 快照 / AOF 含混合持久化）：两条路径独立，混合 AOF 以 RDB 格式保存全量基底、以命令记录增量</figcaption></figure>
+</div><figcaption>图 4-3　Redis 持久化数据流</figcaption></figure>
 <h3 id="sec-4.2.3">4.2.3 取舍总结</h3>
 <p>Redis 让运行数据常驻内存以降低访问延迟，数据容量也因此受到内存限制；故障后能恢复到哪里，由持久化方式和刷盘时机决定。单实例继续增大，还会增加 fork 与恢复加载的成本。容量超过可承担的内存范围时，就需要分片（见<a class="xref" href="07-cluster.html">第 7 章</a>）或调整存储方案。</p>
 <h2 id="sec-4.3">4.3 MySQL 的做法</h2>
@@ -553,7 +553,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <path d="M 920 170 L 936 170 L 936 72 L 160 72 L 160 88" fill="none" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#fig_4_4_arrow)"/>
   <text x="548" y="64" text-anchor="middle" font-size="10" fill="#6B7280">Old 区尾部的淘汰页归还 Free List</text>
 </svg>
-</div><figcaption>图 4-4　InnoDB 缓冲池页管理链表（Free / LRU 新老分区 / Flush）</figcaption></figure>
+</div><figcaption>图 4-4　InnoDB 缓冲池页管理链表</figcaption></figure>
 <h3 id="sec-4.3.3">4.3.3 WAL 与崩溃恢复</h3>
 <p><strong>WAL</strong> 要求在修改后的数据页刷到磁盘之前，先保证记录“这页要怎么改”的 <strong>redo log（重做日志）</strong> 已经落盘。redo log 是顺序追加写的。崩溃之后，InnoDB 用 redo log 重放，把缓冲池里没来得及刷盘的修改补回磁盘的数据页。</p>
 <p>一个事务可能修改多个分散的数据页。采用 WAL 后，提交时不必等这些页全部写回：先持久保存恢复所需的日志，脏页再由后台逐步刷回。随机写并没有消失，只是不必每次都挡在提交路径上；同一页的多次修改也有机会合并后再写。</p>
@@ -672,7 +672,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
     <text x="388" y="12" font-size="10" fill="#374151">MySQL 相关</text>
   </g>
 </svg>
-</div><figcaption>图 4-5　MySQL 一次写操作的全链路时序（缓冲池→redo log→双写→刷盘）</figcaption></figure>
+</div><figcaption>图 4-5　MySQL 写入与刷盘时序</figcaption></figure>
 <p>脏页可以先留在缓冲池中；随着后台刷盘和 checkpoint 推进，较早的 redo log 空间才能复用。</p>
 <h3 id="sec-4.3.4">4.3.4 双写与修改缓冲</h3>
 <p>这两种机制分别处理页写到一半的损坏风险，以及修改二级索引页时的随机读取。</p>
@@ -782,7 +782,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="60" y="574" font-size="11" fill="#374151">　　　PageCache 未命中时，先从磁盘读入（①）</text>
   <text x="60" y="592" font-size="11" fill="#374151">　　　内核组织网络发送（②），文件内容不复制到用户缓冲区</text>
 </svg>
-</div><figcaption>图 4-6　Kafka 消费路径的零拷贝（sendfile）</figcaption></figure>
+</div><figcaption>图 4-6　Kafka 消费路径的零拷贝</figcaption></figure>
 <p>传统文件发送先把数据读到用户缓冲，再写入 socket。<code>sendfile</code> 把中间这次用户态往返省掉，让内核直接组织文件数据的发送。这里的“零拷贝”不是数据完全不搬运，而是不必先复制到应用自己的缓冲区；Kafka 本地日志直接发送、无需 TLS 等字节处理时，可以利用这条路径。</p>
 <h3 id="sec-4.4.4">4.4.4 可靠性参数</h3>
 <p>Kafka 默认不强制每条消息 <code>fsync</code>，刷盘时机交给操作系统。写入确认不必逐条等待本地刷盘，但尚未落盘的数据在节点故障时可能丢失。</p>

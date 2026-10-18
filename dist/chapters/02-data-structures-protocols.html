@@ -232,7 +232,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="380" y="356" font-size="12.5" fill="#374151">· alloc 记已分配空间 → 预分配 / 惰性释放</text>
 
 </svg>
-</div><figcaption>图 2-1　SDS 与 C 字符串的内存布局对比：同一个 hello 的两种存法，差别集中在 SDS 的头部。</figcaption></figure>
+</div><figcaption>图 2-1　SDS 与 C 字符串的内存布局对比</figcaption></figure>
 <p><strong>跳表（skiplist）</strong> 用于 Redis 有序集合的 skiplist 编码。这种编码同时维护 dict 和跳表：member→score 的查找走 dict，ZSCORE 是 O(1)；按顺序读取一段元素走跳表，ZRANGE 是 O(log N + M)，M 为返回元素数。</p>
 <p>跳表是多层有序链表，最底层是一条完整的有序双向链表，上面几层是抽稀的索引层，每隔几个节点保留一个指针。节点层数按随机结果决定，跳表高度大概率落在 O(log N)。每条向前指针还记录一个跨度（span），表示沿它前进跨过了多少个元素。</p>
 <p>查找时从最顶层快速定位到目标附近，再逐层下沉到精确位置。查找、插入和删除的平均时间复杂度都是 O(log N)。范围扫描先定位起点，再沿底层链表前进（O(log N + M)），比红黑树的中序遍历更直接。</p>
@@ -328,7 +328,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="538" y="334" font-size="12" fill="#374151">查找 17：顶层快速逼近，下沉到底层后沿链表命中</text>
 
 </svg>
-</div><figcaption>图 2-2　跳表的多层索引与查找路径：以查找 17 为例。</figcaption></figure>
+</div><figcaption>图 2-2　跳表的多层索引与查找路径</figcaption></figure>
 <p>定位元素时，把查找路径上各层经过的跨度累加，就能得到位置；排行榜的名次由此计算，不必从表头逐个计数。</p>
 <p><strong>字典（dict）</strong> 是 Redis 哈希类型和键空间使用的链式哈希表。它使用带随机种子的 SipHash 计算哈希值，以链表处理冲突。</p>
 <p>渐进式 rehash 使用旧表 <code>ht[0]</code> 和新表 <code>ht[1]</code>。扩容或缩容时，Redis 不一次搬完所有键，而是在后续操作和定时任务中逐步迁移。迁移期间，新写入的键进入新表，查找和删除要兼顾两张表；迁移结束后，新表接替旧表。</p>
@@ -446,7 +446,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="700" y="490" text-anchor="middle" font-size="12.5" font-weight="700" fill="#065F46">搬完之后</text>
   <text x="700" y="512" text-anchor="middle" font-size="11.5" fill="#374151">旧表迁完 → 新表接替旧表，旧表释放</text>
 </svg>
-</div><figcaption>图 2-3　渐进式 rehash 的双表搬迁过程：以旧表桶 2 的一次搬迁作前后对照。</figcaption></figure>
+</div><figcaption>图 2-3　渐进式 rehash 的双表搬迁过程</figcaption></figure>
 <p><strong>压缩列表（ziplist）与紧凑列表（listpack）</strong> 都把元素紧挨着放在连续内存中，减少指针开销，插入时也都可能搬移后续字节。ziplist 的元素记录前一个元素的长度；前一个元素变长后，后一个元素的长度记录可能随之扩大，并继续影响后面的元素。listpack 改为记录元素自身的长度，切断了这种连锁依赖。两种格式的差别见<a class="xref" href="#fig-2-4">图 2-4</a>。</p>
 <figure class="fig" id="fig-2-4"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 446" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
   <defs>
@@ -522,7 +522,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 
 </g>
 </svg>
-</div><figcaption>图 2-4　ziplist 的连锁更新与 listpack 的长度记录：同一个元素变长，在两种格式里的不同后果。</figcaption></figure>
+</div><figcaption>图 2-4　ziplist 的连锁更新与 listpack 的长度记录</figcaption></figure>
 <p><strong>整数集合（intset）</strong> 是 Redis 集合类型在成员较少且全为整数时使用的紧凑编码。它将整数有序地放在连续数组中，用二分查找；编码选能容纳全部成员的最窄宽度。插入超出当前宽度的整数时，整个数组升级到更宽的编码；删除大值后不会自动降级，可能因此多占一些空间。</p>
 <p>集合不再适合这种编码时，底层结构也会转换。插入非整数成员后，Redis 7.2 起可在规模较小时先转为 listpack，否则转为哈希表；纯整数成员超过 intset 的元素数量阈值时则直接转为哈希表。这些转换对上层命令透明，路径见<a class="xref" href="#fig-2-5">图 2-5</a>。</p>
 <figure class="fig" id="fig-2-5"><div class="svg-wrap"><svg width="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 510" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
@@ -596,7 +596,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <path d="M 230 448 Q 230 470 320 470 L 560 470 Q 650 470 650 457 L 650 447" fill="none" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_2_5_arrow)"/>
   <text x="440" y="485" text-anchor="middle" font-size="10.5" fill="#374151">纯整数规模增大，或混入非整数后已不适合紧凑编码：直接转哈希表；升级后不自动降级</text>
 </svg>
-</div><figcaption>图 2-5　Redis 五种底层结构与升级路径：五种结构各成卡片，底部标出小数据编码的升级去向，其中 Set 有两条独立的转换路径。</figcaption></figure>
+</div><figcaption>图 2-5　Redis 底层结构与编码升级路径</figcaption></figure>
 <h3 id="sec-2.2.2">2.2.2 MySQL：面向磁盘页和通用查询的 B+ 树与行格式</h3>
 <p>MySQL（InnoDB）以页组织磁盘数据，默认页大小为 16KB。数据不在缓冲池时，查找需要从磁盘读入相关页，经过的页数因此影响 I/O 成本。</p>
 <p><strong>B+ 树</strong> 是 InnoDB 唯一的主索引结构。一棵 B+ 树从上到下有根节点、内部节点和叶子节点。内部节点主要保存键和子页指针，一页可以容纳较多分支，减少从根到叶需要访问的页数。叶子之间用双向链表串联。聚簇索引的叶子保存完整行数据，InnoDB 的表本体按主键组织成树。二级索引的叶子保存索引键和主键值；读取索引之外的列时，再用主键回到聚簇索引取数据，这一步叫回表。</p>
@@ -721,7 +721,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <line x1="620" y1="539" x2="640" y2="539" stroke="#059669" stroke-width="2" marker-start="url(#fig_2_6_arrow-green)" marker-end="url(#fig_2_6_arrow-green)"/>
   <text x="652" y="544" font-size="10" fill="#4B5563">双向链表方向</text>
 </svg>
-</div><figcaption>图 2-6　InnoDB B+ 树三层结构：一棵示例树，每个方框对应一个 16KB 磁盘页。</figcaption></figure>
+</div><figcaption>图 2-6　InnoDB B+ 树结构</figcaption></figure>
 <p>这张图与<a class="xref" href="#fig-2-2">图 2-2</a> 的跳表对照：两者都为顺序访问准备了底层结构，差别在于，跳表按单个内存节点组织数据，B+ 树则把一整个 16KB 磁盘页作为节点——节点的大小，对齐的是所在介质的访问单位。</p>
 <p><strong>行格式（Row Format）</strong> 决定一行数据怎样放进页里。以 Dynamic 为例，行太长时，可以把部分较长的变长列移到溢出页，行内留下指针。读取被移出的列时，沿指针访问溢出页。索引页由此可以容纳更多记录。</p>
 <p><strong>自适应哈希索引</strong> 是 InnoDB 在 B+ 树之上的额外一层。InnoDB 根据索引页上的查询模式，按合适的索引键前缀在内存中建立哈希索引；能够命中它的查询，可以通过平均 O(1) 的哈希查找直接定位记录，省去 B+ 树 O(log N) 的逐层查找。这层哈希也要占内存、维护自身结构，并可能带来锁竞争。查找省下的时间抵不过维护成本时，关闭它反而更合算。</p>
@@ -766,7 +766,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="440" y="365" text-anchor="middle" font-size="11.5" fill="#374151">每条记录的 offset 与时间戳按批头基准保存差值，差值较小时可用变长整数减少开销</text>
 
 </svg>
-</div><figcaption>图 2-7　RecordBatch V2 字段分组：按功能分组，不表示磁盘字节顺序。整批消息共享 61 字节头部中的元数据，记录中的偏移量和时间戳使用相对差值。</figcaption></figure>
+</div><figcaption>图 2-7　Kafka RecordBatch V2 的批头与记录体</figcaption></figure>
 <p>同一批中的消息共享元数据和 CRC；需要压缩时，也以批为单位。读写双方需要支持相应版本，新旧格式才能共存；<code>magic</code> 用来辨认批格式版本。Kafka 重点服务追加写和按 offset 定位后的连续读取，不提供按业务 key 的点查。</p>
 <h2 id="sec-2.3">2.3 通信协议：客户端和服务端怎么对话</h2>
 <h3 id="sec-2.3.1">2.3.1 Redis RESP：能被人眼读懂的极简协议</h3>

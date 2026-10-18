@@ -225,7 +225,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="685" y="370" font-size="12" fill="#374151">可复制或存于远端</text>
 
 </svg>
-</div><figcaption>图 8-1　三个软件中数据正本、缓存与恢复文件的职责示意。</figcaption></figure>
+</div><figcaption>图 8-1　三个软件的数据正本、缓存与恢复文件</figcaption></figure>
 <p>具体到文件设计，主要涉及四类取舍。</p>
 <p><strong>读写路径</strong>。顺序追加把新数据写在文件尾部；需要快速定位历史记录时，可以用索引缩小查找范围。定长页便于计算页的位置，定位到页后再查找记录，更新时可能发生页内重组。</p>
 <p><strong>空间与解析成本</strong>。紧凑编码可以用编解码的 CPU 开销换取更小的文件与更少的 I/O。定长字段与对齐让定位和解析更直接，空间占用可能更多。</p>
@@ -410,7 +410,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <rect x="555" y="468" width="270" height="48" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
   <text x="690" y="497" text-anchor="middle" font-size="12.5" font-weight="700" fill="#4F46E5">恢复读取：新 base + 新 incr</text>
 </svg>
-</div><figcaption>图 8-3　单文件 AOF 与 Multi-Part AOF 的重写增量衔接</figcaption></figure>
+</div><figcaption>图 8-3　AOF 重写期间的增量衔接</figcaption></figure>
 <h2 id="sec-8.3">8.3 MySQL 的做法</h2>
 <h3 id="sec-8.3.1">8.3.1 定位先行：磁盘为主，内存是缓存</h3>
 <p>InnoDB 将数据页保存在表空间文件中，缓冲池按需缓存这些页。缓存命中时从内存读取，未命中时再访问磁盘。</p>
@@ -509,7 +509,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="720" y="380" text-anchor="middle" font-size="11" fill="#374151">页大：一次读入更多记录</text>
   <text x="720" y="398" text-anchor="middle" font-size="11" fill="#374151">页小：点查少读无关数据</text>
 </svg>
-</div><figcaption>图 8-4　InnoDB 16KB 数据页内部七段布局。</figcaption></figure>
+</div><figcaption>图 8-4　InnoDB 数据页布局</figcaption></figure>
 <p>页内记录按索引键连接成链表。Page Directory 是页内的稀疏索引，每个槽指向一组记录的末记录。查找时先在槽数组中二分，缩小范围后沿记录链比较，无需从头遍历整页。</p>
 <p>InnoDB 默认使用 Dynamic 行格式。行内内容过长时，部分长列移到溢出页，聚簇索引叶子页内保留引用，能容纳更多行内记录。读取被移出的列时，按引用额外访问溢出页。</p>
 <h3 id="sec-8.3.4">8.3.4 redo log 与双写：原地改页后的恢复</h3>
@@ -620,7 +620,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="805" y="343" font-size="10" font-weight="700" fill="#EF4444">修复后</text>
 
 </svg>
-</div><figcaption>图 8-5　页校验与 LSN 用于判断页状态</figcaption></figure>
+</div><figcaption>图 8-5　InnoDB 页校验与崩溃恢复</figcaption></figure>
 <h2 id="sec-8.4">8.4 Kafka 的做法</h2>
 <h3 id="sec-8.4.1">8.4.1 定位先行：磁盘就是日志本体</h3>
 <p>Kafka 的分区日志保存消息本体。本地读取优先使用操作系统页缓存，未命中时再访问磁盘。新消息顺序追加到活跃日志段；稀疏索引缩小按偏移量（offset）定位已有消息时的扫描范围；RecordBatch 让一批消息共享元数据，并可一起压缩。</p>
@@ -752,7 +752,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <line x1="450" y1="550" x2="480" y2="550" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_8_6_arrow)"/>
   <line x1="670" y1="550" x2="700" y2="550" stroke="#4B5563" stroke-width="1.2" marker-end="url(#fig_8_6_arrow)"/>
 </svg>
-</div><figcaption>图 8-6　分区 → 日志段 → 三个主要文件的目录与内部结构。</figcaption></figure>
+</div><figcaption>图 8-6　Kafka 分区与日志段文件结构</figcaption></figure>
 <p>日志段可以按大小或时间切分。段切得太小，文件数量和管理开销会增加；切得太大，单段重写工作量变大，按保留策略整段删除的粒度也更粗。压实（compaction）则按 key 清理旧值，通过重写日志段回收空间，与整段删除互补。</p>
 <h3 id="sec-8.4.3">8.4.3 RecordBatch V2：把一批消息当成一个存储单元</h3>
 <p>V0、V1 即使把多条消息包装后压缩，内部消息仍各带一份元数据，一批中的消息越多，重复开销越明显。</p>
@@ -838,7 +838,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <line x1="700" y1="250" x2="700" y2="195" stroke="#059669" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#fig_8_7_arrow-green)"/>
   <text x="688" y="225" text-anchor="end" font-size="10" fill="#059669">本地段已移除，读远端</text>
 </svg>
-</div><figcaption>图 8-7　Kafka Tiered Storage 日志段生命周期：本地段关闭并满足稳定性条件后异步上传，消费者可经 Broker 读取远端数据。</figcaption></figure>
+</div><figcaption>图 8-7　Kafka 分层存储的日志段生命周期</figcaption></figure>
 <h2 id="sec-8.5">8.5 横向对比</h2>
 <p class="tab-label"><strong>表 8-2　三个软件的存储格式与读写、恢复方式</strong></p>
 <div class="table-wrap"><table id="table-8-2"><thead><tr><th>维度</th><th>Redis</th><th>MySQL</th><th>Kafka</th></tr></thead><tbody><tr><td>数据的主存储位置</td><td>内存</td><td>磁盘</td><td>本地磁盘；启用分层存储时，旧日志段可存于远端</td></tr><tr><td>磁盘文件组织</td><td>RDB 快照文件 / AOF 文件组</td><td>表空间文件，由定长页组成</td><td>分区日志段，由日志文件与索引文件组成</td></tr><tr><td>写方式</td><td>全量重写（RDB）/ 追加与重写（AOF）</td><td>原地改页 + WAL</td><td>新消息追加，压实时重写日志段</td></tr><tr><td>读方式</td><td>加载后在内存中查询</td><td>B+ 树定位与页内查找</td><td>稀疏索引 + 顺序扫描</td></tr><tr><td>索引形态</td><td>持久化文件无 key 索引，查询使用内存结构</td><td>B+ 树 + 页内 Page Directory</td><td>稀疏偏移量 / 时间戳索引</td></tr><tr><td>崩溃恢复</td><td>按配置加载 RDB 或 AOF（可含 RDB base）</td><td>redo 重放 + 双写修页</td><td>以日志为正本，校验并截断残缺尾部</td></tr><tr><td>演进机制</td><td>RDB 版本号 + 编码类型</td><td>行格式与页内格式标记</td><td>Magic 版本号</td></tr><tr><td>损坏检测</td><td>RDB 尾部 CRC64</td><td>页 checksum 与 LSN 对应部分</td><td>Batch 级 CRC</td></tr></tbody></table></div>
@@ -909,7 +909,7 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
   <text x="775" y="372" text-anchor="middle" font-size="12" fill="#374151">按 offset 经稀疏索引定位</text>
   <text x="775" y="393" text-anchor="middle" font-size="11" fill="#6B7280">再作局部顺序扫描</text>
 </svg>
-</div><figcaption>图 8-8　本章三个样本的文件职责与访问路径。</figcaption></figure>
+</div><figcaption>图 8-8　三个软件的文件职责与访问路径</figcaption></figure>
 <h2 id="sec-8.7">8.7 小结</h2>
 <p>存储格式限定了记录怎样定位和更新，也影响重启时的数据重建与运行中的旧数据清理。<a class="xref" href="09-data-sync.html">第 9 章</a>接着讨论数据同步：当增量无法继续衔接时，系统从哪里重新取得完整状态。</p><nav class="page-nav"><a href="07-cluster.html">← 第 7 章 集群架构 — 从单点到分布式</a><a href="09-data-sync.html">第 9 章 数据同步机制 — 集群一致性的实现 →</a></nav></article>
 <footer class="book-footer">
