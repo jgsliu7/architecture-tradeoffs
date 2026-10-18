@@ -121,15 +121,9 @@ figcaption{color:var(--mute);font-size:.92em;margin-top:.6em;line-height:1.5}
 .review-index a:hover{border-color:var(--accent);background:#f7f8ff}
 .review-index strong{display:block;color:var(--ink)}
 .review-index span{display:block;color:var(--mute);font-size:13px;margin-top:2px}
-.book-lead{font-size:17px;line-height:1.75;color:#343a40;margin:0 0 10px;max-width:800px}
-.book-byline{color:var(--mute);font-size:14px;margin:0 0 18px}
-.start-here{background:#f7f8ff;border:1px solid #e0e7ff;border-radius:10px;padding:14px 18px;margin:0 0 8px;max-width:900px}
-.start-here strong{display:block;color:var(--accent);font-size:14px;margin-bottom:4px}
-.start-here span{font-size:14.5px;line-height:1.8;color:#343a40}
 .book-foot{color:var(--mute);font-size:13px;margin:24px 0 0}
 .book-footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);color:var(--mute);font-size:13px;line-height:1.8}
 .book-footer p{margin:0 0 4px}
-@media(max-width:900px){.book-lead{font-size:16px}.start-here{padding:12px 14px}}
 @media(max-width:1200px){figure.fig{margin:2em auto}}
 @media(max-width:900px){
   .layout{grid-template-columns:1fr}
@@ -332,13 +326,7 @@ def build_index(items):
                 '<a href="chapters/%s"><strong>%s</strong><span>%s · 约 %d 分钟</span></a>'
                 % (item["file"], html_escape(item["title"]), html_escape(item["blurb"]), item["minutes"])
             )
-        intro = """
-<p class="book-lead">一个架构师对 Redis、MySQL、Kafka 设计共性的十年观察笔记。不比较功能清单，比较它们面对同一组约束时，各自选了什么、放弃了什么。</p>
-<p class="book-byline">作者：软件架构师，做过 IoT、电商订单和 SaaS 系统，从一线开发做到首席架构师。</p>
-<div class="start-here">
-  <strong>第一次来，从这里开始</strong>
-  <span>想先判断这本书值不值得读，从<a href="chapters/02-data-structures-protocols.html">第 2 章的排行榜例子</a>进入；想了解写作缘起，读<a href="chapters/00-preface.html">序言</a>；只关心结论，读<a href="chapters/10-summary.html">第 10 章</a>。</span>
-</div>"""
+        intro = ""
         foot = ('<p class="book-foot">全书 10 章 + 序言 + 后记 · %d 幅插图 · 约 %g 小时。'
                 '每章标注的是估算阅读时间。</p>') % (svg_count, hours)
     else:
